@@ -1,93 +1,288 @@
-# Subrahmanyam
+# Smart Support — AI-Powered Ticket Automation System
 
+## Overview
 
+This project is a *full-stack AI-powered support ticket platform* that allows authenticated users to submit support requests and enables admins to manage tickets and users through a clean, role-based interface.
 
-## Getting started
+The system uses *AI-driven classification, sentiment analysis, and priority assignment* to automatically categorize and route tickets without manual intervention.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+The platform is designed with *security-first authentication, **clean separation of concerns, and a **scalable full-stack architecture*, reflecting real-world Django + React + AI integration.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+---
 
-## Add your files
+## Key Features
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+### Authentication & Security
+- Custom *JWT authentication* with role-based access control
+- Secure login, logout, and signup flow
+- Role-based routing — customers go to /support, agents go to /tickets, admins go to /admin
+- Protected backend APIs using Django REST Framework permissions
+- Frontend route protection via authorization checks on every page load
+
+### AI Support Engine
+- Automatic ticket classification into predefined categories (billing, technical, account, etc.)
+- Sentiment analysis on ticket content — detects frustration, urgency, and tone
+- Priority assignment combining category + sentiment:
+  - Low / Medium / High / Critical
+- Structured output from the AI module:
+  ```json
+  {
+    "category": "...",
+    "sentiment_score": 0.0,
+    "priority": "..."
+  }
+  ```
+
+### AI Escalation & Ticketing
+- Sentiment analysis detects user frustration or negative intent
+- Low-confidence or high-negativity submissions trigger automatic escalation
+- Support ticket is created and stored in PostgreSQL
+- Ticket includes:
+  - user email
+  - query / description
+  - timestamp
+  - assigned agent
+  - ticket status
+- Tickets are assigned to available support staff automatically
+- Ticket lifecycle:
+  - `open` → `in_progress` → `resolved`
+
+### Admin Panel
+- Admin-only management at /admin
+- Full user management — view, activate, deactivate accounts
+- Ticket overview with filtering by status, priority, and category
+- Assign tickets to agents manually or let the system auto-assign
+- Monitor agent workload and ticket resolution rates
+
+### Frontend
+- Built with React.js
+- Secure API communication via Django REST Framework
+- Client-side authentication and role checks
+- Ticket submission form with real-time AI classification preview
+- Chat-style ticket thread view for back-and-forth communication
+- Auto-scroll to latest message in ticket thread
+- Clean login, signup, support, and admin page flow
+
+### Backend
+- Django REST Framework with custom authentication
+- PostgreSQL database
+- ViewSets and DefaultRouter for clean URL generation
+- Clean separation between authentication, business logic, and AI integration
+- Background processing for non-blocking AI classification
+
+---
+
+## Architecture
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/nueve/internship/subrahmanyam.git
-git branch -M main
-git push -uf origin main
+Browser (Customer / Agent / Admin)
+        ↓
+React.js Frontend (UI)
+        ↓
+Django REST API (Authentication + Business Logic)
+        ↓
+AI Pipeline
+  ├── Category Classification
+  ├── Sentiment Analysis
+  └── Priority Assignment
+        ↓
+Confidence Evaluation
+   ├── High Confidence → Auto-assign & notify
+   └── Low Confidence → Escalation flag set
+        ↓
+Support Ticket System
+        ↓
+Agent Assignment Logic
+        ↓
+PostgreSQL Database
 ```
 
-## Integrate with your tools
+---
 
-* [Set up project integrations](https://gitlab.com/nueve/internship/subrahmanyam/-/settings/integrations)
+## Technology Stack
 
-## Collaborate with your team
+### Frontend
+- React.js
+- JavaScript
+- Fetch API
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### Backend
+- Django
+- Django REST Framework
+- PostgreSQL
+- SimpleJWT
+- threading (background AI processing)
 
-## Test and Deploy
+### AI / ML
+- Python NLP pipeline (classification + sentiment)
+- Scikit-learn / HuggingFace (configurable)
+- FAISS (planned — for knowledge base RAG)
 
-Use the built-in continuous integration in GitLab.
+---
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+## Authentication Flow
 
-***
+1. User submits username and password via `/api/v1/login/`
+2. Django authenticates and issues a JWT access token
+3. Django returns the user's role (`customer`, `agent`, or `admin`) in the response body
+4. Frontend redirects based on role — customers to `/support`, agents to `/tickets`, admins to `/admin`
+5. Every protected API request verifies the JWT signature and resolves `request.user`
+6. Logout clears the token client-side and invalidates the session server-side
 
-# Editing this README
+---
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## How the AI Works
 
-## Suggestions for a good README
+1. User submits a ticket from the support page
+2. Ticket is sent to Django via the REST API
+3. Django authenticates the user and saves the ticket to PostgreSQL
+4. The AI engine processes the ticket description:
+   - Classifies the category
+   - Scores the sentiment
+   - Assigns a priority level
+5. The system evaluates the confidence of the classification
+6. If confidence is high — ticket is auto-assigned and the agent is notified
+7. If confidence is low or sentiment is highly negative:
+   - Escalation flag is set
+   - Admin is notified for manual review
+8. The updated ticket is returned to the frontend
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+The AI module only processes based on the ticket content, ensuring controlled and explainable output.
 
-## Name
-Choose a self-explaining name for your project.
+---
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## Project Structure
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+```
+smart-support/
+│
+├── backend/
+│   ├── manage.py
+│   ├── requirements.txt
+│   │
+│   ├── core/                      # Django project settings
+│   │   ├── settings.py
+│   │   ├── urls.py
+│   │   └── wsgi.py
+│   │
+│   ├── users/                     # Custom User model & JWT auth
+│   │   ├── models.py
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   └── urls.py
+│   │
+│   ├── tickets/                   # Ticket models, serializers, views
+│   │   ├── models.py
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   └── urls.py
+│   │
+│   └── ai_engine/                 # AI classification & sentiment logic
+│       ├── classifier.py
+│       ├── sentiment.py
+│       └── priority.py
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/            # Reusable UI components
+│   │   ├── pages/                 # Route-level views
+│   │   │   ├── Login.js
+│   │   │   ├── Signup.js
+│   │   │   ├── Support.js         # Customer ticket submission
+│   │   │   ├── Tickets.js         # Agent ticket management
+│   │   │   └── Admin.js           # Admin dashboard
+│   │   ├── services/              # API call abstractions
+│   │   └── App.js
+│   │
+│   ├── package.json
+│   └── README.md
+│
+└── README.md
+```
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+---
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+## Running the Project (Development)
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
+- PostgreSQL running locally
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Backend
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+```bash
+cd backend
+python -m venv env
+source env/bin/activate      # Windows: env\Scripts\activate
+pip install -r requirements.txt
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+### Frontend
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+```bash
+cd frontend
+npm install
+npm start
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+---
+
+## Current Status
+
+- Authentication — login, logout, signup, session validation
+- Role-based routing — customers, agents, and admins
+- Secure JWT authentication
+- Ticket CRUD APIs
+- PostgreSQL integration
+- AI classification integration (basic)
+- Sentiment analysis for detecting user dissatisfaction
+- Automatic priority assignment
+- Role-based access control
+- Django Admin panel configuration
+
+---
+
+## Planned Enhancements
+
+- [ ] React frontend full integration with all backend APIs
+- [ ] Agent dashboard for ticket management
+- [ ] Ticket resolution workflow UI
+- [ ] User feedback collection after resolution
+- [ ] Admin monitoring dashboard for agent performance
+- [ ] Advanced filtering by status, category, and priority
+- [ ] Dashboard analytics with charts
+- [ ] AI auto-reply suggestion
+- [ ] SLA breach prediction
+- [ ] Redis + Celery for async AI processing
+- [ ] Dockerization
+- [ ] Production deployment (AWS / Azure)
+- [ ] CI/CD pipeline
+
+---
+
+## Author
+
+**Subrahmanyam**
+
+This project was built to deeply understand:
+- Secure authentication internals
+- Frontend–backend communication patterns
+- AI system integration into business workflows
+- Real-world SaaS architecture and database modeling
+- Role-based access and permission systems
+
+---
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Currently for educational and demonstration purposes.
+A license can be added if the project is open-sourced or deployed publicly.
+
+---
+
+*Active development. Core architecture, authentication, AI integration, and ticket management are stable and working end-to-end.*
