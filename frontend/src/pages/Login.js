@@ -1,14 +1,35 @@
 import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Username:", username);
-    console.log("Password:", password);
-  };
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await axios.post(
+      "http://127.0.0.1:8000/api/login/",
+      {
+        username: username,
+        password: password,
+      }
+    );
+
+    console.log("Login Success:", response.data);
+
+    // Save token
+    localStorage.setItem("access", response.data.access);
+    localStorage.setItem("refresh", response.data.refresh);
+
+    navigate("/dashboard"); 
+  } catch (error) {
+    console.error("Login Failed:", error.response?.data);
+  }
+};
 
   return (
     <div style={{ padding: "20px" }}>
