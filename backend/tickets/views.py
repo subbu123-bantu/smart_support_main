@@ -35,8 +35,8 @@ class TicketViewSet(viewsets.ModelViewSet):
         return Ticket.objects.none()
 
     def perform_create(self, serializer):
-        if self.request.user.role != 'customer':
-            raise PermissionDenied("Only customers can create tickets.")
+        # if self.request.user.role != 'customer':
+        #     raise PermissionDenied("Only customers can create tickets.")
         serializer.save(customer=self.request.user)
 
 
