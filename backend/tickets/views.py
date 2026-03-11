@@ -22,52 +22,31 @@ class TicketViewSet(viewsets.ModelViewSet):
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
 
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    search_fields = ['title', 'description']
+    filterset_fields = ['priority', 'status', 'category']
+
     def get_queryset(self):
         user = self.request.user
 
-        if user.role == 'admin':
+        if user.role in ['admin', 'agent']:
             return Ticket.objects.all()
-        elif user.role == 'agent':
-            return Ticket.objects.all()
-        elif user.role == 'customer':
+
+        if user.role == 'customer':
             return Ticket.objects.filter(customer=user)
 
         return Ticket.objects.none()
 
     def perform_create(self, serializer):
-        # if self.request.user.role != 'customer':
-        #     raise PermissionDenied("Only customers can create tickets.")
+        if self.request.user.role != 'customer':
+            raise PermissionDenied("Only customers can create tickets.")
         serializer.save(customer=self.request.user)
 
+    def update(self, request, *args, **kwargs):
 
+        ticket = self.get_object()
 
-    # def get_permissions(self):
-    
-    #     if self.action == "create":
-    #         return [IsAuthenticated(), IsCustomer()]
+        if request.user.role == 'customer':
+            raise PermissionDenied("Customers cannot update ticket status")
 
-    #     elif self.action in ["update", "partial_update"]:
-    #         return [IsAuthenticated(), IsAgent()]
-
-    #     elif self.action == "destroy":
-    #         return [IsAuthenticated(), IsAdmin()]
-
-    #     return [IsAuthenticated()]
-
-    # def get_queryset(self):
-    #     user = self.request.user
-
-    #     if user.role == "CUSTOMER":
-    #         return Ticket.objects.filter(customer=user)
-
-    #     if user.role == "AGENT":
-    #         return Ticket.objects.filter(assigned_to=user)
-
-    #     return Ticket.objects.all()
-
-    
-
-    #DefaultFilters
-    # {# filter_backend=[DjangoFilterBackend,SearchFilter]
-    # filterset_fields=['status']
-    # search_fields =['title','periority']
+        return super().update(request, *args, **kwargs)

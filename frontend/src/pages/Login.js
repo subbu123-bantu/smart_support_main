@@ -62,6 +62,7 @@ function Login() {
         <br/><br/>
 
         <button type="submit">Login</button>
+        <a href="/register">Register</a>
 
       </form>
     </div>
