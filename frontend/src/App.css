@@ -36,3 +36,145 @@
     transform: rotate(360deg);
   }
 }
+.navbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#1e293b;
+  color:white;
+  padding:15px 30px;
+}
+
+.navbar h2{
+  font-size:20px;
+}
+
+.nav-links{
+  display:flex;
+  gap:20px;
+}
+
+.nav-links a{
+  text-decoration:none;
+  color:white;
+  padding:8px 15px;
+  border-radius:6px;
+}
+
+.nav-links a:hover{
+  background:#334155;
+}
+.dashboard{
+  max-width:1100px;
+  margin:auto;
+  padding:30px;
+}
+button{
+  padding:8px 14px;
+  border:none;
+  border-radius:6px;
+  background:#2563eb;
+  color:white;
+  cursor:pointer;
+}
+
+button:hover{
+  background:#1d4ed8;
+}
+.search-bar{
+  display:flex;
+  gap:10px;
+  margin:20px 0;
+}
+
+.search-bar input{
+  padding:8px;
+  border:1px solid #ccc;
+  border-radius:6px;
+  width:250px;
+}
+
+.search-bar select{
+  padding:8px;
+  border-radius:6px;
+}
+.stats{
+  display:flex;
+  gap:15px;
+  margin:20px 0;
+}
+
+.stat-card{
+  background:white;
+  padding:15px 25px;
+  border-radius:8px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  border-radius:8px;
+  overflow:hidden;
+}
+
+th{
+  background:#f1f5f9;
+  text-align:left;
+  padding:12px;
+}
+
+td{
+  padding:12px;
+  border-top:1px solid #eee;
+}
+
+tr:hover{
+  background:#f9fafb;
+}
+body{
+  background:#f4f6f9;
+  font-family:Arial, Helvetica, sans-serif;
+}
+/* CENTER PAGE */
+.auth-container{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  background:#f4f6f9;
+}
+
+/* FORM CARD */
+.auth-card{
+  background:white;
+  padding:40px;
+  width:320px;
+  border-radius:10px;
+  box-shadow:0 4px 15px rgba(0,0,0,0.1);
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+}
+
+/* INPUT */
+.auth-card input{
+  padding:10px;
+  border:1px solid #ddd;
+  border-radius:6px;
+}
+
+/* BUTTON */
+.auth-card button{
+  padding:10px;
+  background:#2563eb;
+  color:white;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.auth-card button:hover{
+  background:#1d4ed8;
+}

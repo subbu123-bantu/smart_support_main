@@ -14,8 +14,7 @@ function TicketDetails(){
     .then(res=>{
     setTicket(res.data)
     })
-
-    },[])
+    },[id])
 
     if(!ticket) return <p>Loading...</p>
 

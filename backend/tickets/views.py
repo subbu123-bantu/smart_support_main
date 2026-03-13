@@ -1,11 +1,14 @@
 from rest_framework import viewsets, permissions
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Ticket,Category,TicketStatus
-from .serializers import TicketSerializer,CategorySerializer,TicketStatusSerializer
+from .models import Ticket,Category
+from .serializers import TicketSerializer,CategorySerializer
 from rest_framework.permissions import IsAuthenticated
 from users.permissions import IsAdmin, IsAgent
 from rest_framework.exceptions import PermissionDenied
+from users.pagination import CustomPagination
+from rest_framework.decorators import api_view
+from users.filters import TicketFilter
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -13,18 +16,15 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     # permission_classes = [permissions.IsAuthenticated]
 
-class TicketStatusViewSet(viewsets.ModelViewSet):
-    queryset = TicketStatus.objects.all()
-    serializer_class = TicketStatusSerializer
-
 class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
-
+    pagination_class = CustomPagination
+    
     filter_backends = [SearchFilter, DjangoFilterBackend]
     search_fields = ['title', 'description']
-    filterset_fields = ['priority', 'status', 'category']
+    filterset_class = TicketFilter
 
     def get_queryset(self):
         user = self.request.user
@@ -50,3 +50,21 @@ class TicketViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Customers cannot update ticket status")
 
         return super().update(request, *args, **kwargs)
+
+@api_view(['GET'])
+def ticket_stats(request):
+
+    stats = Ticket.objects.values('status').annotate(count=Count('status'))
+
+    data = {
+        "open": 0,
+        "in_progress": 0,
+        "closed": 0
+    }
+
+    for item in stats:
+        data[item["status"]] = item["count"]
+
+    data["total"] = Ticket.objects.count()
+
+    return Response(data)

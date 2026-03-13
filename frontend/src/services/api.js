@@ -1,31 +1,99 @@
 import axios from "axios";
 
+/* ===============================
+   AXIOS INSTANCE
+================================ */
+
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000/api"
+  baseURL: "http://127.0.0.1:8000/api/",
 });
 
-// Automatically attach token to requests
-API.interceptors.request.use((config) => {
+/* ===============================
+   REQUEST INTERCEPTOR
+   (ADD TOKEN AUTOMATICALLY)
+================================ */
 
-  const token = localStorage.getItem("token");
+API.interceptors.request.use(
+  (req) => {
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      req.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return req;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+
+/* ===============================
+   AUTH APIs
+================================ */
+
+export const loginUser = async (data) => {
+  return API.post("login/", data);
+};
+
+export const registerUser = async (data) => {
+  return API.post("register/", data);
+};
+
+
+/* ===============================
+   TICKET APIs
+================================ */
+
+export const getTickets = async (
+  page = 1,
+  priority = "all",
+  search = ""
+) => {
+
+  let url = `tickets/?page=${page}`;
+
+  if (priority !== "all") {
+    url += `&priority=${priority}`;
   }
 
-  return config;
-});
+  if (search.trim() !== "") {
+    url += `&search=${encodeURIComponent(search)}`;
+  }
 
-export const loginUser = (data) => API.post("/login/", data);
+  return API.get(url);
+};
 
-export const registerUser = (data) => API.post("/register/", data);
 
-export const getTickets = () => API.get("/tickets/");
+export const createTicket = async (data) => {
+  return API.post("tickets/", data);
+};
 
-export const createTicket = (data) => API.post("/tickets/", data);
 
-export const getTicketById = (id) => API.get(`/tickets/${id}/`);
+export const getTicketById = async (id) => {
+  return API.get(`tickets/${id}/`);
+};
 
-export const updateTicket = (id, data) => API.put(`/tickets/${id}/`, data);
+
+export const updateTicket = async (id, data) => {
+  return API.put(`tickets/${id}/`, data);
+};
+
+
+export const deleteTicket = async (id) => {
+  return API.delete(`tickets/${id}/`);
+};
+
+
+/* ===============================
+   DASHBOARD STATS
+================================ */
+
+export const getTicketStats = async () => {
+  return API.get("tickets/stats/");
+};
+
 
 export default API;

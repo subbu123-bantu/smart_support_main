@@ -21,9 +21,9 @@ function Navbar() {
 
       <h3>Smart Support System</h3>
 
-      <button onClick={logout}>
-        Logout
-      </button>
+      <button onClick={() => navigate("/dashboard")}>Dashboard</button>
+      <button onClick={() => navigate("/tickets")}>Tickets</button>
+      <button onClick={logout}>Logout</button>
 
     </div>
 
