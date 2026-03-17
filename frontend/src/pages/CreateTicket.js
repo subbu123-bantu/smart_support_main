@@ -1,66 +1,55 @@
 import { useState } from "react";
-import { createTicket } from "../services/api";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { createTicket } from "../services/api";
 
 function CreateTicket() {
 
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-        try {
+    await createTicket({
+      title,
+      description
+    });
 
-            await createTicket({
-                title,
-                description
-            });
+    navigate("/tickets");
+  };
 
-            toast.success("Ticket Created Successfully!");
+  return (
+    <div className="create-ticket-container">
 
-            setTimeout(() => {
-                navigate("/dashboard/");
-            }, 1200);
+      <form className="create-ticket-card" onSubmit={handleSubmit}>
 
-        } catch (error) {
+        <h2>Create Ticket</h2>
 
-            console.log(error);
+        <input
+          className="ticket-input"
+          type="text"
+          placeholder="Ticket Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
 
-            toast.error("Failed to create ticket");
+        <textarea
+          className="ticket-textarea"
+          placeholder="Describe your issue"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
 
-        }
-    };
+        <button className="create-ticket-btn">
+          Create Ticket
+        </button>
 
-    return (
-        <div>
-            <h2>Create Ticket</h2>
+      </form>
 
-            <input
-                placeholder="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-            />
-
-            <br/><br/>
-
-            <textarea
-                placeholder="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-            />
-
-            <br/><br/>
-
-            <button onClick={handleSubmit}>
-                Create Ticket
-            </button>
-
-        </div>
-    );
+    </div>
+  );
 }
 
 export default CreateTicket;

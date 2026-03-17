@@ -178,3 +178,48 @@ body{
 .auth-card button:hover{
   background:#1d4ed8;
 }
+.create-ticket-container{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:80vh;
+  background:#f4f6f8;
+}
+
+.create-ticket-card{
+  background:white;
+  padding:40px;
+  width:420px;
+  border-radius:10px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.08);
+}
+
+.create-ticket-card h2{
+  text-align:center;
+  margin-bottom:25px;
+}
+
+.ticket-input,
+.ticket-textarea,
+.ticket-select{
+  width:100%;
+  padding:10px;
+  margin-bottom:15px;
+  border:1px solid #ddd;
+  border-radius:6px;
+}
+
+.create-ticket-btn{
+  width:100%;
+  padding:12px;
+  background:#1976d2;
+  color:white;
+  border:none;
+  border-radius:6px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.create-ticket-btn:hover{
+  background:#145ea8;
+}
