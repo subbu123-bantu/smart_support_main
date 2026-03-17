@@ -1,17 +1,8 @@
 import axios from "axios";
 
-/* ===============================
-   AXIOS INSTANCE
-================================ */
-
 const API = axios.create({
   baseURL: "http://127.0.0.1:8000/api/",
 });
-
-/* ===============================
-   REQUEST INTERCEPTOR
-   (ADD TOKEN AUTOMATICALLY)
-================================ */
 
 API.interceptors.request.use(
   (req) => {
@@ -30,10 +21,6 @@ API.interceptors.request.use(
 );
 
 
-/* ===============================
-   AUTH APIs
-================================ */
-
 export const loginUser = async (data) => {
   return API.post("login/", data);
 };
@@ -42,16 +29,7 @@ export const registerUser = async (data) => {
   return API.post("register/", data);
 };
 
-
-/* ===============================
-   TICKET APIs
-================================ */
-
-export const getTickets = async (
-  page = 1,
-  priority = "all",
-  search = ""
-) => {
+export const getTickets = (page = 1, priority = "all", search = "") => {
 
   let url = `tickets/?page=${page}`;
 
@@ -59,16 +37,23 @@ export const getTickets = async (
     url += `&priority=${priority}`;
   }
 
-  if (search.trim() !== "") {
-    url += `&search=${encodeURIComponent(search)}`;
+  if (search) {
+    url += `&search=${search}`;
   }
 
   return API.get(url);
+
 };
 
 
-export const createTicket = async (data) => {
-  return API.post("tickets/", data);
+export const createTicket = (data) => {
+  const token = localStorage.getItem("token"); // get token from login
+  return API.post('tickets/', data, {
+    headers: {
+      Authorization: `Bearer ${token}`,  // MUST include token
+      "Content-Type": "application/json",
+    },
+  });
 };
 
 
@@ -78,7 +63,7 @@ export const getTicketById = async (id) => {
 
 
 export const updateTicket = async (id, data) => {
-  return API.put(`tickets/${id}/`, data);
+  return API.patch(`tickets/${id}/`, data);
 };
 
 
