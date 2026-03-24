@@ -136,21 +136,22 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-REST_FRAMEWORK ={
-    'DEFAULT_PAGINATION_CLASS':'rest_framework.pagination.PageNumberPagination',
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 3,
-    'DEFAULT_FILTER_BACKENDS':[
+    'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter'
     ],
-    'SEARCH_PARAM':'q',
+    # DELETE the SEARCH_PARAM line entirely — default is 'search'
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES':(
+    'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
 }
+
 AUTH_USER_MODEL ='users.User'
 
 SIMPLE_JWT ={
@@ -158,3 +159,7 @@ SIMPLE_JWT ={
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 CORS_ALLOW_ALL_ORIGINS = True
+# settings.py
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]

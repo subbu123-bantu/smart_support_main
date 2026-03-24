@@ -51,14 +51,33 @@
 
 .nav-links{
   display:flex;
-  gap:20px;
+  align-items:center;
+  gap:18px;
 }
 
 .nav-links a{
   text-decoration:none;
   color:white;
-  padding:8px 15px;
-  border-radius:6px;
+  padding:10px 20px;
+  border-radius:8px;
+  background:#2563eb;
+  font-weight:500;
+  transition:all 0.25s ease;
+}
+
+/* hover effect */
+.nav-links a:hover{
+  background:#1d4ed8;
+  transform:translateY(-2px);
+}
+
+/* logout button */
+.logout-btn{
+  background:#ef4444;
+}
+
+.logout-btn:hover{
+  background:#dc2626;
 }
 
 .nav-links a:hover{
@@ -83,7 +102,7 @@ button:hover{
 }
 .search-bar{
   display:flex;
-  gap:10px;
+  gap:20px;
   margin:20px 0;
 }
 
@@ -92,11 +111,13 @@ button:hover{
   border:1px solid #ccc;
   border-radius:6px;
   width:250px;
+  gap:10px;
 }
 
 .search-bar select{
   padding:8px;
   border-radius:6px;
+  margin-left: 5px;
 }
 .stats{
   display:flex;

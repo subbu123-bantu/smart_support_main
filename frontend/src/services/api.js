@@ -29,20 +29,24 @@ export const registerUser = async (data) => {
   return API.post("register/", data);
 };
 
-export const getTickets = (page = 1, priority = "all", search = "") => {
+export const getTickets = (page = 1, ticketStatus = "", priority = "", search = "") => {
 
   let url = `tickets/?page=${page}`;
 
-  if (priority !== "all") {
+  if (ticketStatus) {
+    url += `&status=${ticketStatus}`;
+  }
+
+  if (priority && priority.toLowerCase() !== "all") {
     url += `&priority=${priority}`;
   }
 
   if (search) {
     url += `&search=${search}`;
   }
+  console.log("CALLING URL:", url); 
 
   return API.get(url);
-
 };
 
 
@@ -79,6 +83,8 @@ export const deleteTicket = async (id) => {
 export const getTicketStats = async () => {
   return API.get("tickets/stats/");
 };
-
-
 export default API;
+
+export const predictTicket = (data) => {
+  return API.post("predict/", data);
+};

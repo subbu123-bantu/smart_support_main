@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
-
+import { Link } from "react-router-dom";
 function Navbar() {
 
   const navigate = useNavigate();
 
-  const logout = () => {
+  const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/");
   };
@@ -21,10 +21,15 @@ function Navbar() {
 
       <h3>Smart Support System</h3>
 
-      <button onClick={() => navigate("/dashboard")}>Dashboard</button>
-      <button onClick={() => navigate("/tickets")}>Tickets</button>
-      <button onClick={logout}>Logout</button>
-
+      <div className="nav-links">
+        <Link to="/dashboard">Dashboard</Link>
+        <Link to="/tickets">Tickets</Link>
+        <Link to="/create-ticket">Create Ticket</Link>
+        
+      <button className="logout-btn" onClick={handleLogout}>
+        Logout
+      </button>
+      </div>
     </div>
 
   );

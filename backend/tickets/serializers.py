@@ -17,6 +17,19 @@ class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
         fields = "__all__"
+        read_only_fields = ["customer", "user_ticket_id"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+
+        # Hide ID from customers, show ID to admin/agent
+        if request and hasattr(request, "user"):
+            user = request.user
+            if user.role == "customer":
+                data.pop("id", None)
+
+        return data
 
     def validate_title(self, value):
         if not value.strip():

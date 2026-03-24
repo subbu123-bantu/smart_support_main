@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, } from "react";
+import { Link,useNavigate } from "react-router-dom";
 import { getTicketStats } from "../services/api";
 
 function Dashboard() {
-
+  const navigate=useNavigate();
   const [stats, setStats] = useState({
     total: 0,
     open: 0,
@@ -50,23 +50,31 @@ function Dashboard() {
           <p>{stats.total}</p>
         </div>
 
-        <div style={cardStyle}>
+        <div 
+          style={cardStyle}
+          onClick={() => navigate("/tickets?status=open")}
+        >
           <h3>Open</h3>
           <p>{stats.open}</p>
         </div>
 
-        <div style={cardStyle}>
+        <div 
+          style={cardStyle}
+          onClick={() => navigate("/tickets?status=in_progress")}
+        >
           <h3>In Progress</h3>
           <p>{stats.in_progress}</p>
         </div>
 
-        <div style={cardStyle}>
+        <div 
+          style={cardStyle}
+          onClick={() => navigate("/tickets?status=closed")}
+        >
           <h3>Closed</h3>
           <p>{stats.closed}</p>
         </div>
 
       </div>
-
     </div>
   );
 }
