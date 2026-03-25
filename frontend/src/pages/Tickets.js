@@ -1,11 +1,12 @@
-import { useEffect, useState,useCallback} from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useState,useCallback,} from "react";
+import {useNavigate,useSearchParams} from "react-router-dom";
 import { getTickets, updateTicket } from "../services/api";
 
 function Tickets() {
-  const location = useLocation();
+  const role = localStorage.getItem("role");
+  const navigate = useNavigate();
 
-  const params = new URLSearchParams(location.search);
+  const [params]= useSearchParams();
   const ticketStatus = params.get("status") || "";
 
   const [tickets, setTickets] = useState([]);
@@ -84,100 +85,168 @@ useEffect(() => {
       console.error(err);
     }
   };
+const getPriorityColor = (priority) => {
+  switch (priority?.toLowerCase()) {
+    case "urgent":
+      return "bg-purple-100 text-purple-700";
+    case "high":
+      return "bg-red-100 text-red-600";
+    case "medium":
+      return "bg-yellow-100 text-yellow-600";
+    case "low":
+      return "bg-green-100 text-green-600";
+    default:
+      return "bg-gray-100 text-gray-600";
+  }
+  };
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case "open":
+      return "bg-red-100 text-red-600";
+    case "in_progress":
+      return "bg-yellow-100 text-yellow-600";
+    case "closed":
+      return "bg-green-100 text-green-600";
+    default:
+      return "bg-gray-100 text-gray-600";
+  }
+  };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>All Tickets {ticketStatus && `(${ticketStatus})`}</h2>
+  <div className="p-6">
+  <h2 className="text-2xl font-semibold mb-6">Tickets</h2>
 
-      {/* Filters */}
-      <div className="search-bar">
-        <input
-          placeholder="Search tickets..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        />
+  {/* FILTER BAR */}
+  <div className="flex gap-4 mb-6 items-center">
+    <input
+      placeholder="Search tickets..."
+      value={searchInput}
+      onChange={(e) => setSearchInput(e.target.value)}
+      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+      className="border px-4 py-2 rounded-lg w-1/3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
 
-        <button onClick={handleSearch}>Search</button>
+    <button
+      onClick={handleSearch}
+      className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+    >
+      Search
+    </button>
 
-        {isSearchMode && <button onClick={handleClear}>Clear</button>}
+    {isSearchMode && (
+      <button
+        onClick={handleClear}
+        className="bg-gray-200 px-4 py-2 rounded-lg"
+      >
+        Clear
+      </button>
+    )}
 
-        <select
-          value={priority}
-          onChange={handlePriority}
-          style={{ marginLeft: "10px" }}
+    <select
+      value={priority}
+      onChange={handlePriority}
+      className="border px-4 py-2 rounded-lg"
+    >
+      <option value="all">All Priority</option>
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+      <option value="urgent">Urgent</option>
+    </select>
+  </div>
+
+  {/* TICKET CARDS */}
+    <div className="space-y-4">
+      {loading && <p>Loading...</p>}
+      {tickets.map((ticket) => (
+        <div
+          key={ticket.id}
+         onClick={() => {
+            if (role === "admin" || role === "agent") {
+              navigate(`/tickets/${ticket.id}`);
+            }
+          }}
+          className="cursor-pointer bg-white p-5 rounded-xl shadow-sm border border-gray-100 
+                    hover:shadow-md hover:scale-[1.02] transition transform"
         >
-          <option value="all">All Priority</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
-      </div>
+          <div className="flex justify-between items-start">
 
-      {loading && <p>Loading tickets...</p>}
+            {/* LEFT */}
+            <div>
+              <h3 className="text-lg font-semibold">
+                {ticket.title}
+              </h3>
 
-      {/* Table */}
-      <table border="1" cellPadding="10" width="100%">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Category</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Update</th>
-          </tr>
-        </thead>
+              <p className="text-gray-500 text-sm mt-1">
+                {ticket.description}
+              </p>
 
-        <tbody>
-          {tickets.length === 0 ? (
-            <tr>
-              <td colSpan="7">No tickets found</td>
-            </tr>
-          ) : (
-            tickets.map((ticket, index) => (
-              <tr key={ticket.id || index}>
-                <td>{ticket.id}</td>
-                <td>{ticket.title}</td>
-                <td>{ticket.description}</td>
-                <td>{ticket.category}</td>
-                <td>{ticket.priority}</td>
-                <td>{ticket.status}</td>
-                <td>
-                  <select
-                    value={ticket.status}
-                    onChange={(e) =>
-                      updateStatus(ticket.id, e.target.value)
-                    }
-                  >
-                    <option value="open">Open</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="closed">Closed</option>
-                  </select>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+              <div className="flex gap-2 mt-3">
+                <span className={`text-xs px-2 py-1 rounded ${getStatusColor(ticket.status)}`}>
+                  {ticket.status}
+                </span>
 
-      {/* Pagination */}
-      {!isSearchMode && (
-        <div style={{ marginTop: "15px" }}>
-          <button onClick={handlePrev} disabled={!prevPage}>
-            Previous
-          </button>
+                <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                  {ticket.category}
+                </span>
+              </div>
+            </div>
 
-          <span style={{ margin: "0 10px" }}>Page {page}</span>
+            {/* RIGHT */}
+            <div className="text-right">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(ticket.priority)}`}>
+                {ticket.priority}
+              </span>
 
-          <button onClick={handleNext} disabled={!nextPage}>
-            Next
-          </button>
+              <p className="text-xs text-gray-400 mt-2">
+                #{ticket.id}
+              </p>
+
+              {(role === "admin" || role === "agent") && (
+                <select
+                  value={ticket.status}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) =>
+                    updateStatus(ticket.id, e.target.value)
+                  }
+                  className="mt-3 border px-2 py-1 rounded"
+                >
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="closed">Closed</option>
+                </select>
+              )}
+            </div>
+
+          </div>
         </div>
-      )}
+      ))}
     </div>
-  );
+    {/* 🔁 Pagination */}
+    {!isSearchMode && (
+      <div className="flex items-center gap-4 mt-6">
+        <button
+          onClick={handlePrev}
+          disabled={!prevPage}
+          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+        >
+          Previous
+        </button>
+
+        <span>Page {page}</span>
+
+        <button
+          onClick={handleNext}
+          disabled={!nextPage}
+          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+    )}
+  </div>
+);
 }
 
 export default Tickets;

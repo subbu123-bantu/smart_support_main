@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate} from "react-router-dom";
 import { toast } from "react-toastify";
 import { loginUser } from "../services/api";
+import {jwtDecode} from "jwt-decode";
 
 function Login() {
-
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
@@ -12,132 +12,96 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!username || !password) {
-      toast.error("Please fill all fields");
-      return;
-    }
+  if (!username || !password) {
+    toast.error("Please fill all fields");
+    return;
+  }
 
-    try {
+  try {
+    setLoading(true);
 
-      setLoading(true);
+    // ✅ DEFINE response
+    const response = await loginUser({
+      username,
+      password,
+    });
 
-      const response = await loginUser({
-        username,
-        password
-      });
+    const data = response.data;
 
-      const data = response.data;
+    //  Save token
+    localStorage.setItem("token", data.access);
 
-      localStorage.setItem("token", data.access);
+    // Decode role
+    const decoded = jwtDecode(data.access);
+    console.log("DECODED:", decoded);
 
-      toast.success("Login successful!");
+    localStorage.setItem("role", decoded.role);
 
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1000);
+    toast.success("Login successful!",{
+      autoClose: 800,    });
 
-    } catch (error) {
+    navigate("/dashboard");
 
-      console.log(error.response?.data);
-
-      toast.error("Invalid username or password");
-
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div style={styles.container}>
-
-      <div style={styles.card}>
-
-        <h2 style={styles.title}>Smart Support Login</h2>
-
-        <form onSubmit={handleSubmit}>
-
-          <input
-            style={styles.input}
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-
-          <input
-            style={styles.input}
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <button style={styles.button} disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
-          </button>
-
-        </form>
-
-        <p style={styles.registerText}>
-          Don't have an account? <a href="/register">Register</a>
-        </p>
-
-      </div>
-
-    </div>
-  );
-}
-
-const styles = {
-
-  container: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100vh",
-    background: "#f4f6f8"
-  },
-
-  card: {
-    background: "white",
-    padding: "40px",
-    borderRadius: "10px",
-    width: "350px",
-    boxShadow: "0 5px 15px rgba(0,0,0,0.1)"
-  },
-
-  title: {
-    textAlign: "center",
-    marginBottom: "20px"
-  },
-
-  input: {
-    width: "100%",
-    padding: "10px",
-    marginBottom: "15px",
-    border: "1px solid #ddd",
-    borderRadius: "6px",
-    fontSize: "14px"
-  },
-
-  button: {
-    width: "100%",
-    padding: "10px",
-    background: "#1976d2",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    fontSize: "16px",
-    cursor: "pointer"
-  },
-
-  registerText: {
-    textAlign: "center",
-    marginTop: "15px",
-    fontSize: "14px"
+  } catch (error) {
+    console.log(error.response?.data);
+    toast.error("Invalid username or password");
+  } finally {
+    setLoading(false);
   }
 };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-200 via-purple-100 to-gray-100">
+
+  <div className="bg-white/80 backdrop-blur-md p-8 rounded-2xl shadow-xl w-full max-w-md">
+
+    <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800">
+      Smart Support Login
+    </h2>
+
+    <form onSubmit={handleSubmit} className="space-y-4">
+
+      <input
+        type="text"
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
+      />
+
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
+      />
+
+      <button
+        className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition duration-200 shadow-md"
+        disabled={loading}
+        
+      >
+        {loading ? "Logging in..." : "Login"}
+      </button>
+
+    </form>
+
+    <p className="text-center mt-4 text-sm text-gray-600">
+      Don’t have an account? 
+      <span
+        onClick={() => navigate("/register")}
+        className="text-indigo-600 cursor-pointer ml-1 hover:underline"
+      >
+        Register
+      </span>
+    </p>
+
+    </div>
+  </div>
+  );
+}
 
 export default Login;

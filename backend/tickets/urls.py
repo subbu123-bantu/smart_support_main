@@ -12,4 +12,5 @@ urlpatterns = [
     path('stats/', ticket_stats),
     # Support frontend convention from /api/tickets/stats/
     path('tickets/stats/', ticket_stats),
+
 ]

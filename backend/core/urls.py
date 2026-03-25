@@ -36,6 +36,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from users.views import UserViewSet,RegisterView
 from tickets.views import TicketViewSet, CategoryViewSet,ticket_stats
+from users.views import CustomLoginView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -49,7 +50,7 @@ router.register(r'categories', CategoryViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/register/', RegisterView.as_view()),
-    path('api/login/', TokenObtainPairView.as_view()),
+    path('api/login/', CustomLoginView.as_view()),
     path('api/token/refresh/', TokenRefreshView.as_view()),
 
     # Dashboard stats routes (prefer explicit before ViewSet route conflicts)

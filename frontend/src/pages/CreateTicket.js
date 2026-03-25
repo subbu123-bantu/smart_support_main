@@ -7,46 +7,40 @@ function CreateTicket() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Internal AI-assigned values
   const [category, setCategory] = useState("other");
   const [priority, setPriority] = useState("low");
-  const [autoAssign, setAutoAssign] = useState(true); // true = confident, false = goes to admin
+  const [autoAssign, setAutoAssign] = useState(true);
 
+  const role = localStorage.getItem("role");
   const navigate = useNavigate();
 
-  // Predict category & priority behind the scenes
   const handleAutoPredict = async (text) => {
     if (!text) return;
-    setLoading(true);
+
     try {
       const res = await predictTicket({ text });
+
       setCategory(res.data.predicted_category);
       setPriority(res.data.predicted_priority);
 
-      // If AI confidence is low, mark for admin review
       const catConf = res.data.category_confidence;
       const priConf = res.data.priority_confidence;
+
       setAutoAssign(catConf >= 0.7 && priConf >= 0.7);
 
-    } catch (err) {
-      console.error("Prediction error:", err);
+    } catch {
       setAutoAssign(false);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Debounce AI prediction
   useEffect(() => {
     const timer = setTimeout(() => handleAutoPredict(description), 500);
     return () => clearTimeout(timer);
   }, [description]);
 
-  // Submit ticket (category & priority sent to backend)
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
     await createTicket({
       title,
       description,
@@ -55,47 +49,56 @@ function CreateTicket() {
       auto_assign: autoAssign,
     });
 
-    navigate("/tickets"); // only on success
-
-  } catch (err) {
-    console.log(err.response?.data); //  THIS is what you need
-  }
+    navigate("/tickets");
   };
 
   return (
-    <div className="create-ticket-container">
-      <form className="create-ticket-card" onSubmit={handleSubmit}>
-        <h2>Create Ticket</h2>
+ <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-200 via-purple-100 to-gray-100">
 
-        <input
-          className="ticket-input"
-          type="text"
-          placeholder="Ticket Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
+  <div className="bg-white/80 backdrop-blur-md p-8 rounded-2xl shadow-xl w-full max-w-md">
 
-        <textarea
-          className="ticket-textarea"
-          placeholder="Describe your issue"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          required
-        />
+    <h2 className="text-2xl font-semibold text-center mb-6">
+      Create Ticket
+    </h2>
 
-        {loading && <p style={{ color: "#555" }}>AI is assigning category & priority...</p>}
+    <form onSubmit={handleSubmit} className="space-y-4">
 
-        {!loading && !autoAssign && (
-          <p style={{ color: "orange" }}>Low confidence prediction - ticket will be assigned to admin for review.</p>
-        )}
+      <input
+        type="text"
+        placeholder="Ticket Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
+      />
 
-        <button className="create-ticket-btn" type="submit">
-          Create Ticket
-        </button>
-      </form>
-    </div>
-  );
+      <textarea
+        placeholder="Describe your issue"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        className="w-full px-4 py-2 border rounded-lg h-28 resize-none focus:ring-2 focus:ring-indigo-400"
+      />
+
+      {loading && (
+        <p className="text-sm text-indigo-500">
+          🤖 AI analyzing...
+        </p>
+      )}
+
+      {!loading && !autoAssign && (
+        <p className="text-sm text-yellow-500">
+          ⚠️ Sent to admin for review
+        </p>
+      )}
+
+      <button className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition shadow-md">
+        Create Ticket
+      </button>
+
+    </form>
+
+  </div>
+</div>
+);
 }
 
 export default CreateTicket;

@@ -35,7 +35,7 @@ def rule_based_classification(text):
     if any(word in text_lower for word in ["slow", "internet", "wifi", "network", "connection", "latency", "disconnect"]):
         return build_response("network", "medium", 0.85, 0.75)
 
-    if any(word in text_lower for word in ["account", "profile", "update details", "change email","delete account", "account locked", "account blocked","account suspended", "account issue"]):
+    if any(word in text_lower for word in ["account", "profile", "update details", "change email","delete account", "account blocked","account suspended", "account issue"]):
         return build_response("account", "medium", 0.9, 0.75)
     
     if any(w in text_lower for w in ["price", "cost", "plan"]) and not any(w in text_lower for w in ["not working", "failed", "error"]):
@@ -153,7 +153,7 @@ def predict_ticket(text):
     # Step 4: Build final response
     result = build_response(category, priority, cat_score, pri_score,source="AI")
 
-    if result["source"] == "ai":
+    if result["source"] == "AI":
         result["category_confidence"] -= 0.1
         result["priority_confidence"] -= 0.1
 

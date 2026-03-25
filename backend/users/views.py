@@ -8,6 +8,11 @@ from .serializers import RegisterSerializer
 from rest_framework.permissions import AllowAny
 from .permissions import IsAdmin,IsAgent,IsCustomer
 from .pagination import CustomPagination
+from rest_framework.decorators import api_view
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import CustomTokenSerializer
 
 
 
@@ -25,4 +30,25 @@ class RegisterView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['POST'])
+def login_view(request):
+    username = request.data.get("username")
+    password = request.data.get("password")
+
+    user = authenticate(username=username, password=password)
+
+    if not user:
+        return Response({"error": "Invalid credentials"}, status=401)
+
+    refresh = RefreshToken.for_user(user)
+
+    return Response({
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+        "role": user.role   
+    })
+
+class CustomLoginView(TokenObtainPairView):
+    serializer_class = CustomTokenSerializer
     

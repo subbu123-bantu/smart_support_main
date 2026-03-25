@@ -45,16 +45,15 @@ class TicketViewSet(viewsets.ModelViewSet):
 
         #STATUS FILTER
         status = self.request.query_params.get('status')
+        priority = self.request.query_params.get('priority')
+        search = self.request.query_params.get('search')
+
         if status:
             queryset = queryset.filter(status__iexact=status)
 
-        #PRIORITY FILTER
-        priority = self.request.query_params.get('priority')
-        if priority and priority != "all":
+        if priority and priority.lower() != "all":
             queryset = queryset.filter(priority__iexact=priority)
 
-        #SEARCH FILTER
-        search = self.request.query_params.get('search')
         if search:
             queryset = queryset.filter(
                 Q(title__icontains=search) |

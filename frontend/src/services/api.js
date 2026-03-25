@@ -76,10 +76,7 @@ export const deleteTicket = async (id) => {
 };
 
 
-/* ===============================
-   DASHBOARD STATS
-================================ */
-
+// DASHBOARD STATS
 export const getTicketStats = async () => {
   return API.get("tickets/stats/");
 };
