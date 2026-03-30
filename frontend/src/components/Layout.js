@@ -3,14 +3,14 @@ import Topbar from "./Topbar";
 
 function Layout({ children }) {
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div className="flex h-screen">
       
       <Sidebar />
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <div className="flex flex-col flex-1">
         <Topbar />
         
-        <div style={{ padding: "20px", background: "#F9FAFB", flex: 1 }}>
+        <div className="bg-gray-50 text-gray-900 font-sans min-h-screen overflow-y-hidden">
           {children}
         </div>
       </div>

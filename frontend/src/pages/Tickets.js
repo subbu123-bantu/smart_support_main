@@ -157,7 +157,7 @@ const getStatusColor = (status) => {
   </div>
 
   {/* TICKET CARDS */}
-    <div className="space-y-4">
+    <div className="space-y-4 min-h-[300px]">
       {loading && <p>Loading...</p>}
       {tickets.map((ticket) => (
         <div
@@ -168,9 +168,9 @@ const getStatusColor = (status) => {
             }
           }}
           className="cursor-pointer bg-white p-5 rounded-xl shadow-sm border border-gray-100 
-                    hover:shadow-md hover:scale-[1.02] transition transform"
+                    hover:shadow-md hover:scale-[1.02] transition transform "
         >
-          <div className="flex justify-between items-start">
+          <div className="flex  justify-between items-start">
 
             {/* LEFT */}
             <div>

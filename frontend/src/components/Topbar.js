@@ -1,10 +1,6 @@
 function Topbar() {
   return (
-    <div style={{
-      background: "white",
-      padding: "15px 20px",
-      borderBottom: "1px solid #eee"
-    }}>
+    <div className="bg-white px-5 py-4 border-b border-gray-200">
       <h3>Dashboard</h3>
     </div>
   );

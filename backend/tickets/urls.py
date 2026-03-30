@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import TicketViewSet, CategoryViewSet, predict_ticket_api, ticket_stats
 
 router = DefaultRouter()
-router.register(r'tickets', TicketViewSet)
+router.register(r'tickets', TicketViewSet,basename='ticket')
 router.register(r'categories', CategoryViewSet)
 
 urlpatterns = [

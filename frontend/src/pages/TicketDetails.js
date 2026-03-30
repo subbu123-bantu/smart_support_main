@@ -38,24 +38,24 @@ function TicketDetails() {
   
 
   return (
-    <div className="bg-white p-5 rounded-xl shadow hover:shadow-md transition cursor-pointer">
+    <div className="w-fit mx-3 bg-white p-5 rounded-xl shadow-md cursor-pointer">
 
-  <h3 className="font-semibold text-lg">{ticket.title}</h3>
+  <h3 className="ffont-bold text-3xl">{ticket.title}</h3>
 
-  <p className="text-gray-500 text-sm mt-1">
+  <p className="text-gray-600 text-lg mt-3 max-w-xl mx-auto">
     {ticket.description}
   </p>
 
   <div className="flex gap-1 mt-1">
     
-    <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+    <span className="text-xs bg-gray-100 px-3 py-2 rounded">
       {ticket.category}
     </span>
-    <span className={`px-2 py-1 text-xs rounded-full ${getStatusStyle(ticket.status)}`}>
+    <span className={`px-3 py-2 text-xs rounded-full ${getStatusStyle(ticket.status)}`}>
         {ticket.status.replace("_", " ")}
     </span>
 
-    <span className={`text-xs px-2 py-1 rounded ${
+    <span className={`text-xs px-3 py-2 rounded ${
       ticket.priority === "high"
         ? "bg-red-100 text-red-600"
         : ticket.priority === "medium"

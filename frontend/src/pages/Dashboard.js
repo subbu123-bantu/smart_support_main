@@ -50,7 +50,7 @@ function Dashboard() {
   }, [role]);
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen overflow-y=none">
+    <div className="p-6 bg-gray-100 min-h-screen overflow-y-">
 
       <h2 className="text-2xl font-semibold mb-6">Dashboard</h2>
 
@@ -78,7 +78,8 @@ function Dashboard() {
           <h2 className="text-3xl font-bold text-yellow-500">{stats.in_progress}</h2>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow hover:shadow-md">
+        <div className="bg-white p-5 rounded-xl shadow hover:shadow-md cursor-pointer"
+           onClick={() => navigate("/tickets?status=closed")} >
           <p className="text-gray-500 text-sm">Closed</p>
           <h2 className="text-3xl font-bold text-green-500">{stats.closed}</h2>
         </div>

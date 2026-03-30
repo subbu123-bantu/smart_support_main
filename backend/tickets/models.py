@@ -15,6 +15,9 @@ class Ticket(models.Model):
     description = models.TextField()
 
     user_ticket_id = models.PositiveIntegerField(editable=False, blank=True, null=True)
+    
+    assigned_team = models.CharField(max_length=100, blank=True)
+    embedding = models.JSONField(null=True, blank=True) 
 
     STATUS_CHOICES = [
         ("open", "Open"),
@@ -66,3 +69,16 @@ class Ticket(models.Model):
 
     def __str__(self):
         return self.title
+    
+class TicketPredictionLog(models.Model):
+    text = models.TextField()
+
+    predicted_category = models.CharField(max_length=50)
+    predicted_priority = models.CharField(max_length=20)
+
+    source = models.CharField(max_length=20)  # rule / AI / fallback
+    confidence = models.FloatField(default=0)
+
+    final_accepted = models.BooleanField(default=True)  # later used for feedback loop
+
+    created_at = models.DateTimeField(auto_now_add=True)
