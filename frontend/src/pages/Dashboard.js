@@ -25,7 +25,11 @@ function Dashboard() {
   }, []);
 
   return (
+<<<<<<< HEAD
     <div style={{ padding: "20px" }}>
+=======
+    <div className="p-6 bg-gray-100 min-h-screen overflow-y-">
+>>>>>>> 6bee5ac (Auto predict)
 
       <h2>Support Tickets Dashboard</h2>
 
@@ -60,9 +64,16 @@ function Dashboard() {
           <p>{stats.in_progress}</p>
         </div>
 
+<<<<<<< HEAD
         <div style={cardStyle}>
           <h3>Closed</h3>
           <p>{stats.closed}</p>
+=======
+        <div className="bg-white p-5 rounded-xl shadow hover:shadow-md cursor-pointer"
+           onClick={() => navigate("/tickets?status=closed")} >
+          <p className="text-gray-500 text-sm">Closed</p>
+          <h2 className="text-3xl font-bold text-green-500">{stats.closed}</h2>
+>>>>>>> 6bee5ac (Auto predict)
         </div>
 
       </div>

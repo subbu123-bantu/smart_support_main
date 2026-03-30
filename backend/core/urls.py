@@ -43,7 +43,7 @@ from rest_framework_simplejwt.views import (
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
-router.register(r'tickets', TicketViewSet)
+router.register(r'tickets', TicketViewSet,basename='ticket')
 router.register(r'categories', CategoryViewSet)
 
 urlpatterns = [
