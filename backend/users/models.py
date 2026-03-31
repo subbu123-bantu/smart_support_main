@@ -8,7 +8,7 @@ class User(AbstractUser):
         ('agent', 'Agent'),
         ('customer', 'Customer'),
     )
-
+    email = models.EmailField(unique=True)  
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     is_active = models.BooleanField(default=True)
 

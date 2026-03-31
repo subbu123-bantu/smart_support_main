@@ -2,50 +2,53 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Q, Count
-from django.db import transaction
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
-from .services.assignment import assign_ticket
 from .models import Ticket, Category
 from .serializers import TicketSerializer, CategorySerializer
 from users.permissions import IsAdmin
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from users.pagination import CustomPagination
 from .ai import predict_ticket
-from users.models import User
-from django.http import HttpResponse    
+from rest_framework.views import APIView
 
-
-# CATEGORY VIEWSET
-
-
+# CATEGORY #
+class test_backend(APIView):
+    def get(self, request):
+        return Response({"message": "Backend is working!"})
+    
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated, IsAdmin]
 
-# TICKET VIEWSET
+
+# TICKETS #
 
 class TicketViewSet(viewsets.ModelViewSet):
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
 
-    # GET QUERYSET (ROLE BASED)
+    # ✅ FIXED QUERYSET
     def get_queryset(self):
         user = self.request.user
+        queryset = Ticket.objects.all()
 
-        if user.role == 'admin':
-            queryset = Ticket.objects.all()
+        # Role-based filtering
+        if user.role == "admin":
+            pass
 
-        elif user.role == 'agent':
-            # FIX: correct relation
-            queryset = Ticket.objects.filter(assigned_to=user)
+        elif user.role == "agent":
+            queryset = queryset.filter(assigned_to=user)
 
-        else:  # customer
-            queryset = Ticket.objects.filter(customer=user)
+        elif user.role == "customer":
+            queryset = queryset.filter(customer=user)
 
-        # Filters
+        else:
+            return Ticket.objects.none()
+
+        # ✅ Filters
         status = self.request.query_params.get('status')
         priority = self.request.query_params.get('priority')
         search = self.request.query_params.get('search')
@@ -61,59 +64,39 @@ class TicketViewSet(viewsets.ModelViewSet):
             search_query = SearchQuery(search)
 
             queryset = queryset.annotate(
-                search=vector,
+                search_vector=vector,
                 rank=SearchRank(vector, search_query)
             ).filter(
-                search=search_query
+                search_vector=search_query
             ).order_by('-rank')
 
-    # CREATE TICKET
+        return queryset
+
+
     def perform_create(self, serializer):
         user = self.request.user
 
         if user.role != 'customer':
             raise PermissionDenied("Only customers can create tickets.")
 
-        with transaction.atomic():
-            ticket = serializer.save(customer=user)
+        ticket = serializer.save()
 
-            # AI Prediction
-            text = f"{ticket.title or ''} {ticket.description or ''}"
-            result = predict_ticket(text)
+        text = f"{ticket.title or ''} {ticket.description or ''}"
+        result = predict_ticket(text)
 
-            # FIX: map category string → Category object
-            category = Category.objects.filter(name=result["category"]).first()
+        # FIX: map string → object
+        category_obj, _ = Category.objects.get_or_create(
+            name=result["category"].lower()
+        )
 
-            if not category:
-                # fallback category (ensure "others" exists in DB)
-                category = Category.objects.filter(name="others").first()
+        ticket.category = category_obj
+        ticket.priority = result["priority"]
+        ticket.predicted_category = result["category"]
+        ticket.predicted_priority = result["priority"]
 
-            if category:
-                ticket.category = category
+        ticket.save()
 
-            ticket.priority = result["priority"]
-            ticket.predicted_category = result["category"]
-            ticket.predicted_priority = result["priority"]
 
-            ticket.save(update_fields=[
-                "category",
-                "priority",
-                "predicted_category",
-                "predicted_priority"
-            ])
-
-            # Assignment
-            assigned_agent = assign_ticket(ticket)
-
-            # Fallback assignment (IMPORTANT)
-            if not assigned_agent:
-                admin = User.objects.filter(role='admin').first()
-                if admin:
-                    ticket.assigned_to = admin
-                    ticket.save(update_fields=["assigned_to"])
-
-    # UPDATE TICKET
-   
     def update(self, request, *args, **kwargs):
         ticket = self.get_object()
         user = request.user
@@ -122,18 +105,20 @@ class TicketViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Customers cannot update tickets.")
 
         # FIX: correct comparison
-        if user.role == 'agent' and ticket.assigned_to != user:
+        if user.role == 'agent' and ticket.assigned_to.user != user:
             raise PermissionDenied("You can only update your assigned tickets.")
 
         return super().update(request, *args, **kwargs)
+    
 
-# TICKET STATS API
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def ticket_stats(request):
     user = request.user
 
+    # Correct role-based filtering
     if user.role == 'admin':
         queryset = Ticket.objects.all()
 
@@ -152,8 +137,6 @@ def ticket_stats(request):
 
     return Response(stats)
 
-# AI PREDICTION API
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def predict_ticket_api(request):
@@ -164,6 +147,3 @@ def predict_ticket_api(request):
 
     result = predict_ticket(text)
     return Response(result)
-
-def test_backend(request):
-    return HttpResponse("Backend is working!")

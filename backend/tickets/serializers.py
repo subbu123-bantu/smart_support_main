@@ -14,10 +14,28 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TicketSerializer(serializers.ModelSerializer):
+    category = serializers.StringRelatedField() 
     class Meta:
         model = Ticket
         fields = "__all__"
         read_only_fields = ["customer", "user_ticket_id"]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+
+        if not request or not request.user:
+            raise serializers.ValidationError("User not found in request")
+
+        validated_data["customer"] = request.user
+
+        # 🔥 FIX: convert predicted_category → Category object
+        category_name = validated_data.get("predicted_category")
+
+        if category_name:
+            category_obj, _ = Category.objects.get_or_create(name=category_name)
+            validated_data["category"] = category_obj
+
+        return super().create(validated_data)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

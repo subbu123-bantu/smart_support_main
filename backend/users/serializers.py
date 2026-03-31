@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from tickets.models import Category
 from .models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -12,20 +14,23 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'role']
-
+        fields = ['id', 'username', 'email', 'password']
     def create(self, validated_data):
-        role = validated_data.get('role','customer')
+        request = self.context.get("request")
 
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password']
-        )
-        user.role=role
-        user.save()
+        if not request or not request.user:
+            raise serializers.ValidationError("User not found")
 
-        return user
+        validated_data["customer"] = request.user
+
+        # 🔥 FIX CATEGORY HERE
+        category_name = validated_data.get("predicted_category")
+
+        if category_name:
+            category_obj, _ = Category.objects.get_or_create(name=category_name)
+            validated_data["category"] = category_obj
+
+        return super().create(validated_data)
 
 class CustomTokenSerializer(TokenObtainPairSerializer):
     @classmethod
