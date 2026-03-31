@@ -1,12 +1,12 @@
 from django.db.models import Count
 from django.db import transaction
-from tickets.models import Agent
+from users.models import AgentProfile
 
 
 @transaction.atomic
 def assign_ticket(ticket):
     agents = (
-        Agent.objects.filter(
+        AgentProfile.objects.filter(
             is_active=True,
             agentcategory__category=ticket.category
         )
