@@ -68,3 +68,7 @@ backend/env/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*s
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
