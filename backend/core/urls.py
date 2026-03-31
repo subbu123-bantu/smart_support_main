@@ -35,7 +35,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from users.views import UserViewSet,RegisterView
-from tickets.views import TicketViewSet, CategoryViewSet, test_backend,ticket_stats
+from tickets.views import TicketViewSet, CategoryViewSet, test_backend, ticket_stats
 from users.views import CustomLoginView    
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -58,5 +58,5 @@ urlpatterns = [
 
     path('api/', include(router.urls)),
     path('api/', include('tickets.urls')),
-    path('', test_backend),
+   path("test/", test_backend.as_view())   
 ]

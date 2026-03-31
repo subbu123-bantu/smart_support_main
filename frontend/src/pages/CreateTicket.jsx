@@ -19,7 +19,6 @@ function CreateTicket() {
 
     try {
       const res = await predictTicket({ text });
-
       setCategory(res.data.predicted_category);
       setPriority(res.data.predicted_priority);
 
