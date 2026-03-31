@@ -6,7 +6,6 @@ import Tickets from "./pages/Tickets";
 import CreateTicket from "./pages/CreateTicket";
 import TicketDetails from "./pages/TicketDetails";
 import Register from "./pages/Register";
-// import Sidebar from "./components/Sidebar";
 import PrivateRoute from "./components/PrivateRoute";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -22,12 +21,6 @@ function AppWrapper() {
 }
 
 function App() {
-
-  // const location = useLocation();
-
-  // const hideSidebar =
-  //   location.pathname === "/" ||
-  //   location.pathname === "/register";
 
   return (
     <>

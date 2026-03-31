@@ -5,25 +5,37 @@ import requests
 from dotenv import load_dotenv
 from .models import TicketPredictionLog
 
-#CONFIG#
+#  CONFIG  #
 
 load_dotenv()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-CONFIDENCE_THRESHOLD = 0.8
+CATEGORIES = ["billing", "technical", "authentication", "network", "account"]
 
-#PATTERNS #
+#  THRESHOLDS (NOW MEANINGFUL)  #
+
+def get_threshold_for_category(category):
+    thresholds = {
+        "billing": 0.85,
+        "technical": 0.80,
+        "authentication": 0.90,
+        "network": 0.80,
+        "account": 0.80
+    }
+    return thresholds.get(category, 0.75)
+
+#  PATTERNS  #
 
 PATTERNS = {
-    "billing": ["payment", "transaction", "refund", "charged", "money", "pricing"],
-    "technical": ["error", "bug", "crash", "not working", "freeze", "broken"],
+    "billing": ["payment", "transaction", "refund", "charged", "money", "pricing", "upi", "deducted"],
+    "technical": ["error", "bug", "crash", "not working", "freeze", "broken", "fails"],
     "authentication": ["login", "otp", "password", "verify", "session"],
     "network": ["internet", "wifi", "connection", "slow", "network"],
-    "account": ["profile", "account", "settings", "delete account"],
+    "account": ["profile", "account", "settings", "delete"]
 }
 
-#  PREPROCESS  #
+# PREPROCESS  #
 
 def preprocess(text):
     text = text.lower()
@@ -35,53 +47,63 @@ def preprocess(text):
 def get_priority(text):
     text = text.lower()
 
-    if any(w in text for w in ["urgent", "asap", "blocked", "down"]):
-        return "urgent"
-    if any(w in text for w in ["crash", "failed", "error"]):
-        return "high"
-    if any(w in text for w in ["slow", "lag"]):
-        return "medium"
-    return "low"
+    score = 0
 
-# RULE ENGINE #
+    #HIGH severity signals
+    high_words = ["crash", "failed", "error", "not working", "server error", "network request failed"]
+    for w in high_words:
+        if w in text:
+            score += 3
+
+    # MEDIUM signals
+    medium_words = ["slow", "delay", "issue", "problem", "not loading"]
+    for w in medium_words:
+        if w in text:
+            score += 2
+
+    # BUSINESS IMPACT signals
+    critical_words = ["payment", "deducted", "refund", "charged", "order not confirmed"]
+    for w in critical_words:
+        if w in text:
+            score += 3
+
+    # FINAL DECISION
+    if score >= 6:
+        return "high"
+    elif score >= 3:
+        return "medium"
+    else:
+        return "low"
+#  RULE ENGINE  #
 
 def rule_engine(text):
-
-    # PRIORITY ORDER (very important)
     text = text.lower()
-    if len(text.split()) < 3 and not any(w in text for w in [
-        "login", "payment", "error", "network"
-    ]):
-        return {"category": "other", "confidence": 0.5, "source": "rule"}
+
+    if len(text.split()) < 3:
+        return {"category": "other", "confidence": 0.6, "source": "rule"}
 
     if "password" in text:
         return {"category": "authentication", "confidence": 0.95, "source": "rule"}
-    
-    #  1. AUTH ONLY if pure auth (no bug words)
+
     if any(w in text for w in ["login", "otp", "password", "verify", "session"]):
-        if not any(w in text for w in ["error", "fail", "crash", "bug", "not working", "freeze"]):
-            return {"category": "authentication", "confidence": 0.9, "source": "rule"}
+        if not any(w in text for w in ["error", "fail", "crash", "bug"]):
+            return {"category": "authentication", "confidence": 0.90, "source": "rule"}
 
-    #  2. NETWORK (higher priority than technical)
     if any(w in text for w in ["network", "internet", "wifi", "connection"]):
-        return {"category": "network", "confidence": 0.9, "source": "rule"}
+        return {"category": "network", "confidence": 0.88, "source": "rule"}
 
-    #  3. BILLING (expand keywords)
-    if any(w in text for w in ["payment", "money", "refund", "charged", "upi", "pricing", "deducted"]):
-        return {"category": "billing", "confidence": 0.9, "source": "rule"}
+    if any(w in text for w in ["payment", "refund", "money", "upi", "charged"]):
+        return {"category": "billing", "confidence": 0.88, "source": "rule"}
 
-    #  4. ACCOUNT (new category fix)
-    if any(w in text for w in ["profile", "account", "settings", "delete"]):
-        return {"category": "account", "confidence": 0.9, "source": "rule"}
+    if any(w in text for w in ["profile", "account", "settings"]):
+        return {"category": "account", "confidence": 0.85, "source": "rule"}
 
-    #  5. TECHNICAL (fallback)
-    if any(w in text for w in ["error", "bug", "crash", "not working", "freeze", "broken", "fails"]):
-        return {"category": "technical", "confidence": 0.9, "source": "rule"}
-    
-    
+    if any(w in text for w in ["error", "bug", "crash", "not working"]):
+        return {"category": "technical", "confidence": 0.80, "source": "rule"}
 
     return None
-#  AI  #
+
+#  AI #
 
 def call_groq(prompt):
     if not GROQ_API_KEY:
@@ -97,7 +119,7 @@ def call_groq(prompt):
             json={
                 "model": "llama-3.3-70b-versatile",
                 "messages": [
-                    {"role": "system", "content": "Return ONLY JSON"},
+                    {"role": "system", "content": "Return ONLY valid JSON."},
                     {"role": "user", "content": prompt},
                 ],
                 "temperature": 0.2,
@@ -107,22 +129,22 @@ def call_groq(prompt):
 
         if res.status_code == 200:
             return res.json()["choices"][0]["message"]["content"]
-        else:
-            print("GROQ ERROR:", res.status_code, res.text)
 
-    except Exception as e:
-        print("GROQ ERROR:", e)
+    except Exception:
+        return None
 
     return None
 
 
 def ai_classification(text):
     prompt = f"""
-Classify ticket into:
-billing, technical, authentication, network
+Classify into: billing, technical, authentication, network, account
 
-Return JSON:
-{{"category":"...", "priority":"..."}}
+Return ONLY JSON:
+{{
+  "category": "...",
+  "confidence": 0.xx
+}}
 
 Ticket: "{text}"
 """
@@ -130,10 +152,15 @@ Ticket: "{text}"
     result = call_groq(prompt)
 
     try:
-        return json.loads(result)
+        parsed = json.loads(result)
+        if parsed.get("category") in CATEGORIES:
+            parsed["source"] = "AI"
+            parsed.setdefault("confidence", 0.7)
+            return parsed
     except:
-        print("JSON ERROR:", result)
-        return None
+        pass
+
+    return None
 
 #  LOGGING  #
 
@@ -143,7 +170,7 @@ def log_prediction(text, result):
         predicted_category=result["category"],
         predicted_priority=result["priority"],
         source=result["source"],
-        confidence=result.get("confidence", 0)
+        confidence=result["confidence"]
     )
 
 # MAIN PIPELINE  #
@@ -151,32 +178,52 @@ def log_prediction(text, result):
 def predict_ticket(text):
     clean = preprocess(text)
 
-    # STEP 1: RULE
     rule = rule_engine(clean)
+    ai = ai_classification(text)
 
-    if rule:
+    # DECISION #
+
+    if rule and ai:
+        final = rule if rule["confidence"] >= ai.get("confidence", 0) else ai
+
+    elif rule:
         final = rule
 
+    elif ai:
+        final = {
+            "category": ai.get("category", "other"),
+            "confidence": ai.get("confidence", 0.7),
+            "source": "AI"
+        }
+
     else:
-        # STEP 2: AI
-        ai = ai_classification(text)
+        final = {
+            "category": "other",
+            "confidence": 0.5,
+            "source": "fallback"
+        }
 
-        if ai:
-            final = {
-                "category": ai.get("category", "other"),
-                "confidence": 0.7,
-                "source": "AI"
-            }
-        else:
-            final = {
-                "category": "other",
-                "confidence": 0.5,
-                "source": "fallback"
-            }
+    # VALIDATION  #
 
-    if final["category"] not in ["billing", "technical", "authentication", "network", "account"]:
+    if final["category"] not in CATEGORIES:
         final["category"] = "other"
+        final["confidence"] = 0.5
+        final["source"] = "fallback"
+
+    #THRESHOLD ENFORCEMENT #
+
+    threshold = get_threshold_for_category(final["category"])
+
+    if final["confidence"] < threshold:
+        final["category"] = "other"
+        final["source"] = "threshold_reject"
+        final["confidence"] = threshold
+
+    # PRIORITY #
+
     final["priority"] = get_priority(text)
+
+    #LOGGING  #
 
     log_prediction(text, final)
 

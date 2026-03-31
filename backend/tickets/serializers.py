@@ -40,4 +40,4 @@ class TicketSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("Description cannot be empty")
         return value
-        
+    
