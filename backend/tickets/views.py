@@ -1,9 +1,10 @@
 from http import cookies
+import traceback
 
 from requests import request
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import JsonResponse, PermissionDenied
 from django.db.models import Q, Count
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
@@ -30,7 +31,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 # TICKETS 
 
 class TicketViewSet(viewsets.ModelViewSet):
-    authentication_classes = [CookieJWTAuthentication]
+    # authentication_classes = [CookieJWTAuthentication]
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
@@ -84,33 +85,33 @@ class TicketViewSet(viewsets.ModelViewSet):
 #STATS
 
 @api_view(['GET'])
-@authentication_classes([CookieJWTAuthentication])
-@permission_classes([IsAuthenticated])
+
 def ticket_stats(request):
-    user = request.userS
+    user = request.user
+    try:
+        if user.role.lower() == 'admin':
+            queryset = Ticket.objects.all()
+        elif user.role.lower()== 'agent':
+            queryset = Ticket.objects.filter(assigned_to=user)
+        else:
+            queryset = Ticket.objects.filter(customer=user)
 
-    if user.role.lower() == 'admin':
-        queryset = Ticket.objects.all()
-    elif user.role.lower()== 'agent':
-        queryset = Ticket.objects.filter(assigned_to=user)
-    else:
-        queryset = Ticket.objects.filter(customer=user)
-
-    stats = queryset.aggregate(
-        total=Count('id'),
-        open=Count('id', filter=Q(status='open')),
-        in_progress=Count('id', filter=Q(status='in_progress')),
-        closed=Count('id', filter=Q(status='closed')),
-    )
-
-    return Response(stats)
+        stats = queryset.aggregate(
+            total=Count('id'),
+            open=Count('id', filter=Q(status='open')),
+            in_progress=Count('id', filter=Q(status='in_progress')),
+            closed=Count('id', filter=Q(status='closed')),
+        )
+        return Response(stats)
+    except Exception as e:
+        print(traceback.format_exc())
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 # PREDICT API
 
 @api_view(['POST'])
-@authentication_classes([CookieJWTAuthentication])
-@permission_classes([IsAuthenticated])
+
 def predict_ticket_api(request):
     text = request.data.get("text", "")
 
@@ -123,8 +124,7 @@ def predict_ticket_api(request):
 
 
 @api_view(["POST"])
-@authentication_classes([CookieJWTAuthentication])
-@permission_classes([IsAuthenticated])
+
 def update_prediction_feedback(request, ticket_id):
     is_correct = request.data.get("is_correct")
 
@@ -139,8 +139,7 @@ def update_prediction_feedback(request, ticket_id):
     return Response({"message": "Feedback saved"})
 
 @api_view(["GET"])
-@authentication_classes([CookieJWTAuthentication])
-@permission_classes([IsAuthenticated])
+
 def prediction_accuracy(request):
     from tickets.models import TicketPredictionLog
 
@@ -156,8 +155,7 @@ def prediction_accuracy(request):
     })
 
 @api_view(["GET"])
-@authentication_classes([CookieJWTAuthentication])
-@permission_classes([IsAuthenticated])
+
 def check_assignments(request):
     tickets = Ticket.objects.all().values(
         "id",

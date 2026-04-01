@@ -18,6 +18,7 @@ class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
         fields = '__all__'
+        
     category = serializers.StringRelatedField() 
     class Meta:
         model = Ticket
