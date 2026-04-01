@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { getTicketById } from "../services/api";
 
 function TicketDetails() {
-  const { id } = useParams();
+  const { id } = useParams(); //Use param is used to access the dynamic segments of the url
   const [ticket, setTicket] = useState(null);
 
   const getStatusStyle = (status) => {
@@ -35,6 +35,7 @@ function TicketDetails() {
       try {
         const res = await getTicketById(id);
         setTicket(res.data);
+        console.log(res.data);
       } catch (err) {
         console.error(err);
       }
@@ -45,8 +46,20 @@ function TicketDetails() {
 
   if (!ticket) {
     return (
-      <div className="flex justify-center items-center h-60 text-gray-500">
-        Loading ticket details...
+      <div className="flex flex-col justify-center items-center h-80 text-center">
+        
+        <h1 className="text-5xl font-bold text-gray-800 mb-3">
+          404
+        </h1>
+
+        <p className="text-2xl font-semibold text-gray-700 mb-2">
+          Ticket Not Found
+        </p>
+
+        <p className="text-gray-500 text-base">
+          The ticket you are looking for does not exist or may have been removed.
+        </p>
+
       </div>
     );
   }

@@ -15,29 +15,25 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'password']
-    def create(self, validated_data):
-        request = self.context.get("request")
 
-        if not request or not request.user:
-            raise serializers.ValidationError("User not found")
+    def create(self, validated_data):   #NOW OUTSIDE Meta
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data.get('email'),
+            password=validated_data['password']
+        )
 
-        validated_data["customer"] = request.user
+        user.role = "customer"
+        user.is_active = True
+        user.save()
 
-        # 🔥 FIX CATEGORY HERE
-        category_name = validated_data.get("predicted_category")
-
-        if category_name:
-            category_obj, _ = Category.objects.get_or_create(name=category_name)
-            validated_data["category"] = category_obj
-
-        return super().create(validated_data)
-
+        return user
 class CustomTokenSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
 
-        # 🔥 ADD ROLE INTO TOKEN
-        token['role'] = user.role
+        # ADD ROLE INTO TOKEN
+        token['role'] = user.role.lower()
 
         return token

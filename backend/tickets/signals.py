@@ -1,19 +1,14 @@
-from django.db.models.signals import pre_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import Ticket
+from .services.assignment import assign_ticket  # your function
 
-@receiver(pre_save, sender=Ticket)
-def set_user_ticket_id(sender, instance, **kwargs):
+@receiver(post_save, sender=Ticket)
+def auto_assign_ticket(sender, instance, created, **kwargs):
+    # Only assign when ticket is created
+    if created and not instance.assigned_to:
+        agent = assign_ticket(instance)
 
-    # 🚨 FIX: check if customer exists
-    if not instance.customer_id:
-        return
-
-    last_ticket = Ticket.objects.filter(
-        customer=instance.customer
-    ).order_by('-user_ticket_id').first()
-
-    if last_ticket:
-        instance.user_ticket_id = last_ticket.user_ticket_id + 1
-    else:
-        instance.user_ticket_id = 1
+        if agent:
+            instance.assigned_to = agent
+            instance.save(update_fields=["assigned_to"])

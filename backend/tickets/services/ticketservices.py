@@ -1,0 +1,27 @@
+from tickets.models import Ticket, Category
+from tickets.ai import predict_ticket, log_prediction
+from tickets.services.assignment import assign_ticket
+
+
+def create_ticket(validated_data, user):
+    validated_data["customer"] = user
+
+    prediction = predict_ticket(validated_data["description"])
+
+    category_name = prediction["category"].lower().strip()
+    priority = prediction["priority"].lower()
+
+    category_obj, _ = Category.objects.get_or_create(name=category_name)
+
+    validated_data["category"] = category_obj
+    validated_data["priority"] = priority
+    validated_data["predicted_category"] = category_name
+    validated_data["predicted_priority"] = priority
+
+    ticket = Ticket.objects.create(**validated_data)
+
+    log_prediction(validated_data["description"], prediction, ticket)
+
+    assign_ticket(ticket)
+
+    return ticket
