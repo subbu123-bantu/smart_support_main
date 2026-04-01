@@ -38,8 +38,13 @@ function CreateTicket() {
   }, [description]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
+  if (loading) return;  // 🔒 prevent duplicate
+
+  setLoading(true);
+
+  try {
     await createTicket({
       title,
       description,
@@ -49,8 +54,10 @@ function CreateTicket() {
     });
 
     navigate("/tickets");
-  };
-
+  } finally {
+    setLoading(false);
+  }
+};
   return (
  <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-200 via-purple-100 to-gray-100">
 

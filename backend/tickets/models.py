@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 
+
 class Category(models.Model):
     name=models.CharField(max_length=100)
     description=models.TextField(blank=True)
@@ -14,7 +15,6 @@ class Ticket(models.Model):
 
     user_ticket_id = models.PositiveIntegerField(editable=False, null=True, blank=True)
     assigned_team = models.CharField(max_length=100, blank=True)
-    embedding = models.JSONField(null=True, blank=True)
 
     class Status(models.TextChoices):
         OPEN = "open"
@@ -22,14 +22,6 @@ class Ticket(models.Model):
         CLOSED = "closed"
 
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
-
-    class Category(models.TextChoices):
-        TECHNICAL = "technical"
-        BILLING = "billing"
-        AUTH = "authentication"
-        NETWORK = "network"
-        ACCOUNT = "account"
-        OTHER = "other"
 
     category = models.ForeignKey("Category", on_delete=models.SET_NULL, null=True)
 
@@ -54,7 +46,6 @@ class Ticket(models.Model):
         blank=True,
         related_name="assigned_tickets"
     )
-
     predicted_category = models.CharField(max_length=20, null=True, blank=True)
     predicted_priority = models.CharField(max_length=10, null=True, blank=True)
 
@@ -68,6 +59,8 @@ class Ticket(models.Model):
         return self.title
     
 class TicketPredictionLog(models.Model):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, null=True, blank=True)
+
     text = models.TextField()
 
     predicted_category = models.CharField(max_length=50,blank=True)
@@ -75,7 +68,9 @@ class TicketPredictionLog(models.Model):
 
     source = models.CharField(max_length=20)  # rule / AI / fallback
     confidence = models.FloatField(default=0)
+    
 
-    final_accepted = models.BooleanField(default=True)  # later used for feedback loop
+    final_accepted = models.BooleanField(null=True, blank=True)  # later used for feedback loop
 
     created_at = models.DateTimeField(auto_now_add=True)
+    

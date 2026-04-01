@@ -21,6 +21,7 @@ function Dashboard() {
     const fetchStats = async () => {
       try {
         const res = await getTicketStats();
+        if (!localStorage.getItem("token")) return;
         setStats(res.data);
       } catch (error) {
         console.error("Error loading stats:", error);
@@ -50,14 +51,16 @@ function Dashboard() {
   }, [role]);
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen overflow-y-">
+    <div className="p-6 bg-gray-100 min-h-screen overflow-y-hidden">
 
       <h2 className="text-2xl font-semibold mb-6">Dashboard</h2>
 
       {/* 🔹 Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-        <div className="bg-white p-5 rounded-xl shadow hover:shadow-md transition">
+        <div 
+          onClick={() => navigate("/tickets")}      
+          className="bg-white p-5 rounded-xl shadow hover:shadow-md transition cursor-pointer">
           <p className="text-gray-500 text-sm">Total</p>
           <h2 className="text-3xl font-bold">{stats.total}</h2>
         </div>

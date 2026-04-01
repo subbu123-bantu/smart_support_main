@@ -68,7 +68,9 @@ def get_priority(text):
             score += 3
 
     # FINAL DECISION
-    if score >= 6:
+    if score >= 8:
+        return "urgent"
+    elif score >= 6:
         return "high"
     elif score >= 3:
         return "medium"
@@ -164,15 +166,15 @@ Ticket: "{text}"
 
 #  LOGGING  #
 
-def log_prediction(text, result):
+def log_prediction(text, result, ticket=None):
     TicketPredictionLog.objects.create(
+        ticket=ticket,
         text=text,
         predicted_category=result["category"],
         predicted_priority=result["priority"],
         source=result["source"],
         confidence=result["confidence"]
     )
-
 # MAIN PIPELINE  #
 
 def predict_ticket(text):
@@ -220,7 +222,7 @@ def predict_ticket(text):
         final["confidence"] = threshold
 
     # PRIORITY #
-
+    final["category"] = final["category"].lower().strip()
     final["priority"] = get_priority(text)
 
     #LOGGING  #

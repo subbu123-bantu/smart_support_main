@@ -5,4 +5,4 @@ class TicketsConfig(AppConfig):
     name = 'tickets'
 
     def ready(self):
-        import tickets.signals  # Add this line
+        import tickets.signals

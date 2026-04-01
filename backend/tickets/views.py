@@ -1,130 +1,98 @@
+from http import cookies
+
+from requests import request
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Q, Count
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
-from .models import Ticket, Category
-from .serializers import TicketSerializer, CategorySerializer
-from users.permissions import IsAdmin
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
-from users.pagination import CustomPagination
-from .ai import predict_ticket
 from rest_framework.views import APIView
 
-# CATEGORY #
+from .authentication import CookieJWTAuthentication
+from .models import Ticket, Category, TicketPredictionLog
+from .serializers import TicketSerializer, CategorySerializer
+from users.permissions import IsAdmin
+from users.pagination import CustomPagination
+from .ai import predict_ticket
+
+#CATEGORY
 class test_backend(APIView):
-    def get(self, request):
+    def list(self, request):
         return Response({"message": "Backend is working!"})
-    
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated, IsAdmin]
 
 
-# TICKETS #
+# TICKETS 
 
 class TicketViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication]
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
 
-    # ✅ FIXED QUERYSET
     def get_queryset(self):
         user = self.request.user
+        print("USER IN QUERYSET:", user, user.id if user.is_authenticated else None)
+
         queryset = Ticket.objects.all()
 
-        # Role-based filtering
-        if user.role == "admin":
-            pass
-
-        elif user.role == "agent":
-            queryset = queryset.filter(assigned_to=user)
-
-        elif user.role == "customer":
-            queryset = queryset.filter(customer=user)
-
-        else:
+        print("AUTH USER:", self.request.user)
+        print("AUTHENTICATED:", self.request.user.is_authenticated)
+        if not user.is_authenticated:
             return Ticket.objects.none()
 
-        # ✅ Filters
-        status = self.request.query_params.get('status')
-        priority = self.request.query_params.get('priority')
-        search = self.request.query_params.get('search')
+        if user.role.lower() == "admin":
+            return queryset
 
-        if status:
-            queryset = queryset.filter(status__iexact=status)
+        if user.role.lower() == "agent":
+            return queryset.filter(assigned_to=user)
 
-        if priority and priority.lower() != "all":
-            queryset = queryset.filter(priority__iexact=priority)
+        if user.role.lower() == "customer":
+            return queryset.filter(customer=user)
 
-        if search:
-            vector = SearchVector('title', 'description', 'category__name')
-            search_query = SearchQuery(search)
+        return Ticket.objects.none()
 
-            queryset = queryset.annotate(
-                search_vector=vector,
-                rank=SearchRank(vector, search_query)
-            ).filter(
-                search_vector=search_query
-            ).order_by('-rank')
-
-        return queryset
-
+    #CREATE
 
     def perform_create(self, serializer):
-        user = self.request.user
-
-        if user.role != 'customer':
+        if self.request.user.role.lower() != 'customer':
             raise PermissionDenied("Only customers can create tickets.")
 
-        ticket = serializer.save()
-
-        text = f"{ticket.title or ''} {ticket.description or ''}"
-        result = predict_ticket(text)
-
-        # FIX: map string → object
-        category_obj, _ = Category.objects.get_or_create(
-            name=result["category"].lower()
-        )
-
-        ticket.category = category_obj
-        ticket.priority = result["priority"]
-        ticket.predicted_category = result["category"]
-        ticket.predicted_priority = result["priority"]
-
-        ticket.save()
-
+        serializer.save(customer=self.request.user)
+        print("REQUEST USER:", self.request.user)
+        print("AUTH:", self.request.auth)
+    #UPDATE
 
     def update(self, request, *args, **kwargs):
         ticket = self.get_object()
         user = request.user
 
-        if user.role == 'customer':
+        if user.role.lower() == 'customer':
             raise PermissionDenied("Customers cannot update tickets.")
 
-        # FIX: correct comparison
-        if user.role == 'agent' and ticket.assigned_to.user != user:
+        if user.role.lower() == 'agent' and ticket.assigned_to != user:
             raise PermissionDenied("You can only update your assigned tickets.")
 
         return super().update(request, *args, **kwargs)
-    
 
 
+#STATS
 
 @api_view(['GET'])
+@authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
 def ticket_stats(request):
-    user = request.user
+    user = request.userS
 
-    # Correct role-based filtering
-    if user.role == 'admin':
+    if user.role.lower() == 'admin':
         queryset = Ticket.objects.all()
-
-    elif user.role == 'agent':
+    elif user.role.lower()== 'agent':
         queryset = Ticket.objects.filter(assigned_to=user)
-
     else:
         queryset = Ticket.objects.filter(customer=user)
 
@@ -137,7 +105,11 @@ def ticket_stats(request):
 
     return Response(stats)
 
+
+# PREDICT API
+
 @api_view(['POST'])
+@authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
 def predict_ticket_api(request):
     text = request.data.get("text", "")
@@ -147,3 +119,50 @@ def predict_ticket_api(request):
 
     result = predict_ticket(text)
     return Response(result)
+
+
+
+@api_view(["POST"])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsAuthenticated])
+def update_prediction_feedback(request, ticket_id):
+    is_correct = request.data.get("is_correct")
+
+    log = TicketPredictionLog.objects.filter(ticket_id=ticket_id).last()
+
+    if not log:
+        return Response({"error": "Log not found"}, status=404)
+
+    log.final_accepted = is_correct
+    log.save()
+
+    return Response({"message": "Feedback saved"})
+
+@api_view(["GET"])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsAuthenticated])
+def prediction_accuracy(request):
+    from tickets.models import TicketPredictionLog
+
+    total = TicketPredictionLog.objects.count()
+    correct = TicketPredictionLog.objects.filter(final_accepted=True).count()
+
+    accuracy = (correct / total) * 100 if total > 0 else 0
+
+    return Response({
+        "total": total,
+        "correct": correct,
+        "accuracy": accuracy
+    })
+
+@api_view(["GET"])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsAuthenticated])
+def check_assignments(request):
+    tickets = Ticket.objects.all().values(
+        "id",
+        "title",
+        "category__name",
+        "assigned_to__username"
+    )
+    return Response(list(tickets))

@@ -47,7 +47,7 @@ def login_view(request):
     return Response({
         "access": str(refresh.access_token),
         "refresh": str(refresh),
-        "role": user.role   
+        "role": user.role.lower()  
     })
 
 class CustomLoginView(TokenObtainPairView):

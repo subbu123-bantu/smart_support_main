@@ -10,7 +10,7 @@ function Layout({ children }) {
       <div className="flex flex-col flex-1">
         <Topbar />
         
-        <div className="bg-gray-50 text-gray-900 font-sans min-h-screen overflow-y-hidden">
+        <div className="bg-gray-50 text-gray-900 font-sans min-h-screen overflow-y-auto">
           {children}
         </div>
       </div>
