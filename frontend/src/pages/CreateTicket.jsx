@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createTicket, predictTicket } from "../services/api";
+import { toast } from "react-toastify"
 
 function CreateTicket() {
   const [title, setTitle] = useState("");
@@ -52,8 +53,12 @@ function CreateTicket() {
       priority,
       auto_assign: autoAssign,
     });
+    toast.success("Ticket created!");
+    navigate("/tickets");} 
+    catch (error) {
+    console.log("ERROR DETAIL:", error.response?.data);  // 👈 add this
+    toast.error("Failed to create ticket");
 
-    navigate("/tickets");
   } finally {
     setLoading(false);
   }

@@ -42,15 +42,12 @@ class TicketSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("User not found")
 
         return create_ticket(validated_data, request.user)
-    
     def to_representation(self, instance):
         data = super().to_representation(instance)
         request = self.context.get("request")
 
-        # Hide ID from customers, show ID to admin/agent
-        if request and hasattr(request, "user"):
-            user = request.user
-            if user.role == "customer":
+        if request and request.user.is_authenticated:  # ✅ check authenticated first
+            if request.user.role == "customer":
                 data.pop("id", None)
 
         return data
