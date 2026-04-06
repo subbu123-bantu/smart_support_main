@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import  PermissionDenied
+from .models import AgentProfile
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -67,6 +68,15 @@ def get_agents(request):
     if request.user.role.lower() != 'admin':
         raise PermissionDenied("Only admins can view agents.")
     
-    from .models import User
-    agents = User.objects.filter(role='agent').values('id', 'username')
-    return Response(list(agents))
+    profiles = AgentProfile.objects.select_related('user').prefetch_related('categories')
+    
+    result = []
+    for profile in profiles:
+        result.append({
+            'id': profile.user.id,
+            'username': profile.user.username,
+            'is_available': profile.is_available,
+            'categories': [cat.name for cat in profile.categories.all()]
+        })
+    
+    return Response(result)

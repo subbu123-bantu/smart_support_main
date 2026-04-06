@@ -9,7 +9,8 @@ def assign_ticket(ticket):
 
     category_name = ticket.category.name.strip().lower()
 
-    agents = (
+    # Try to find available agent matching the ticket's category
+    agent_profile = (
         AgentProfile.objects.filter(
             is_available=True,
             categories__name__iexact=category_name
@@ -17,25 +18,27 @@ def assign_ticket(ticket):
         .annotate(
             ticket_count=Count(
                 'user__assigned_tickets',
-                filter=Q(user__assigned_tickets__status='open')
+                filter=Q(user__assigned_tickets__status__in=['open', 'in_progress'])
             )
         )
         .order_by('ticket_count')
+        .first()  # just take the first (least busy) — no min() needed
     )
 
-    agent = min(
-    agents,
-    key=lambda a: a.user.assigned_tickets.count()
-)
-
-    if agent:
-        ticket.assigned_to = agent.user
+    if agent_profile:
+        ticket.assigned_to = agent_profile.user
         ticket.save()
-        return agent.user
+        return agent_profile.user
 
+    # Fallback — assign to any available agent regardless of category
     fallback = (
         AgentProfile.objects.filter(is_available=True)
-        .annotate(ticket_count=Count('user__assigned_tickets'))
+        .annotate(
+            ticket_count=Count(
+                'user__assigned_tickets',
+                filter=Q(user__assigned_tickets__status__in=['open', 'in_progress'])
+            )
+        )
         .order_by('ticket_count')
         .first()
     )

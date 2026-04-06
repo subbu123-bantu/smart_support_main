@@ -158,7 +158,6 @@ function Tickets() {
         {loading && <p>Loading...</p>}
         {tickets.map((ticket) => (
           <div
-            key={ticket.id}
             onClick={() => {
               if (role === "admin" || role === "agent") {
                 navigate(`/tickets/${ticket.id}`);
@@ -177,41 +176,70 @@ function Tickets() {
                   <span className="text-xs bg-gray-100 px-2 py-1 rounded">{ticket.category}</span>
                 </div>
               </div>
-              <div className="text-right">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(ticket.priority)}`}>
-                  {ticket.priority}
-                </span>
-                <p className="text-xs text-gray-400 mt-2">#{ticket.id}</p>
+              <div className="text-right" key={ticket.id}>
+  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(ticket.priority)}`}>
+    {ticket.priority}
+  </span>
+  <p className="text-xs text-gray-400 mt-2">
+  #{role === "customer" ? ticket.user_ticket_id : ticket.id}
+  </p>
 
-                {/* ✅ show assigned agent name for admin */}
-                {role === "admin" && (
-                  <select
-                    value={ticket.assigned_to || ""}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => handleAssign(ticket.id, e.target.value)}
-                    className="mt-2 border px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 cursor-pointer"
-                  >
-                    <option value="">⚠️ Unassigned</option>
-                    {agents.map(agent => (
-                      <option key={agent.id} value={agent.id}>
-                        👤 {agent.username}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {(role === "admin" || role === "agent") && (
-                  <select
-                    value={ticket.status}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => updateStatus(ticket.id, e.target.value)}
-                    className="mt-2 border px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 cursor-pointer"
-                  >
-                    <option value="open">Open</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="closed">Closed</option>
-                  </select>
-                )}
-              </div>
+  {role === "admin" && (
+    <select
+      value={ticket.assigned_to || ""}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => handleAssign(ticket.id, e.target.value)}
+      className="mt-2 border px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 cursor-pointer"
+    >
+      <option value="">⚠️ Unassigned</option>
+
+      {agents.filter(a =>
+        a.categories?.some(cat =>
+          cat.toLowerCase() === ticket.category?.toLowerCase()
+        )
+      ).length > 0 && (
+        <optgroup key={`recommended-${ticket.id}`} label="⭐ Recommended">
+          {agents
+            .filter(a => a.categories?.some(cat =>
+              cat.toLowerCase() === ticket.category?.toLowerCase()
+            ))
+            .map(agent => (
+              <option key={`rec-${ticket.id}-${agent.id}`} value={agent.id}>
+                👤 {agent.username} — {agent.categories.join(', ')}
+                {!agent.is_available ? ' (busy)' : ''}
+              </option>
+            ))}
+        </optgroup>
+      )}
+
+      <optgroup key={`others-${ticket.id}`} label="Other Agents">
+        {agents
+          .filter(a => !a.categories?.some(cat =>
+            cat.toLowerCase() === ticket.category?.toLowerCase()
+          ))
+          .map(agent => (
+            <option key={`other-${ticket.id}-${agent.id}`} value={agent.id}>
+              👤 {agent.username} — {agent.categories.length > 0 ? agent.categories.join(', ') : 'No specialization'}
+              {!agent.is_available ? ' (busy)' : ''}
+            </option>
+          ))}
+      </optgroup>
+    </select>
+  )}
+
+  {(role === "admin" || role === "agent") && (
+    <select
+      value={ticket.status}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => updateStatus(ticket.id, e.target.value)}
+      className="mt-2 border px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 cursor-pointer"
+    >
+      <option value="open">Open</option>
+      <option value="in_progress">In Progress</option>
+      <option value="closed">Closed</option>
+    </select>
+  )}
+</div>
             </div>
           </div>
         ))}

@@ -4,13 +4,19 @@ import traceback
 from requests import request
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import JsonResponse, PermissionDenied
+from rest_framework.exceptions import PermissionDenied
+from django.http import JsonResponse                         
 from django.db.models import Q, Count
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .authentication import CookieJWTAuthentication
+from .tasks import send_email_task
+
+from rest_framework import status
+from .models import Ticket
+from users.models import AgentProfile
+from users.models import User
 from .models import Ticket, Category, TicketPredictionLog
 from .serializers import TicketSerializer, CategorySerializer
 from users.permissions import IsAdmin
@@ -18,9 +24,10 @@ from users.pagination import CustomPagination
 from .ai import predict_ticket
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
-#CATEGORY
+
+# CATEGORY
 class test_backend(APIView):
-    def list(self, request):
+    def get(self, request):
         return Response({"message": "Backend is working!"})
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -29,16 +36,15 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsAdmin]
 
 
-# TICKETS 
+# TICKETS
 
 class TicketViewSet(viewsets.ModelViewSet):
-    # authentication_classes = [CookieJWTAuthentication]
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend, SearchFilter]  # ✅ add this
-    filterset_fields = ['status', 'priority']              # ✅ add this
-    search_fields = ['title', 'description']      
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['status', 'priority']
+    search_fields = ['title', 'description']
 
     def get_queryset(self):
         user = self.request.user
@@ -48,7 +54,6 @@ class TicketViewSet(viewsets.ModelViewSet):
             return Ticket.objects.none()
 
         if user.role.lower() == "admin":
-            # filter by assigned/unassigned if query param present
             assigned = self.request.query_params.get('assigned')
             if assigned == 'true':
                 queryset = queryset.filter(assigned_to__isnull=False)
@@ -64,8 +69,7 @@ class TicketViewSet(viewsets.ModelViewSet):
 
         return Ticket.objects.none()
 
-    #CREATE
-
+    # CREATE
     def perform_create(self, serializer):
         if self.request.user.role.lower() != 'customer':
             raise PermissionDenied("Only customers can create tickets.")
@@ -73,8 +77,8 @@ class TicketViewSet(viewsets.ModelViewSet):
         serializer.save(customer=self.request.user)
         print("REQUEST USER:", self.request.user)
         print("AUTH:", self.request.auth)
-    #UPDATE
 
+    # UPDATE
     def update(self, request, *args, **kwargs):
         ticket = self.get_object()
         user = request.user
@@ -85,25 +89,25 @@ class TicketViewSet(viewsets.ModelViewSet):
         if user.role.lower() == 'agent' and ticket.assigned_to != user:
             raise PermissionDenied("You can only update your assigned tickets.")
 
-        # Agent can only update status
         if user.role.lower() == 'agent':
             allowed_fields = {'status'}
             if not set(request.data.keys()).issubset(allowed_fields):
                 raise PermissionDenied("Agents can only update ticket status.")
 
-        return super().update(request, *args, **kwargs)  # ✅ call update, not partial_update
+        send_email_task.delay(ticket.customer.email, 'changed status')
+
+        return super().update(request, *args, **kwargs)
 
 
-#STATS
-
+# STATS
 @api_view(['GET'])
-
+@permission_classes([IsAuthenticated])  
 def ticket_stats(request):
     user = request.user
     try:
         if user.role.lower() == 'admin':
             queryset = Ticket.objects.all()
-        elif user.role.lower()== 'agent':
+        elif user.role.lower() == 'agent':
             queryset = Ticket.objects.filter(assigned_to=user)
         else:
             queryset = Ticket.objects.filter(customer=user)
@@ -117,115 +121,61 @@ def ticket_stats(request):
         return Response(stats)
     except Exception as e:
         print(traceback.format_exc())
-        return JsonResponse({"error": str(e)}, status=500)
-    
+        return JsonResponse({"error": str(e)}, status=500)  
+
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def assign_ticket(request, ticket_id):
-    user = request.user
-    if user.role.lower() != 'admin':
+    if request.user.role.lower() != 'admin':
         raise PermissionDenied("Only admins can assign tickets.")
 
-    ticket = Ticket.objects.get(id=ticket_id)
-    agent_id = request.data.get("assigned_to")
+    try:
+        ticket = Ticket.objects.get(id=ticket_id)
+    except Ticket.DoesNotExist:
+        return Response({"error": "Ticket not found"}, status=404)
+
+    agent_id = request.data.get("agent_id")
+    print("agent_id received:", agent_id)
+    print("ticket.category:", ticket.category)
 
     if agent_id:
-        from users.models import User
-        agent = User.objects.get(id=agent_id)
-        ticket.assigned_to = agent
-    else:
-        ticket.assigned_to = None  # unassign
+        try:
+            profile = AgentProfile.objects.select_related('user').get(user__id=agent_id)
+        except AgentProfile.DoesNotExist:
+            return Response({"error": f"No AgentProfile found for user id {agent_id}"}, status=404)
 
+        ticket.assigned_to = profile.user
+        ticket.status = "in_progress"
+        ticket.save()
+        return Response({"message": f"Ticket assigned to {profile.user.username}"})
+
+    # Auto-assign
+    category_name = ticket.category.name if hasattr(ticket.category, 'name') else ticket.category
+
+    matching_profiles = (
+        AgentProfile.objects
+        .filter(is_available=True, categories__name__iexact=category_name)
+        .select_related('user')
+        .prefetch_related('categories')
+        .distinct()
+    )
+
+    print("matching profiles count:", matching_profiles.count())
+
+    if not matching_profiles.exists():
+        return Response({"error": "No available agents for this category"}, status=404)
+
+    best_agent = min(
+        matching_profiles,
+        key=lambda p: Ticket.objects.filter(
+            assigned_to=p.user, status__in=["open", "in_progress"]
+        ).count()
+    )
+
+    ticket.assigned_to = best_agent.user
+    ticket.status = "in_progress"
     ticket.save()
-    return Response({"message": "Ticket assigned", "assigned_to": str(ticket.assigned_to)})
-
-
-# PREDICT API
-
-@api_view(['POST'])
-
-def predict_ticket_api(request):
-    text = request.data.get("text", "")
-
-    if not text:
-        return Response({"error": "No text provided"}, status=400)
-
-    result = predict_ticket(text)
-    return Response(result)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# @api_view(["POST"])
-
-# def update_prediction_feedback(request, ticket_id):
-#     is_correct = request.data.get("is_correct")
-
-#     log = TicketPredictionLog.objects.filter(ticket_id=ticket_id).last()
-
-#     if not log:
-#         return Response({"error": "Log not found"}, status=404)
-
-#     log.final_accepted = is_correct
-#     log.save()
-
-#     return Response({"message": "Feedback saved"})
-
-# @api_view(["GET"])
-
-# def prediction_accuracy(request):
-#     from tickets.models import TicketPredictionLog
-
-#     total = TicketPredictionLog.objects.count()
-#     correct = TicketPredictionLog.objects.filter(final_accepted=True).count()
-
-#     accuracy = (correct / total) * 100 if total > 0 else 0
-
-#     return Response({
-#         "total": total,
-#         "correct": correct,
-#         "accuracy": accuracy
-#     })
-
-# @api_view(["GET"])
-
-# def check_assignments(request):
-#     tickets = Ticket.objects.all().values(
-#         "id",
-#         "title",
-#         "category__name",
-#         "assigned_to__username"
-#     )
-#     return Response(list(tickets))
+    return Response({
+        "message": f"Auto-assigned to {best_agent.user.username}",
+        "agent": best_agent.user.username
+    })

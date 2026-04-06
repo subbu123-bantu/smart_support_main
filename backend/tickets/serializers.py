@@ -1,4 +1,3 @@
-
 from rest_framework import serializers
 
 from .services.ticketservices import create_ticket
@@ -14,15 +13,10 @@ class CategorySerializer(serializers.ModelSerializer):
 class TicketSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.CharField(source='assigned_to.username', read_only=True)
     customer_name = serializers.CharField(source='customer.username', read_only=True)
-
+    category = serializers.StringRelatedField()
     class Meta:
         model = Ticket
         fields = '__all__'
-        
-    category = serializers.StringRelatedField() 
-    class Meta:
-        model = Ticket
-        fields = "__all__"
         read_only_fields = ["customer", "user_ticket_id"]
 
     def validate_title(self, value):
@@ -34,7 +28,7 @@ class TicketSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("Description cannot be empty")
         return value
-    
+
     def create(self, validated_data):
         request = self.context.get("request")
 
@@ -42,11 +36,12 @@ class TicketSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("User not found")
 
         return create_ticket(validated_data, request.user)
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         request = self.context.get("request")
 
-        if request and request.user.is_authenticated:  # ✅ check authenticated first
+        if request and request.user.is_authenticated:
             if request.user.role == "customer":
                 data.pop("id", None)
 

@@ -11,7 +11,6 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)  
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='Customer')
     is_active = models.BooleanField(default=True)
-
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
     
