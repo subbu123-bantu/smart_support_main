@@ -134,65 +134,6 @@ const getStatusColor = (status) => {
       Search
     </button>
 
-<<<<<<< HEAD
-    {isSearchMode && (
-      <button
-        onClick={handleClear}
-        className="bg-gray-200 px-4 py-2 rounded-lg"
-      >
-        Clear
-      </button>
-    )}
-
-    <select
-      value={priority}
-      onChange={handlePriority}
-      className="border px-4 py-2 rounded-lg"
-    >
-      <option value="all">All Priority</option>
-      <option value="low">Low</option>
-      <option value="medium">Medium</option>
-      <option value="high">High</option>
-      <option value="urgent">Urgent</option>
-    </select>
-  </div>
-
-  {/* TICKET CARDS */}
-    <div className="space-y-4 min-h-[300px]">
-      {loading && <p>Loading...</p>}
-      {tickets.map((ticket) => (
-        <div
-          key={ticket.id}
-         onClick={() => {
-            if (role === "admin" || role === "agent") {
-              navigate(`/tickets/${ticket.id}`);
-            }
-          }}
-          className="cursor-pointer bg-white p-5 rounded-xl shadow-sm border border-gray-100 
-                    hover:shadow-md hover:scale-[1.02] transition transform "
-        >
-          <div className="flex  justify-between items-start">
-
-            {/* LEFT */}
-            <div>
-              <h3 className="text-lg font-semibold">
-                {ticket.title}
-              </h3>
-
-              <p className="text-gray-500 text-sm mt-1">
-                {ticket.description}
-              </p>
-
-              <div className="flex gap-2 mt-3">
-                <span className={`text-xs px-2 py-1 rounded ${getStatusColor(ticket.status)}`}>
-                  {ticket.status}
-                </span>
-
-                <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                  {ticket.category}
-                </span>
-              </div>
-=======
       {/* TICKET CARDS */}
       <div className="space-y-4 min-h-[300px]">
         {loading && <p>Loading...</p>}
@@ -280,7 +221,6 @@ const getStatusColor = (status) => {
     </select>
   )}
 </div>
->>>>>>> 815f769 (working on sending a mail to user)
             </div>
 
             {/* RIGHT */}
@@ -310,7 +250,6 @@ const getStatusColor = (status) => {
             </div>
 
           </div>
-        </div>
       ))}
     </div>
     {/* 🔁 Pagination */}

@@ -44,10 +44,10 @@ def login_view(request):
     refresh = RefreshToken.for_user(user)
 
     return Response({
-        "access": str(refresh.access_token),
-        "refresh": str(refresh),
-        "role": user.role.lower()  
-    })
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "role": user.role.lower()  
+        })
 
     response.set_cookie(key="access", value=str(refresh.access_token), httponly=True, secure=False, samesite='Lax', max_age=3000)
     response.set_cookie(key="refresh", value=str(refresh), httponly=True, secure=False, samesite='Lax', max_age=86400)
