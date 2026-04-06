@@ -8,13 +8,12 @@ from .serializers import RegisterSerializer
 from rest_framework.permissions import AllowAny
 from .permissions import IsAdmin,IsAgent,IsCustomer
 from .pagination import CustomPagination
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenSerializer
-
-
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import  PermissionDenied
+from .models import AgentProfile
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -50,6 +49,35 @@ def login_view(request):
         "role": user.role.lower()  
     })
 
-class CustomLoginView(TokenObtainPairView):
-    serializer_class = CustomTokenSerializer
+    response.set_cookie(key="access", value=str(refresh.access_token), httponly=True, secure=False, samesite='Lax', max_age=3000)
+    response.set_cookie(key="refresh", value=str(refresh), httponly=True, secure=False, samesite='Lax', max_age=86400)
+
+    return response
+
+   
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def logout_view(request):
+    response = Response({"message": "Logged out successfully"})
+    response.delete_cookie("access")
+    response.delete_cookie("refresh")
+    return response
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_agents(request):
+    if request.user.role.lower() != 'admin':
+        raise PermissionDenied("Only admins can view agents.")
     
+    profiles = AgentProfile.objects.select_related('user').prefetch_related('categories')
+    
+    result = []
+    for profile in profiles:
+        result.append({
+            'id': profile.user.id,
+            'username': profile.user.username,
+            'is_available': profile.is_available,
+            'categories': [cat.name for cat in profile.categories.all()]
+        })
+    
+    return Response(result)

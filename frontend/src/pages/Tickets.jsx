@@ -134,6 +134,7 @@ const getStatusColor = (status) => {
       Search
     </button>
 
+<<<<<<< HEAD
     {isSearchMode && (
       <button
         onClick={handleClear}
@@ -191,6 +192,95 @@ const getStatusColor = (status) => {
                   {ticket.category}
                 </span>
               </div>
+=======
+      {/* TICKET CARDS */}
+      <div className="space-y-4 min-h-[300px]">
+        {loading && <p>Loading...</p>}
+        {tickets.map((ticket) => (
+          <div
+            onClick={() => {
+              if (role === "admin" || role === "agent") {
+                navigate(`/tickets/${ticket.id}`);
+              }
+            }}
+            className="cursor-pointer bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:scale-[1.02] transition transform"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-semibold">{ticket.title}</h3>
+                <p className="text-gray-500 text-sm mt-1">{ticket.description}</p>
+                <div className="flex gap-2 mt-3">
+                  <span className={`text-xs px-2 py-1 rounded ${getStatusColor(ticket.status)}`}>
+                    {ticket.status}
+                  </span>
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">{ticket.category}</span>
+                </div>
+              </div>
+              <div className="text-right" key={ticket.id}>
+  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(ticket.priority)}`}>
+    {ticket.priority}
+  </span>
+  <p className="text-xs text-gray-400 mt-2">
+  #{role === "customer" ? ticket.user_ticket_id : ticket.id}
+  </p>
+
+  {role === "admin" && (
+    <select
+      value={ticket.assigned_to || ""}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => handleAssign(ticket.id, e.target.value)}
+      className="mt-2 border px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 cursor-pointer"
+    >
+      <option value="">⚠️ Unassigned</option>
+
+      {agents.filter(a =>
+        a.categories?.some(cat =>
+          cat.toLowerCase() === ticket.category?.toLowerCase()
+        )
+      ).length > 0 && (
+        <optgroup key={`recommended-${ticket.id}`} label="⭐ Recommended">
+          {agents
+            .filter(a => a.categories?.some(cat =>
+              cat.toLowerCase() === ticket.category?.toLowerCase()
+            ))
+            .map(agent => (
+              <option key={`rec-${ticket.id}-${agent.id}`} value={agent.id}>
+                👤 {agent.username} — {agent.categories.join(', ')}
+                {!agent.is_available ? ' (busy)' : ''}
+              </option>
+            ))}
+        </optgroup>
+      )}
+
+      <optgroup key={`others-${ticket.id}`} label="Other Agents">
+        {agents
+          .filter(a => !a.categories?.some(cat =>
+            cat.toLowerCase() === ticket.category?.toLowerCase()
+          ))
+          .map(agent => (
+            <option key={`other-${ticket.id}-${agent.id}`} value={agent.id}>
+              👤 {agent.username} — {agent.categories.length > 0 ? agent.categories.join(', ') : 'No specialization'}
+              {!agent.is_available ? ' (busy)' : ''}
+            </option>
+          ))}
+      </optgroup>
+    </select>
+  )}
+
+  {(role === "admin" || role === "agent") && (
+    <select
+      value={ticket.status}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => updateStatus(ticket.id, e.target.value)}
+      className="mt-2 border px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 cursor-pointer"
+    >
+      <option value="open">Open</option>
+      <option value="in_progress">In Progress</option>
+      <option value="closed">Closed</option>
+    </select>
+  )}
+</div>
+>>>>>>> 815f769 (working on sending a mail to user)
             </div>
 
             {/* RIGHT */}

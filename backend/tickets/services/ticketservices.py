@@ -1,6 +1,9 @@
 from tickets.models import Ticket, Category
 from tickets.ai import predict_ticket, log_prediction
 from tickets.services.assignment import assign_ticket
+from tickets.tasks import send_email_task
+from django.db import transaction
+from django.db.models import Max
 
 
 def create_ticket(validated_data, user):
@@ -18,10 +21,21 @@ def create_ticket(validated_data, user):
     validated_data["predicted_category"] = category_name
     validated_data["predicted_priority"] = priority
 
-    ticket = Ticket.objects.create(**validated_data)
+    with transaction.atomic():
+        Ticket.objects.filter(customer=user).select_for_update()
+        last_id = (
+            Ticket.objects
+            .filter(customer=user)
+            .select_for_update()
+            .aggregate(Max("user_ticket_id"))["user_ticket_id__max"]
+        )
+        validated_data["user_ticket_id"] = (last_id or 0) + 1
 
-    log_prediction(validated_data["description"], prediction, ticket)
+        ticket = Ticket.objects.create(**validated_data)
 
-    assign_ticket(ticket)
+        log_prediction(ticket.description, prediction, ticket)
+        assign_ticket(ticket)
+
+    send_email_task.delay(ticket.customer.email, ticket.description)
 
     return ticket
