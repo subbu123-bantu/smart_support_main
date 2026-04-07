@@ -1,27 +1,21 @@
-from http import cookies
 import traceback
 from datetime import timedelta
 from django.utils import timezone
-from django.db.models import Avg, F, ExpressionWrapper, DurationField
-from django.db.models.functions import TruncDate
-from requests import request
-from rest_framework import viewsets
+
+from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
-from django.http import JsonResponse                         
-from django.db.models import Q, Count
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from django.http import JsonResponse
+from django.db.models import Q, Count, Avg, F, ExpressionWrapper, DurationField
+from django.db.models.functions import TruncDate
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .tasks import send_email_task
-
-from rest_framework import status
-from .models import Ticket
-from users.models import AgentProfile
-from users.models import User
 from .models import Ticket, Category, TicketPredictionLog
 from .serializers import TicketSerializer, CategorySerializer
+from users.models import AgentProfile, User
 from users.permissions import IsAdmin
 from users.pagination import CustomPagination
 from .ai import predict_ticket
@@ -112,10 +106,6 @@ class TicketViewSet(viewsets.ModelViewSet):
  
         return response
 
-
-# STATS
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])  
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def ticket_stats(request):
@@ -200,7 +190,7 @@ def ticket_stats(request):
 
     except Exception as e:
         print(traceback.format_exc())
-        return JsonResponse({"error": str(e)}, status=500)
+        return Response({"error": str(e)}, status=500)
     
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])

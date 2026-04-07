@@ -27,17 +27,4 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.is_active = True
         user.save()
 
-<<<<<<< HEAD
         return user
-class CustomTokenSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-
-        # ADD ROLE INTO TOKEN
-        token['role'] = user.role.lower()
-
-        return token
-=======
-        return user
->>>>>>> dev
