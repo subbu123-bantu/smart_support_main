@@ -77,30 +77,41 @@ class TicketViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         if self.request.user.role.lower() != 'customer':
             raise PermissionDenied("Only customers can create tickets.")
-
         serializer.save(customer=self.request.user)
-        print("REQUEST USER:", self.request.user)
-        print("AUTH:", self.request.auth)
+
 
     # UPDATE
     def update(self, request, *args, **kwargs):
         ticket = self.get_object()
         user = request.user
-
+ 
         if user.role.lower() == 'customer':
             raise PermissionDenied("Customers cannot update tickets.")
-
+ 
         if user.role.lower() == 'agent' and ticket.assigned_to != user:
             raise PermissionDenied("You can only update your assigned tickets.")
-
+ 
         if user.role.lower() == 'agent':
             allowed_fields = {'status'}
             if not set(request.data.keys()).issubset(allowed_fields):
                 raise PermissionDenied("Agents can only update ticket status.")
 
-        send_email_task.delay(ticket.customer.email, 'changed status')
-
-        return super().update(request, *args, **kwargs)
+        response = super().update(request, *args, **kwargs)
+ 
+        ticket.refresh_from_db()  # get updated status from DB
+ 
+        send_email_task.delay(
+            ticket.customer.email,
+            subject=f"Your ticket '{ticket.title}' status updated to {ticket.status}",
+            template_name="emails/ticket_status_updated.html",
+            context={
+                "customer_name": ticket.customer.username,
+                "ticket_title": ticket.title,
+                "new_status": ticket.status,
+            }
+        )
+ 
+        return response
 
 
 # STATS

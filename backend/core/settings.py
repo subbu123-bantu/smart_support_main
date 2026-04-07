@@ -55,7 +55,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "core" / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -166,3 +166,5 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
+# settings.py
+CELERY_WORKER_POOL = 'solo'
