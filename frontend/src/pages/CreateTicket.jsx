@@ -7,6 +7,8 @@ function CreateTicket() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [predicting, setPredicting] = useState(false);
 
   const [category, setCategory] = useState("other");
   const [priority, setPriority] = useState("low");
@@ -18,8 +20,11 @@ function CreateTicket() {
   const handleAutoPredict = async (text) => {
     if (!text) return;
 
+    setPredicting(true);
+
     try {
       const res = await predictTicket({ text });
+
       setCategory(res.data.predicted_category);
       setPriority(res.data.predicted_priority);
 
@@ -30,6 +35,8 @@ function CreateTicket() {
 
     } catch {
       setAutoAssign(false);
+    } finally {
+      setPredicting(false);
     }
   };
 
@@ -41,28 +48,30 @@ function CreateTicket() {
   const handleSubmit = async (e) => {
   e.preventDefault();
 
-  if (loading) return;  // 🔒 prevent duplicate
+    if (submitting) return;  // 🔒 hard block
 
-  setLoading(true);
+    setSubmitting(true);
 
-  try {
-    await createTicket({
-      title,
-      description,
-      category,
-      priority,
-      auto_assign: autoAssign,
-    });
-    toast.success("Ticket created!");
-    navigate("/tickets");} 
-    catch (error) {
-    console.log("ERROR DETAIL:", error.response?.data);  // 👈 add this
-    toast.error("Failed to create ticket");
+    try {
+      await createTicket({
+        title,
+        description,
+        category,
+        priority,
+        auto_assign: autoAssign,
+      });
 
-  } finally {
-    setLoading(false);
-  }
-};
+      toast.success("Ticket created!");
+      navigate("/tickets");
+
+    } catch (error) {
+      console.log("ERROR DETAIL:", error.response?.data);
+      toast.error("Failed to create ticket");
+
+    } finally {
+      setSubmitting(false);
+    }
+  };
   return (
  <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-200 via-purple-100 to-gray-100">
 
@@ -89,7 +98,7 @@ function CreateTicket() {
         className="w-full px-4 py-2 border rounded-lg h-28 resize-none focus:ring-2 focus:ring-indigo-400"
       />
 
-      {loading && (
+      {predicting && (
         <p className="text-sm text-indigo-500">
           🤖 AI analyzing...
         </p>
@@ -101,8 +110,16 @@ function CreateTicket() {
         </p>
       )}
 
-      <button className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition shadow-md">
-        Create Ticket
+      <button
+        type="submit"
+        disabled={submitting}
+        className={`w-full py-2 rounded-lg transition shadow-md text-white 
+          ${submitting 
+            ? "bg-gray-400 cursor-not-allowed" 
+            : "bg-indigo-600 hover:bg-indigo-700"
+          }`}
+      >
+        {submitting ? "Creating Ticket..." : "Create Ticket"}
       </button>
 
     </form>

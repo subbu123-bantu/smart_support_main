@@ -18,7 +18,7 @@ function Tickets() {
   const [loading, setLoading] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [assignedFilter, setAssignedFilter] = useState(""); // ✅ add this
+  const [assignedFilter, setAssignedFilter] = useState(""); 
   const [agents, setAgents] = useState([]);
 
   const fetchTickets = useCallback(async () => {
@@ -29,7 +29,7 @@ function Tickets() {
         ticketStatus || null,
         priority === "all" ? null : priority,
         searchQuery || null,
-        assignedFilter  // ✅ pass it here
+        assignedFilter  
       );
       setTickets(res.data.results || []);
       setNextPage(res.data.next);
@@ -39,8 +39,7 @@ function Tickets() {
     } finally {
       setLoading(false);
     }
-  }, [page, priority, searchQuery, ticketStatus, assignedFilter]); // ✅ add assignedFilter
-
+  }, [page, priority, searchQuery, ticketStatus, assignedFilter]); 
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
