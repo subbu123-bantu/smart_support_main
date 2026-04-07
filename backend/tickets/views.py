@@ -1,4 +1,3 @@
-from datetime import timedelta, timezone
 from http import cookies
 import traceback
 
@@ -7,8 +6,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from django.http import JsonResponse                         
-from django.db.models import Q, Count, Avg, F, ExpressionWrapper, DurationField
-from django.db.models.functions import TruncDate
+from django.db.models import Q, Count
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -26,13 +24,11 @@ from users.pagination import CustomPagination
 from .ai import predict_ticket
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import AllowAny  
 
+# CATEGORY
 class test_backend(APIView):
-    permission_classes = [AllowAny] 
-
     def get(self, request):
-        return Response({"message": "Backend working"})
+        return Response({"message": "Backend is working!"})
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -116,7 +112,7 @@ class TicketViewSet(viewsets.ModelViewSet):
 
 # STATS
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])  
 def ticket_stats(request):
     user = request.user
     try:
@@ -126,96 +122,16 @@ def ticket_stats(request):
             queryset = Ticket.objects.filter(assigned_to=user)
         else:
             queryset = Ticket.objects.filter(customer=user)
- 
-        # Basic counts
         stats = queryset.aggregate(
             total=Count('id'),
             open=Count('id', filter=Q(status='open')),
             in_progress=Count('id', filter=Q(status='in_progress')),
             closed=Count('id', filter=Q(status='closed')),
         )
- 
-        # Admin-only extended analytics
-        if user.role.lower() == 'admin':
- 
-            # Category breakdown
-            by_category = list(
-                queryset
-                .values('category__name')
-                .annotate(count=Count('id'))
-                .order_by('-count')
-            )
- 
-            # Priority breakdown
-            by_priority = list(
-                queryset
-                .values('priority')
-                .annotate(count=Count('id'))
-                .order_by('-count')
-            )
- 
-            # Tickets over last 7 days
-            seven_days_ago = timezone.now() - timedelta(days=7)
-            by_date = list(
-                queryset
-                .filter(created_at__gte=seven_days_ago)
-                .annotate(date=TruncDate('created_at'))
-                .values('date')
-                .annotate(count=Count('id'))
-                .order_by('date')
-            )
-            # Convert date objects to strings for JSON
-            for entry in by_date:
-                entry['date'] = str(entry['date'])
- 
-            # Agent workload
-            agent_profiles = AgentProfile.objects.select_related('user').all()
-            agent_workload = []
- 
-            for profile in agent_profiles:
-                agent_tickets = Ticket.objects.filter(assigned_to=profile.user)
- 
-                assigned = agent_tickets.count()
-                in_progress = agent_tickets.filter(status='in_progress').count()
-                solved = agent_tickets.filter(status='closed').count()
- 
-                # Average resolution time (created_at → updated_at for closed tickets)
-                avg_resolution = agent_tickets.filter(status='closed').aggregate(
-                    avg=Avg(
-                        ExpressionWrapper(
-                            F('updated_at') - F('created_at'),
-                            output_field=DurationField()
-                        )
-                    )
-                )['avg']
- 
-                # Convert timedelta to hours
-                avg_hours = None
-                if avg_resolution:
-                    avg_hours = round(avg_resolution.total_seconds() / 3600, 1)
- 
-                agent_workload.append({
-                    "agent": profile.user.username,
-                    "assigned": assigned,
-                    "in_progress": in_progress,
-                    "solved": solved,
-                    "avg_resolution_hours": avg_hours,
-                })
- 
-            # Sort by most assigned
-            agent_workload.sort(key=lambda x: x['assigned'], reverse=True)
- 
-            stats['by_category'] = by_category
-            stats['by_priority'] = by_priority
-            stats['by_date'] = by_date
-            stats['agent_workload'] = agent_workload
- 
         return Response(stats)
- 
     except Exception as e:
         print(traceback.format_exc())
-        return JsonResponse({"error": str(e)}, status=500)
-   
+        return JsonResponse({"error": str(e)}, status=500)  
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])

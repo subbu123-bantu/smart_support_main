@@ -4,7 +4,7 @@ from .views import TicketViewSet, CategoryViewSet
 from .views import ticket_stats,assign_ticket
 router = DefaultRouter()
 router.register(r'tickets', TicketViewSet,basename='ticket')
-router.register(r'categories', CategoryViewSet)
+router.register(r'categories', CategoryViewSet,basename='category')
 
 urlpatterns = [
     path('', include(router.urls)),

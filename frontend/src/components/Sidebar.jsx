@@ -9,11 +9,17 @@ function Sidebar() {
 
   const role = (localStorage.getItem("role") || "Customer").toLowerCase();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
+  const handleLogout = async () => {
+  try {
+    await LogOut();
+  } catch (err) {
+    // ignore
+  } finally {
+    localStorage.removeItem("access");
     localStorage.removeItem("role");
-    navigate("/login");
-  };
+    window.location.href = "/login";  // hard redirect, clears React state too
+  }
+};
 
   const linkClass = ({ isActive }) =>
   `flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition

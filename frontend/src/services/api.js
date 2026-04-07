@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/",
+  baseURL: "http://localhost:8000/api/",
 });
 
 
@@ -9,10 +9,14 @@ const API = axios.create({
 //REQUEST INTERCEPTOR (attach token)
 API.interceptors.request.use(
   (req) => {
-    const token = localStorage.getItem("token");
-
-    if (token) {
-      req.headers.Authorization = `Bearer ${token}`;
+    // ✅ don't attach token for auth endpoints
+    const isAuthRequest = req.url.includes("login") || req.url.includes("register");
+    
+    if (!isAuthRequest) {
+      const token = localStorage.getItem("access");
+      if (token) {
+        req.headers.Authorization = `Bearer ${token}`;
+      }
     }
 
     return req;
@@ -23,61 +27,41 @@ API.interceptors.request.use(
 API.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.log("❌ ERROR:", error.config.url, error.response?.status, error.response?.data);
     const isLoginRequest = error.config.url.includes("login");
-    if (error.response && error.response.status === 401 && !isLoginRequest) {
-      console.log("Unauthorized → Redirecting to login");
-
-      localStorage.removeItem("token");
-
+    if (error.response?.status === 401 && !isLoginRequest) {
+      localStorage.clear();
       window.location.href = "/login";
     }
-
     return Promise.reject(error);
   }
 );
 
 
 //AUTH
-export const loginUser = (data) => API.post("login/", data);
+// AUTH
+export const loginUser = (data) => API.post("v2/login/", data);
+export const registerUser = (data) => API.post("v2/register/", data);
 
-export const registerUser = (data) => API.post("register/", data);
-
-
-// DASHBOARD 
-export const dashboardStats = () => API.get("dashboard-stats/");
-
-export const getTicketStats = () => API.get("tickets/stats/");
-
-
-// TICKETS 
-export const getTickets = (page = 1,ticketStatus = "",priority = "",search = "") => {
-
-  let url = `tickets/?page=${page}`;
-
+// TICKETS
+export const getTicketStats = () => API.get("v1/stats/");
+export const getTickets = (page=1, ticketStatus="", priority="", search="", assigned="") => {
+  let url = `v1/tickets/?page=${page}`;
   if (ticketStatus) url += `&status=${ticketStatus}`;
-  if (priority && priority.toLowerCase() !== "all")
-    url += `&priority=${priority}`;
+  if (priority && priority.toLowerCase() !== "all") url += `&priority=${priority}`;
   if (search) url += `&search=${search}`;
-
-  console.log("CALLING URL:", url);
-
+  if (assigned !== "") url += `&assigned=${assigned}`;  // ✅ add this
   return API.get(url);
 };
+export const createTicket = (data) => API.post("v1/tickets/", data);
+export const getTicketById = (id) => API.get(`v1/tickets/${id}/`);
+export const updateTicket = (id, data) => API.patch(`v1/tickets/${id}/`, data);
+export const deleteTicket = (id) => API.delete(`v1/tickets/${id}/`);
+export const predictTicket = (data) => API.post("v1/predict/", data);
 
-export const createTicket = (data) => API.post("tickets/", data);
+export const assignTicket = (ticketId, agentId) =>
+  API.patch(`v1/tickets/${ticketId}/assign/`, { assigned_to: agentId });
 
-export const getTicketById = (id) => API.get(`tickets/${id}/`);
-
-export const updateTicket = (id, data) =>
-  API.patch(`tickets/${id}/`, data);
-
-export const deleteTicket = (id) =>
-  API.delete(`tickets/${id}/`);
-
-
-// AI 
-export const predictTicket = (data) =>
-  API.post("predict/", data);
-
+export const getAgents = () => API.get("v2/agents/");
 
 export default API;

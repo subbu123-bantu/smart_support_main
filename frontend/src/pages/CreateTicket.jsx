@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createTicket, predictTicket } from "../services/api";
+import { toast } from "react-toastify"
 
 function CreateTicket() {
   const [title, setTitle] = useState("");

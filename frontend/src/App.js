@@ -35,7 +35,7 @@ function App() {
 
         <Route path="/login"  element={<Login />} />
 
-        <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+        <Route path="/dashboard" element={<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>} />
 
         <Route path="/create-ticket" element={<PrivateRoute>{<CreateTicket />}</PrivateRoute>}/>
 

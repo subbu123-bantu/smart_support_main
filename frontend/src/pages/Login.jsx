@@ -1,57 +1,39 @@
 import { useState } from "react";
-import { useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { loginUser } from "../services/api";
-import {jwtDecode} from "jwt-decode";
 
 function Login() {
   const navigate = useNavigate();
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!username || !password) {
-    toast.error("Please fill all fields");
-    return;
-  }
+    if (!username || !password) {
+      toast.error("Please fill all fields");
+      return;
+    }
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
+      // ✅ clean version - only once
+      const res = await loginUser({ username, password });
+      const { access, role } = res.data.user;
+      localStorage.setItem("access", access);
+      localStorage.setItem("role", role);
+      toast.success("Login successful!", { autoClose: 800 });
+      navigate("/dashboard");
 
-    //  DEFINE response
-    const response = await loginUser({
-      username,
-      password,
-    });
-
-    const data = response.data;
-
-    //  Save token
-    localStorage.setItem("token", data.access);
-
-    // Decode role
-    const decoded = jwtDecode(data.access);
-    console.log("DECODED:", decoded);
-
-    localStorage.setItem("role", decoded.role);
-
-    toast.success("Login successful!",{
-      autoClose: 800,    });
-
-    navigate("/dashboard");
-
-  } catch (error) {
-    console.log(error.response?.data);
-    toast.error("Invalid username or password");
-  } finally {
-    setLoading(false);
-  }
-};
-
+    } catch (error) {
+      console.log(error.response?.data);
+      toast.error("Invalid username or password");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-200 via-purple-100 to-gray-100">
 

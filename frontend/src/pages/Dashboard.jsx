@@ -21,14 +21,22 @@ function Dashboard() {
     const fetchStats = async () => {
       try {
         const res = await getTicketStats();
+<<<<<<< HEAD
         if (!localStorage.getItem("token")) return;
+=======
+>>>>>>> dev
         setStats(res.data);
       } catch (error) {
         console.error("Error loading stats:", error);
       }
     };
 
+<<<<<<< HEAD
     fetchStats();
+=======
+    const token = localStorage.getItem("access");
+    if (token) fetchStats(); 
+>>>>>>> dev
   }, []);
 
   // 🔹 Fetch Recent Tickets

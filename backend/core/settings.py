@@ -119,7 +119,11 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
+<<<<<<< HEAD
         'tickets.authentication.CookieJWTAuthentication',
+=======
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+>>>>>>> dev
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
