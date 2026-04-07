@@ -22,7 +22,6 @@ def create_ticket(validated_data, user):
     validated_data["predicted_priority"] = priority
 
     with transaction.atomic():
-        Ticket.objects.filter(customer=user).select_for_update()
         last_id = (
             Ticket.objects
             .filter(customer=user)
@@ -32,10 +31,19 @@ def create_ticket(validated_data, user):
         validated_data["user_ticket_id"] = (last_id or 0) + 1
 
         ticket = Ticket.objects.create(**validated_data)
-
         log_prediction(ticket.description, prediction, ticket)
         assign_ticket(ticket)
 
-    send_email_task.delay(ticket.customer.email, ticket.description)
+    send_email_task.delay(
+        ticket.customer.email,
+        subject=f"Ticket '{ticket.title}' created successfully",
+        template_name="emails/ticket_created.html",
+        context={
+            "customer_name": user.username,
+            "ticket_title": ticket.title,
+            "category": category_name,
+            "priority": priority,
+        }
+    )
 
     return ticket
