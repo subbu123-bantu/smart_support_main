@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from .models import TicketComment
 
 from .services.ticketservices import create_ticket
 from .ai import log_prediction, predict_ticket
@@ -13,10 +14,10 @@ class CategorySerializer(serializers.ModelSerializer):
 class TicketSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.CharField(source='assigned_to.username', read_only=True)
     customer_name = serializers.CharField(source='customer.username', read_only=True)
-    category = serializers.StringRelatedField()
+    category_name = serializers.CharField(source="category.name", read_only=True)
     class Meta:
         model = Ticket
-        fields = '__all__'
+        fields = ["id","title","description", "status","priority","category","category_name","assigned_to","customer","user_ticket_id","assigned_to_name","customer_name", ]
         read_only_fields = ["customer", "user_ticket_id"]
 
     def validate_title(self, value):
@@ -36,6 +37,19 @@ class TicketSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("User not found")
 
         return create_ticket(validated_data, request.user)
+    
+    def update(self, instance, validated_data):
+        if "category" in validated_data:
+            instance.category = validated_data["category"]
+
+        if "priority" in validated_data:
+            instance.priority = validated_data["priority"]
+
+        if "status" in validated_data:
+            instance.status = validated_data["status"]
+
+        instance.save()
+        return instance
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -46,3 +60,22 @@ class TicketSerializer(serializers.ModelSerializer):
                 data.pop("id", None)
 
         return data
+    
+
+class TicketCommentSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+    user_role = serializers.CharField(source="user.role", read_only=True)
+
+    class Meta:
+        model = TicketComment
+        fields = [
+            "id",
+            "ticket",
+            "user",
+            "username",
+            "user_role",
+            "message",
+            "is_internal",
+            "created_at",
+        ]
+        read_only_fields = ["user", "ticket", "username", "user_role", "created_at"]

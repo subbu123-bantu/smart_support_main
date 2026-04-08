@@ -45,12 +45,16 @@ export const registerUser = (data) => API.post("v2/register/", data);
 
 // TICKETS
 export const getTicketStats = () => API.get("v1/stats/");
-export const getTickets = (page=1, ticketStatus="", priority="", search="", assigned="") => {
+export const getTickets = (page=1,ticketStatus="",priority="",search="",assigned="",category="") => {
+
   let url = `v1/tickets/?page=${page}`;
+
   if (ticketStatus) url += `&status=${ticketStatus}`;
-  if (priority && priority.toLowerCase() !== "all") url += `&priority=${priority}`;
+  if (priority && priority !== "all") url += `&priority=${priority}`;
   if (search) url += `&search=${search}`;
-  if (assigned !== "") url += `&assigned=${assigned}`;  // ✅ add this
+  if (assigned !== "") url += `&assigned=${assigned}`;
+  if (category) url += `&category=${category}`;
+
   return API.get(url);
 };
 export const createTicket = (data) => API.post("v1/tickets/", data);
@@ -63,5 +67,13 @@ export const assignTicket = (ticketId, agentId) =>
   API.patch(`v1/tickets/${ticketId}/assign/`, { assigned_to: agentId });
 
 export const getAgents = () => API.get("v2/agents/");
+
+export const getCategories = () => API.get("v1/categories/");
+
+export const getTicketComments = (ticketId) =>
+  API.get(`v1/tickets/${ticketId}/comments/`);
+
+export const addTicketComment = (ticketId, data) =>
+  API.post(`v1/tickets/${ticketId}/comments/`, data);
 
 export default API;

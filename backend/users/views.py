@@ -1,22 +1,22 @@
-from rest_framework import viewsets,status
-from .models import User
-from .serializers import UserSerializer
+from rest_framework import viewsets, status
+from .models import User, AgentProfile
+from .serializers import UserSerializer, RegisterSerializer
 from rest_framework.response import Response
-from .serializers import RegisterSerializer
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from .permissions import IsAdmin
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import  PermissionDenied
-from .models import AgentProfile
+from rest_framework.exceptions import PermissionDenied
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes=[IsAdmin]
+    permission_classes = [IsAdmin]
 
+
+@authentication_classes([])
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_view(request):
@@ -25,7 +25,8 @@ def register_view(request):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
@@ -48,12 +49,26 @@ def login_view(request):
         }
     })
 
-    response.set_cookie(key="access", value=str(refresh.access_token), httponly=True, secure=False, samesite='Lax', max_age=3000)
-    response.set_cookie(key="refresh", value=str(refresh), httponly=True, secure=False, samesite='Lax', max_age=86400)
+    response.set_cookie(
+        key="access",
+        value=str(refresh.access_token),
+        httponly=True,
+        secure=False,
+        samesite='Lax',
+        max_age=3000
+    )
+    response.set_cookie(
+        key="refresh",
+        value=str(refresh),
+        httponly=True,
+        secure=False,
+        samesite='Lax',
+        max_age=86400
+    )
 
     return response
 
-   
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def logout_view(request):
@@ -62,21 +77,21 @@ def logout_view(request):
     response.delete_cookie("refresh")
     return response
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_agents(request):
     if request.user.role.lower() != 'admin':
         raise PermissionDenied("Only admins can view agents.")
-    
-    profiles = AgentProfile.objects.select_related('user').prefetch_related('categories')
-    
+
+    profiles = AgentProfile.objects.select_related('user')
+
     result = []
     for profile in profiles:
         result.append({
             'id': profile.user.id,
             'username': profile.user.username,
             'is_available': profile.is_available,
-            'categories': [cat.name for cat in profile.categories.all()]
         })
-    
+
     return Response(result)

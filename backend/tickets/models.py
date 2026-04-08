@@ -1,10 +1,11 @@
 from django.db import models
 from django.conf import settings
 
+from users.models import User
+
 
 class Category(models.Model):
-    name=models.CharField(max_length=100)
-    description=models.TextField(blank=True)
+    name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
@@ -57,6 +58,17 @@ class Ticket(models.Model):
 
     def __str__(self):
         return self.title
+    
+
+class TicketComment(models.Model):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.TextField()
+    is_internal = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.ticket.id}"
     
 class TicketPredictionLog(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, null=True, blank=True)
