@@ -2,7 +2,12 @@ import traceback
 from datetime import timedelta
 from django.utils import timezone
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets
+from .models import Ticket, TicketComment
+from .serializers import TicketCommentSerializer
+
+from requests import request
+from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from django.http import JsonResponse
@@ -31,6 +36,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated, IsAdmin]
+    pagination_class = None
 
 
 # TICKETS
@@ -40,30 +46,49 @@ class TicketViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ['status', 'priority']
+    filterset_fields = {
+        'status': ['exact'],
+        'priority': ['exact'],
+        'category': ['exact'],
+    }
     search_fields = ['title', 'description']
 
     def get_queryset(self):
         user = self.request.user
+        print("AUTH USER:", user)
+        print("AUTHENTICATED:", user.is_authenticated)
+        print("ROLE:", getattr(user, "role", None))
+
         queryset = Ticket.objects.all()
 
         if not user.is_authenticated:
+            print("NOT AUTHENTICATED")
             return Ticket.objects.none()
 
-        if user.role.lower() == "admin":
-            assigned = self.request.query_params.get('assigned')
-            if assigned == 'true':
+        role = str(user.role).lower().strip()
+        print("NORMALIZED ROLE:", role)
+
+        if role == "admin":
+            assigned = self.request.query_params.get("assigned")
+            if assigned == "true":
                 queryset = queryset.filter(assigned_to__isnull=False)
-            elif assigned == 'false':
+            elif assigned == "false":
                 queryset = queryset.filter(assigned_to__isnull=True)
+
+            print("ADMIN COUNT:", queryset.count())
             return queryset
 
-        if user.role.lower() == "agent":
-            return queryset.filter(assigned_to=user)
+        if role == "agent":
+            qs = queryset.filter(assigned_to=user)
+            print("AGENT COUNT:", qs.count())
+            return qs
 
-        if user.role.lower() == "customer":
-            return queryset.filter(customer=user)
+        if role == "customer":
+            qs = queryset.filter(customer=user)
+            print("CUSTOMER COUNT:", qs.count())
+            return qs
 
+        print("FALLBACK NONE")
         return Ticket.objects.none()
 
     # CREATE
@@ -77,25 +102,29 @@ class TicketViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         ticket = self.get_object()
         user = request.user
- 
+
         if user.role.lower() == 'customer':
             raise PermissionDenied("Customers cannot update tickets.")
- 
+
         if user.role.lower() == 'agent' and ticket.assigned_to != user:
             raise PermissionDenied("You can only update your assigned tickets.")
- 
+
         if user.role.lower() == 'agent':
             allowed_fields = {'status'}
             if not set(request.data.keys()).issubset(allowed_fields):
                 raise PermissionDenied("Agents can only update ticket status.")
 
+        # 🔥 Let serializer handle everything
         response = super().update(request, *args, **kwargs)
- 
-        ticket.refresh_from_db()  # get updated status from DB
- 
+        print("DATA:", request.data)
+
+        # refresh updated ticket
+        ticket.refresh_from_db()
+
+        # send email
         send_email_task.delay(
             ticket.customer.email,
-            subject=f"Your ticket '{ticket.title}' status updated to {ticket.status}",
+            subject=f"Your ticket '{ticket.title}' updated",
             template_name="emails/ticket_status_updated.html",
             context={
                 "customer_name": ticket.customer.username,
@@ -103,9 +132,10 @@ class TicketViewSet(viewsets.ModelViewSet):
                 "new_status": ticket.status,
             }
         )
- 
+
         return response
 
+# STATS
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def ticket_stats(request):
@@ -248,3 +278,92 @@ def assign_ticket(request, ticket_id):
         "message": f"Auto-assigned to {best_agent.user.username}",
         "agent": best_agent.user.username
     })
+
+
+
+class TicketCommentViewSet(viewsets.ModelViewSet):
+    serializer_class = TicketCommentSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["get", "post", "delete"]
+
+    def get_ticket(self):
+        ticket_id = self.kwargs.get("ticket_id")
+        try:
+            return Ticket.objects.get(id=ticket_id)
+        except Ticket.DoesNotExist:
+            raise PermissionDenied("Ticket not found.")
+
+    def get_queryset(self):
+        user = self.request.user
+        ticket = self.get_ticket()
+
+        if user.role.lower() == "admin":
+            queryset = TicketComment.objects.filter(ticket=ticket)
+
+        elif user.role.lower() == "agent":
+            if ticket.assigned_to != user:
+                raise PermissionDenied("You can only view comments on your assigned tickets.")
+            queryset = TicketComment.objects.filter(ticket=ticket)
+
+        elif user.role.lower() == "customer":
+            if ticket.customer != user:
+                raise PermissionDenied("You can only view comments on your own tickets.")
+            queryset = TicketComment.objects.filter(ticket=ticket, is_internal=False)
+
+        else:
+            raise PermissionDenied("Invalid role.")
+
+        return queryset.select_related("user", "ticket")
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        ticket = self.get_ticket()
+        comment = None
+
+        if user.role.lower() == "admin":
+            comment = serializer.save(ticket=ticket, user=user)
+
+        elif user.role.lower() == "agent":
+            if ticket.assigned_to != user:
+                raise PermissionDenied("You can only comment on your assigned tickets.")
+            comment = serializer.save(ticket=ticket, user=user)
+
+        elif user.role.lower() == "customer":
+            if ticket.customer != user:
+                raise PermissionDenied("You can only comment on your own tickets.")
+            comment = serializer.save(ticket=ticket, user=user, is_internal=False)
+
+        else:
+            raise PermissionDenied("Invalid role.")
+
+        # send email only when admin/agent adds a PUBLIC comment
+        if (
+            comment
+            and user.role.lower() in ["admin", "agent"]
+            and not comment.is_internal
+        ):
+            send_email_task.delay(
+                ticket.customer.email,
+                subject=f"[Ticket #{ticket.id}] New comment on your ticket",
+                template_name="emails/ticket_comment_added.html",
+                context={
+                    "customer_name": ticket.customer.username,
+                    "ticket_title": ticket.title,
+                    "ticket_id": ticket.id,
+                    "comment_by": user.username,
+                    "comment_message": comment.message[:300],
+                    "comment_role": user.role.lower(),  # 🔥 important
+                }
+            )
+
+    def destroy(self, request, *args, **kwargs):
+        comment = self.get_object()
+        user = request.user
+
+        if user.role.lower() == "admin":
+            return super().destroy(request, *args, **kwargs)
+
+        if comment.user != user:
+            raise PermissionDenied("You can only delete your own comments.")
+
+        return super().destroy(request, *args, **kwargs)

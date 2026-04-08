@@ -1,123 +1,141 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { getTicketById } from "../services/api";
+import { ArrowLeft, Tag, AlertCircle, Clock } from "lucide-react";
+import TicketComments from "./TicketComments";
+
+const role = localStorage.getItem("role");
+
+const STATUS_META = {
+  open:        { color: "text-red-400", bg: "bg-red-500/10 border-red-500/20", label: "Open" },
+  in_progress: { color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20", label: "In Progress" },
+  closed:      { color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", label: "Closed" },
+};
+
+const PRIORITY_META = {
+  urgent: "text-red-400 bg-red-500/10 border-red-500/20",
+  high:   "text-orange-400 bg-orange-500/10 border-orange-500/20",
+  medium: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+  low:    "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+};
 
 function TicketDetails() {
-  const { id } = useParams(); //Use param is used to access the dynamic segments of the url
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const [ticket, setTicket] = useState(null);
-
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case "open":
-        return "bg-red-50 text-red-600 border-red-200";
-      case "in_progress":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      case "closed":
-        return "bg-green-50 text-green-700 border-green-200";
-      default:
-        return "bg-gray-50 text-gray-600 border-gray-200";
-    }
-  };
-
-  const getPriorityStyle = (priority) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-50 text-red-600 border-red-200";
-      case "medium":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      default:
-        return "bg-green-50 text-green-700 border-green-200";
-    }
-  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTicket = async () => {
-      try {
-        const res = await getTicketById(id);
-        setTicket(res.data);
-        console.log(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchTicket();
+    getTicketById(id)
+      .then(res => setTicket(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [id]);
 
-  if (!ticket) {
+  if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center h-80 text-center">
-        
-        <h1 className="text-5xl font-bold text-gray-800 mb-3">
-          404
-        </h1>
-
-        <p className="text-2xl font-semibold text-gray-700 mb-2">
-          Ticket Not Found
-        </p>
-
-        <p className="text-gray-500 text-base">
-          The ticket you are looking for does not exist or may have been removed.
-        </p>
-
+      <div className="min-h-screen flex items-center justify-center bg-[#0c0e14] text-gray-500">
+        Loading ticket...
       </div>
     );
   }
 
-  return (
-  <div className="min-h-screen bg-gray-50 flex justify-center p-8">
-    <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-
-      {/* Header */}
-      <div className="border-b pb-6 mb-6">
-        <h1 className="text-4xl font-semibold text-gray-900 leading-tight">
-          {ticket.title}
-        </h1>
-
-        <p className="text-sm text-gray-500 mt-2">
-          Ticket ID: #{ticket.id}
-        </p>
+  if (!ticket) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0c0e14] text-center">
+        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+          <AlertCircle size={24} className="text-gray-500" />
+        </div>
+        <h2 className="text-xl font-bold text-white mb-2">Ticket not found</h2>
+        <p className="text-gray-500 text-sm mb-6">This ticket may have been removed.</p>
+        <button
+          onClick={() => navigate("/tickets")}
+          className="text-indigo-400 hover:text-indigo-300 text-sm"
+        >
+          ← Back to tickets
+        </button>
       </div>
+    );
+  }
 
-      {/* Description */}
-      <div className="mb-8">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          Description
-        </h2>
+  const status = STATUS_META[ticket.status] || STATUS_META.open;
 
-        <div className="bg-gray-50 border rounded-xl p-6">
-          <p className="text-gray-800 text-lg leading-relaxed">
-            {ticket.description}
+ return (
+  <div className="min-h-screen bg-[#0c0e14] text-white p-6">
+    <button
+      onClick={() => navigate("/tickets")}
+      className="mb-6 text-sm text-gray-400 hover:text-white transition flex items-center gap-2"
+    >
+      <ArrowLeft size={14} /> Back to tickets
+    </button>
+
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-8">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs text-gray-500 font-mono">#{ticket.id}</span>
+
+              <span className={`text-xs px-2 py-1 rounded-full border ${status.bg} ${status.color}`}>
+                {status.label}
+              </span>
+            </div>
+
+            <h1 className="text-2xl font-bold leading-tight">
+              {ticket.title}
+            </h1>
+          </div>
+
+          <span className={`text-xs px-3 py-1 rounded-full border ${PRIORITY_META[ticket.priority]}`}>
+            {ticket.priority}
+          </span>
+        </div>
+
+        <div className="mb-8">
+          <p className="text-gray-500 text-xs uppercase tracking-wider mb-3">
+            Description
           </p>
+
+          <div className="bg-white/[0.02] border border-white/5 rounded-xl p-5">
+            <p className="text-sm text-gray-300 leading-relaxed">
+              {ticket.description}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2 text-gray-500 text-xs uppercase">
+              <Tag size={12} /> Category
+            </div>
+            <p className="text-sm font-semibold capitalize">
+              {ticket.category_name || ticket.category || "—"}
+            </p>
+          </div>
+
+          <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2 text-gray-500 text-xs uppercase">
+              <AlertCircle size={12} /> Priority
+            </div>
+            <p className="text-sm font-semibold capitalize">
+              {ticket.priority}
+            </p>
+          </div>
+
+          <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2 text-gray-500 text-xs uppercase">
+              <Clock size={12} /> Assigned
+            </div>
+            <p className="text-sm font-semibold">
+              {ticket.assigned_to_name || "Unassigned"}
+            </p>
+          </div>
         </div>
       </div>
-
-      {/* Tags */}
-      <div className="flex flex-wrap gap-4">
-
-        <span className="text-sm px-5 py-2.5 rounded-full bg-gray-100 text-gray-800 border shadow-sm">
-          {ticket.category}
-        </span>
-
-        <span
-          className={`text-sm px-5 py-2.5 rounded-full border shadow-sm font-medium ${getStatusStyle(
-            ticket.status
-          )}`}
-        >
-          {ticket.status.replace("_", " ")}
-        </span>
-
-        <span
-          className={`text-sm px-5 py-2.5 rounded-full border shadow-sm font-medium ${getPriorityStyle(
-            ticket.priority
-          )}`}
-        >
-          {ticket.priority}
-        </span>
-      </div>
+      <TicketComments ticketId={id} role={role} />
     </div>
   </div>
 );
 }
-
-export default TicketDetails; 
+export default TicketDetails;

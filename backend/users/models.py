@@ -16,7 +16,6 @@ class User(AbstractUser):
     
 class AgentProfile(models.Model):
     user = models.OneToOneField(User, related_name="agent_profile", on_delete=models.CASCADE)
-    categories = models.ManyToManyField("tickets.Category")
     is_available = models.BooleanField(default=True)
 
     def __str__(self):
