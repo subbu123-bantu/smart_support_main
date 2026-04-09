@@ -76,4 +76,7 @@ export const getTicketComments = (ticketId) =>
 export const addTicketComment = (ticketId, data) =>
   API.post(`v1/tickets/${ticketId}/comments/`, data);
 
+export const getTicketPredictionFeedback = (ticketId) =>
+  API.get(`v1/tickets/${ticketId}/prediction-feedback/`);
+
 export default API;

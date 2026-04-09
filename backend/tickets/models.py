@@ -71,18 +71,16 @@ class TicketComment(models.Model):
         return f"{self.user.username} - {self.ticket.id}"
     
 class TicketPredictionLog(models.Model):
-    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, null=True, blank=True)
-
+    ticket = models.ForeignKey("Ticket", on_delete=models.SET_NULL, null=True, blank=True)
     text = models.TextField()
+    predicted_category = models.CharField(max_length=100)
+    predicted_priority = models.CharField(max_length=50)
+    source = models.CharField(max_length=50)
+    confidence = models.FloatField(default=0.0)
 
-    predicted_category = models.CharField(max_length=50,blank=True)
-    predicted_priority = models.CharField(max_length=20,blank=True)
-
-    source = models.CharField(max_length=20)  # rule / AI / fallback
-    confidence = models.FloatField(default=0)
-    
-
-    final_accepted = models.BooleanField(null=True, blank=True)  # later used for feedback loop
+    actual_category = models.CharField(max_length=100, null=True, blank=True)
+    actual_priority = models.CharField(max_length=50, null=True, blank=True)
+    category_correct = models.BooleanField(null=True, blank=True)
+    priority_correct = models.BooleanField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
-    

@@ -29,7 +29,6 @@ def create_ticket(validated_data, user):
             .aggregate(Max("user_ticket_id"))["user_ticket_id__max"]
         )
         validated_data["user_ticket_id"] = (last_id or 0) + 1
-
         ticket = Ticket.objects.create(**validated_data)
         log_prediction(ticket.description, prediction, ticket)
         assign_ticket(ticket)
