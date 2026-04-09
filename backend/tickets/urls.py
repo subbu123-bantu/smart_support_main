@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import TicketViewSet, CategoryViewSet, TicketCommentViewSet
 from .views import ticket_stats, assign_ticket
+from .ai import predict_ticket
 
 router = DefaultRouter()
 router.register(r'tickets', TicketViewSet, basename='ticket')
@@ -18,8 +19,11 @@ ticket_comment_detail = TicketCommentViewSet.as_view({
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('predict/',predict_ticket),
     path('stats/', ticket_stats),
     path('tickets/<int:ticket_id>/assign/', assign_ticket),
+    
+
 
     path('tickets/<int:ticket_id>/comments/', ticket_comments, name='ticket-comments'),
     path('tickets/<int:ticket_id>/comments/<int:pk>/', ticket_comment_detail, name='ticket-comment-detail'),
