@@ -68,7 +68,7 @@ function Login() {
           </p>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-6 mt-12">
+          {/* <div className="grid grid-cols-3 gap-6 mt-12">
             {[
               { value: "98%", label: "Resolution rate" },
               { value: "<2h", label: "Avg response time" },
@@ -79,7 +79,7 @@ function Login() {
                 <p className="text-gray-600 text-sm mt-1">{s.label}</p>
               </div>
             ))}
-          </div>
+          </div> */}
         </div>
 
         {/* Footer */}

@@ -59,22 +59,32 @@ function CreateTicket() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting) return;
+
     if (!title.trim() || !description.trim()) {
       toast.error("Please fill in both fields");
       return;
     }
+
     setSubmitting(true);
     try {
-      await createTicket({ title, description, category, priority, auto_assign: autoAssign });
+      await createTicket({
+        title: title.trim(),
+        description: description.trim(),
+      });
+
       toast.success("Ticket submitted!");
       navigate("/tickets");
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Failed to create ticket");
+      console.log(err.response?.data);
+      toast.error(
+        err.response?.data?.detail ||
+        err.response?.data?.category?.[0] ||
+        "Failed to create ticket"
+      );
     } finally {
       setSubmitting(false);
     }
   };
-
   const catMeta  = CATEGORY_META[category]  || CATEGORY_META.other;
   const priMeta  = PRIORITY_META[priority]   || PRIORITY_META.low;
 

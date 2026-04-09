@@ -1,9 +1,8 @@
+from datetime import timedelta, timezone
 import traceback
-from datetime import timedelta
-from django.utils import timezone
-
+from .models import TicketPredictionLog
 from rest_framework import viewsets
-from .models import Ticket, TicketComment
+from .models import Ticket, TicketComment,TicketPredictionLog
 from .serializers import TicketCommentSerializer
 
 from requests import request
@@ -18,6 +17,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .tasks import send_email_task
+from .models import Ticket
+from users.models import AgentProfile
 from .models import Ticket, Category, TicketPredictionLog
 from .serializers import TicketSerializer, CategorySerializer
 from users.models import AgentProfile, User
@@ -121,6 +122,7 @@ class TicketViewSet(viewsets.ModelViewSet):
         # refresh updated ticket
         ticket.refresh_from_db()
 
+        update_prediction_feedback(ticket)
         # send email
         send_email_task.delay(
             ticket.customer.email,
@@ -134,6 +136,8 @@ class TicketViewSet(viewsets.ModelViewSet):
         )
 
         return response
+    
+    
 
 # STATS
 @api_view(['GET'])
@@ -281,6 +285,34 @@ def assign_ticket(request, ticket_id):
 
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def prediction_stats(request):
+    logs = TicketPredictionLog.objects.filter(actual_category__isnull=False)
+
+    total = logs.count()
+    correct_category = logs.filter(category_correct=True).count()
+    correct_priority = logs.filter(priority_correct=True).count()
+
+    category_accuracy = round((correct_category / total) * 100, 2) if total else 0
+    priority_accuracy = round((correct_priority / total) * 100, 2) if total else 0
+
+    by_source = list(
+        logs.values("source").annotate(count=Count("id")).order_by("-count")
+    )
+
+    review_needed = TicketPredictionLog.objects.filter(
+        Q(confidence__lt=0.85) | Q(predicted_category="other")
+    ).count()
+
+    return Response({
+        "total_evaluated": total,
+        "category_accuracy": category_accuracy,
+        "priority_accuracy": priority_accuracy,
+        "by_source": by_source,
+        "review_needed": review_needed,
+    })
+
 class TicketCommentViewSet(viewsets.ModelViewSet):
     serializer_class = TicketCommentSerializer
     permission_classes = [IsAuthenticated]
@@ -367,3 +399,69 @@ class TicketCommentViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You can only delete your own comments.")
 
         return super().destroy(request, *args, **kwargs)
+    
+
+def update_prediction_feedback(ticket):
+    log = (
+        TicketPredictionLog.objects
+        .filter(ticket=ticket)
+        .order_by("-created_at")
+        .first()
+    )
+
+    if not log:
+        return
+
+    actual_category = ticket.category.name if ticket.category else None
+    actual_priority = ticket.priority
+
+    log.actual_category = actual_category
+    log.actual_priority = actual_priority
+    log.category_correct = (log.predicted_category == actual_category)
+    log.priority_correct = (log.predicted_priority == actual_priority)
+    log.save()
+    
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def ticket_prediction_feedback(request, ticket_id):
+    try:
+        ticket = Ticket.objects.get(id=ticket_id)
+    except Ticket.DoesNotExist:
+        return Response({"error": "Ticket not found"}, status=404)
+
+    user = request.user
+    role = user.role.lower()
+
+    if role == "customer" and ticket.customer != user:
+        raise PermissionDenied("You can only view your own tickets.")
+
+    if role == "agent" and ticket.assigned_to != user:
+        raise PermissionDenied("You can only view feedback for your assigned tickets.")
+
+    log = (
+        TicketPredictionLog.objects
+        .filter(ticket=ticket)
+        .order_by("-created_at")
+        .first()
+    )
+
+    if not log:
+        return Response({
+            "ticket_id": ticket.id,
+            "has_feedback": False,
+            "message": "No prediction feedback found for this ticket."
+        })
+
+    return Response({
+        "ticket_id": ticket.id,
+        "has_feedback": True,
+        "predicted_category": log.predicted_category,
+        "actual_category": log.actual_category,
+        "category_correct": log.category_correct,
+        "predicted_priority": log.predicted_priority,
+        "actual_priority": log.actual_priority,
+        "priority_correct": log.priority_correct,
+        "confidence": log.confidence,
+        "source": log.source,
+        "created_at": log.created_at,
+    })

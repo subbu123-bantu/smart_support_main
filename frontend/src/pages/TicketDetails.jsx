@@ -3,8 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getTicketById } from "../services/api";
 import { ArrowLeft, Tag, AlertCircle, Clock } from "lucide-react";
 import TicketComments from "./TicketComments";
+import { getTicketPredictionFeedback } from "../services/api";
 
-const role = localStorage.getItem("role");
+
 
 const STATUS_META = {
   open:        { color: "text-red-400", bg: "bg-red-500/10 border-red-500/20", label: "Open" },
@@ -26,11 +27,27 @@ function TicketDetails() {
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const role = localStorage.getItem("role");
+  const [predictionFeedback, setPredictionFeedback] = useState(null);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+
   useEffect(() => {
     getTicketById(id)
       .then(res => setTicket(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
+  }, [id]);
+    useEffect(() => {
+    if (!id) return;
+
+    setLoadingFeedback(true);
+    getTicketPredictionFeedback(id)
+      .then((res) => setPredictionFeedback(res.data))
+      .catch((err) => {
+        console.error("Error loading prediction feedback:", err);
+        setPredictionFeedback(null);
+      })
+      .finally(() => setLoadingFeedback(false));
   }, [id]);
 
   if (loading) {
@@ -135,6 +152,116 @@ function TicketDetails() {
       </div>
       <TicketComments ticketId={id} role={role} />
     </div>
+    <div className="bg-[#0f1117] border border-white/5 rounded-2xl p-5 mt-6">
+  <h3 className="text-lg font-semibold text-white mb-1">
+    AI Prediction Feedback
+  </h3>
+  <p className="text-xs text-gray-600 mb-5">
+    Compare predicted values with the final ticket decision
+  </p>
+
+  {loadingFeedback ? (
+    <p className="text-gray-500 text-sm">Loading feedback...</p>
+  ) : !predictionFeedback || !predictionFeedback.has_feedback ? (
+    <p className="text-gray-500 text-sm">No prediction feedback available for this ticket.</p>
+  ) : (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4">
+          <p className="text-xs text-gray-600 mb-2 uppercase tracking-wider">
+            Category
+          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-400">Predicted</p>
+              <p className="text-white font-medium capitalize">
+                {predictionFeedback.predicted_category}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Actual</p>
+              <p className="text-white font-medium capitalize">
+                {predictionFeedback.actual_category || "—"}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            {predictionFeedback.category_correct === true ? (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                Correct
+              </span>
+            ) : predictionFeedback.category_correct === false ? (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-400">
+                Incorrect
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                Not evaluated
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4">
+          <p className="text-xs text-gray-600 mb-2 uppercase tracking-wider">
+            Priority
+          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-400">Predicted</p>
+              <p className="text-white font-medium capitalize">
+                {predictionFeedback.predicted_priority}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Actual</p>
+              <p className="text-white font-medium capitalize">
+                {predictionFeedback.actual_priority || "—"}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            {predictionFeedback.priority_correct === true ? (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                Correct
+              </span>
+            ) : predictionFeedback.priority_correct === false ? (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-400">
+                Incorrect
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                Not evaluated
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4">
+          <p className="text-xs text-gray-600 mb-2 uppercase tracking-wider">
+            Prediction Source
+          </p>
+          <p className="text-white font-medium capitalize">
+            {predictionFeedback.source?.replaceAll("_", " ")}
+          </p>
+        </div>
+
+        <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4">
+          <p className="text-xs text-gray-600 mb-2 uppercase tracking-wider">
+            Confidence
+          </p>
+          <p className="text-white font-medium">
+            {Math.round((predictionFeedback.confidence || 0) * 100)}%
+          </p>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
   </div>
 );
 }
