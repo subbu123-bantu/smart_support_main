@@ -9,7 +9,7 @@ const API = axios.create({
 //REQUEST INTERCEPTOR (attach token)
 API.interceptors.request.use(
   (req) => {
-    // ✅ don't attach token for auth endpoints
+    // don't attach token for auth endpoints
     const isAuthRequest = req.url.includes("login") || req.url.includes("register");
     
     if (!isAuthRequest) {
