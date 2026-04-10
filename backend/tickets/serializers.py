@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from .models import TicketComment
 
-from .services.ticketservices import create_ticket
+from tickets.services.ticketcreate import create_ticket
 from .ai import log_prediction, predict_ticket
-from .services.assignment import assign_ticket
+from .services.assignment import assign_ticket_to_agent
 from .models import Ticket, Category, TicketPredictionLog
 
 class CategorySerializer(serializers.ModelSerializer):

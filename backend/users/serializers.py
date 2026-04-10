@@ -23,4 +23,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.role = "customer"
         user.is_active = True
         user.save()
+<<<<<<< HEAD
         return user
+=======
+        return user
+>>>>>>> 22dff1a4b55bf986ea02cb45207212f1f44e42aa

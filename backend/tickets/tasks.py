@@ -12,10 +12,10 @@ def send_email_task(self, recipient_email, subject, template_name="emails/ticket
     try:
         context = context or {}
 
-        # 🔹 Render HTML template
+        # Render HTML template
         html_content = render_to_string(template_name, context)
 
-        # 🔹 Brevo API call
+        # Brevo API call
         response = requests.post(
             "https://api.brevo.com/v3/smtp/email",
             headers={
