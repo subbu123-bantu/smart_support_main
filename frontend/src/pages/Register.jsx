@@ -1,0 +1,217 @@
+import { useState } from "react";
+import { registerUser } from "../services/api";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+
+function Register() {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!username || !email || !password || !confirm) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    if (password !== confirm) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await registerUser({ username, email, password });
+      toast.success("Account created! Please sign in.");
+      navigate("/");
+    } catch (err) {
+      const msg =
+        err.response?.data?.username?.[0] ||
+        err.response?.data?.email?.[0] ||
+        "Registration failed";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const features = [
+    { icon: "⚡", title: "Instant routing", desc: "AI assigns your ticket to the right team in seconds" },
+    { icon: "🔍", title: "Auto-classification", desc: "Smart categorisation without any manual input" },
+    { icon: "📬", title: "Live updates", desc: "Email notifications at every stage of resolution" },
+  ];
+
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif" }} className="flex min-h-screen bg-[#0c0e14]">
+
+      {/* ── Left Panel ── */}
+      <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 bg-[#0f1117] border-r border-white/5">
+
+        {/* Logo */}
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4h5v5H2zM9 7h5v5H9z" fill="white" opacity="0.9"/>
+              <path d="M2 10h3v4H2zM11 2h3v4h-3z" fill="white" opacity="0.5"/>
+            </svg>
+          </div>
+          <span className="text-white font-semibold text-lg tracking-tight">Smart Support</span>
+        </div>
+
+        {/* Center content */}
+        <div>
+          <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 mb-8">
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+            <span className="text-indigo-400 text-xs font-medium tracking-wide">Get started in seconds</span>
+          </div>
+
+          <h1 className="text-5xl font-bold text-white leading-tight mb-6" style={{ letterSpacing: "-0.03em" }}>
+            Support that<br />
+            <span className="text-indigo-400">actually works.</span>
+          </h1>
+          <p className="text-gray-500 text-lg leading-relaxed max-w-sm mb-10">
+            Join thousands of teams using Smart Support to resolve issues faster with AI-powered workflows.
+          </p>
+
+          {/* Feature list */}
+          <div className="space-y-5">
+            {features.map((f, i) => (
+              <div key={i} className="flex items-start gap-4">
+                <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-base flex-shrink-0">
+                  {f.icon}
+                </div>
+                <div>
+                  <p className="text-white text-sm font-medium">{f.title}</p>
+                  <p className="text-gray-600 text-sm mt-0.5">{f.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <p className="text-gray-700 text-sm">© 2026 Smart Support. All rights reserved.</p>
+      </div>
+
+      {/* ── Right Panel — Register Form ── */}
+      <div className="flex flex-1 items-center justify-center p-8">
+        <div className="w-full max-w-sm">
+
+          {/* Mobile logo */}
+          <div className="flex lg:hidden items-center gap-2 mb-10">
+            <div className="w-7 h-7 rounded-md bg-indigo-500 flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M2 4h5v5H2zM9 7h5v5H9z" fill="white"/>
+              </svg>
+            </div>
+            <span className="text-white font-semibold">Smart Support</span>
+          </div>
+
+          <h2 className="text-2xl font-bold text-white mb-1" style={{ letterSpacing: "-0.02em" }}>
+            Create your account
+          </h2>
+          <p className="text-gray-500 text-sm mb-8">Free to get started. No credit card needed.</p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+                Username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Choose a username"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500 focus:bg-indigo-500/5 transition-all duration-200"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500 focus:bg-indigo-500/5 transition-all duration-200"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Create a password"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500 focus:bg-indigo-500/5 transition-all duration-200"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+                Confirm password
+              </label>
+              <input
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="Re-enter your password"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500 focus:bg-indigo-500/5 transition-all duration-200"
+              />
+              {/* Inline match indicator */}
+              {confirm && (
+                <p className={`text-xs mt-1.5 ${password === confirm ? "text-emerald-500" : "text-red-400"}`}>
+                  {password === confirm ? "✓ Passwords match" : "✗ Passwords do not match"}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl transition-all duration-200 text-sm mt-2 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  Creating account...
+                </>
+              ) : "Create account"}
+            </button>
+
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-white/5 text-center">
+            <p className="text-gray-600 text-sm">
+              Already have an account?{" "}
+              <span
+                onClick={() => navigate("/")}
+                className="text-indigo-400 cursor-pointer hover:text-indigo-300 transition-colors"
+              >
+                Sign in
+              </span>
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Register;
