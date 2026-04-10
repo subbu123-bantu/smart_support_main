@@ -60,10 +60,10 @@ const PRIORITY_META = {
 const chartAxisStyle = { fontSize: 12, fill: "#6b7280" };
 
 const tooltipStyle = {
-  backgroundColor: "#0f1117",
+  backgroundColor: "#111827",
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: "14px",
-  color: "#ffffff",
+  color: "#fff",
 };
 
 function Dashboard() {
@@ -225,7 +225,7 @@ function Dashboard() {
         </div>
       </div>
 
-      {(role === "admin" || role === "agent") && (
+      {(role === "admin") && (
         <>
           {/* CHARTS */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
@@ -426,53 +426,51 @@ function Dashboard() {
               </table>
             </div>
           </div>
+            {(role === "admin" || role === "agent") && (
+              <div className="bg-[#0f1117] border border-white/5 rounded-2xl p-5">
+                <h3 className="text-lg font-semibold mb-1 text-white">
+                  Recent Tickets
+                </h3>
+                <p className="text-xs text-gray-600 mb-5">
+                  Latest ticket activity across the workspace
+                </p>
 
-          {/* RECENT TICKETS */}
-          <div className="bg-[#0f1117] border border-white/5 rounded-2xl p-5">
-            <h3 className="text-lg font-semibold mb-1 text-white">
-              Recent Tickets
-            </h3>
-            <p className="text-xs text-gray-600 mb-5">
-              Latest ticket activity across the workspace
-            </p>
+                {loadingTickets ? (
+                  <p className="text-gray-500 text-sm">Loading...</p>
+                ) : recentTickets.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No recent tickets</p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentTickets.map((ticket) => {
+                      const meta = PRIORITY_META[ticket.priority] || PRIORITY_META.low;
 
-            {loadingTickets ? (
-              <p className="text-gray-500 text-sm">Loading...</p>
-            ) : recentTickets.length === 0 ? (
-              <p className="text-gray-500 text-sm">No recent tickets</p>
-            ) : (
-              <div className="space-y-3">
-                {recentTickets.map((ticket) => {
-                  const meta =
-                    PRIORITY_META[ticket.priority] || PRIORITY_META.low;
-
-                  return (
-                    <div
-                      key={ticket.id}
-                      onClick={() => navigate(`/tickets/${ticket.id}`)}
-                      className="flex justify-between items-center p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:border-indigo-500/20 hover:bg-indigo-500/5 cursor-pointer transition-all duration-200"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-white">
-                          #{ticket.id} {ticket.title}
-                        </p>
-                      </div>
-
-                      <span
-                        className={`text-xs px-3 py-1 rounded-full border ${meta.bg} ${meta.color}`}
+                    return (
+                      <div
+                        key={ticket.id}
+                        onClick={() => navigate(`/tickets/${ticket.id}`)}
+                        className="flex justify-between items-center p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:border-indigo-500/20 hover:bg-indigo-500/5 cursor-pointer transition-all duration-200"
                       >
-                        {ticket.priority}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </>
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            #{ticket.id} {ticket.title}
+                          </p>
+                        </div>
+
+                        <span
+                          className={`text-xs px-3 py-1 rounded-full border ${meta.bg} ${meta.color}`}
+                        >
+                          {ticket.priority}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+       </>
       )}
     </div>
   );
 }
-
 export default Dashboard;

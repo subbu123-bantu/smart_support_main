@@ -1,9 +1,10 @@
-from tickets.models import Ticket, Category
-from tickets.ai import predict_ticket, log_prediction
-from tickets.services.assignment import assign_ticket
-from tickets.tasks import send_email_task
 from django.db import transaction
 from django.db.models import Max
+
+from tickets.ai import predict_ticket, log_prediction
+from tickets.models import Ticket, Category
+from tickets.services.assignment import auto_assign_ticket
+from tickets.tasks import send_email_task
 
 
 def create_ticket(validated_data, user):
@@ -28,11 +29,12 @@ def create_ticket(validated_data, user):
             .select_for_update()
             .aggregate(Max("user_ticket_id"))["user_ticket_id__max"]
         )
+
         validated_data["user_ticket_id"] = (last_id or 0) + 1
         ticket = Ticket.objects.create(**validated_data)
+
         log_prediction(ticket.description, prediction, ticket)
-        assign_ticket(ticket)
-        print(ticket)
+        auto_assign_ticket(ticket)
 
     send_email_task.delay(
         ticket.customer.email,
