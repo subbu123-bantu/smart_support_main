@@ -1,29 +1,9 @@
 import { useEffect, useState } from "react";
 import { getTicketStats, getTickets } from "../services/api";
 import { useNavigate } from "react-router-dom";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  PieChart,
-  Pie,
-  LineChart,
-  Line,
-  CartesianGrid,
-} from "recharts";
+import {BarChart,Bar,XAxis,YAxis,Tooltip,ResponsiveContainer,Cell,PieChart,Pie,LineChart,Line,CartesianGrid,} from "recharts";
 
-const CATEGORY_COLORS = [
-  "#6366f1",
-  "#f59e0b",
-  "#22c55e",
-  "#ef4444",
-  "#8b5cf6",
-  "#06b6d4",
-];
+const CATEGORY_COLORS = ["#6366f1","#f59e0b","#22c55e","#ef4444","#8b5cf6","#06b6d4",];
 
 const PRIORITY_COLORS = {
   urgent: "#7c3aed",
