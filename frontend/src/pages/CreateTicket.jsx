@@ -27,25 +27,24 @@ function CreateTicket() {
 
   const [category, setCategory] = useState("other");
   const [priority, setPriority] = useState("low");
-  const [autoAssign, setAutoAssign] = useState(true);
   const [confidence, setConfidence] = useState(null);
+  const [needsManualReview, setNeedsManualReview] = useState(false);
 
   const navigate = useNavigate();
 
   const handleAutoPredict = async (text) => {
     if (!text || text.trim().length < 10) return;
+
     setPredicting(true);
     try {
       const res = await predictTicket({ text });
       setCategory(res.data.predicted_category || "other");
       setPriority(res.data.predicted_priority || "low");
-      const catConf = res.data.category_confidence ?? res.data.confidence;
-      const priConf = res.data.priority_confidence ?? 1;
-      setConfidence(catConf);
-      setAutoAssign(catConf >= 0.7 && priConf >= 0.7);
+      setConfidence(res.data.category_confidence ?? null);
+      setNeedsManualReview(Boolean(res.data.needs_manual_review));
     } catch {
-      setAutoAssign(false);
       setConfidence(null);
+      setNeedsManualReview(true);
     } finally {
       setPredicting(false);
     }
@@ -94,17 +93,6 @@ function CreateTicket() {
       {/* ── Left Panel ── */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 bg-[#0f1117] border-r border-white/5">
 
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M2 4h5v5H2zM9 7h5v5H9z" fill="white" opacity="0.9"/>
-              <path d="M2 10h3v4H2zM11 2h3v4h-3z" fill="white" opacity="0.5"/>
-            </svg>
-          </div>
-          <span className="text-white font-semibold text-lg tracking-tight">Smart Support</span>
-        </div>
-
         {/* Center content */}
         <div>
           <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 mb-8">
@@ -152,7 +140,7 @@ function CreateTicket() {
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-gray-600 text-xs">Confidence</span>
                 <span className="text-gray-500 text-xs">
-                  {confidence != null ? `${Math.round(confidence * 100)}%` : "—"}
+                  {confidence != null ? `${Math.round(confidence * 100)}%` : "0%"}
                 </span>
               </div>
               <div className="h-1 bg-white/5 rounded-full overflow-hidden">
@@ -168,9 +156,9 @@ function CreateTicket() {
               </div>
             </div>
 
-            {!autoAssign && confidence != null && (
+            {needsManualReview && confidence != null && (
               <p className="text-amber-500/80 text-xs mt-3 flex items-center gap-1.5">
-                <span>⚠</span> Low confidence — sent for admin review
+                <span>⚠</span> Low confidence — backend will mark this for manual review
               </p>
             )}
           </div>

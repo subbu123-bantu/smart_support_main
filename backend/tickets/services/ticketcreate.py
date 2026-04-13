@@ -8,19 +8,13 @@ from tickets.tasks import send_email_task
 
 
 def create_ticket(validated_data, user):
-    validated_data["customer"] = user
-
-    prediction = predict_ticket(validated_data["description"])
+    text_for_prediction = f"{validated_data.get('title', '')} {validated_data.get('description', '')}".strip()
+    prediction = predict_ticket(text_for_prediction)
 
     category_name = prediction["category"].lower().strip()
     priority = prediction["priority"].lower()
 
     category_obj, _ = Category.objects.get_or_create(name=category_name)
-
-    validated_data["category"] = category_obj
-    validated_data["priority"] = priority
-    validated_data["predicted_category"] = category_name
-    validated_data["predicted_priority"] = priority
 
     with transaction.atomic():
         last_id = (
@@ -29,12 +23,24 @@ def create_ticket(validated_data, user):
             .select_for_update()
             .aggregate(Max("user_ticket_id"))["user_ticket_id__max"]
         )
-        validated_data["user_ticket_id"] = (last_id or 0) + 1
-        ticket = Ticket.objects.create(**validated_data)
 
-        log_prediction(ticket.description, prediction, ticket)
-        auto_assign_ticket(ticket)
+        ticket = Ticket.objects.create(
+            **validated_data,
+            customer=user,
+            category=category_obj,
+            priority=priority,
+            predicted_category=category_name,
+            predicted_priority=priority,
+            user_ticket_id=(last_id or 0) + 1,
+        )
 
+        log_prediction(text_for_prediction, prediction, ticket)
+
+        try:
+            assignment_result, _ = auto_assign_ticket(ticket)
+        except Exception:
+            assignment_result = {"assigned": False, "agent": None}
+            
     send_email_task.delay(
         ticket.customer.email,
         subject=f"Ticket '{ticket.title}' created successfully",
@@ -44,7 +50,9 @@ def create_ticket(validated_data, user):
             "ticket_title": ticket.title,
             "category": category_name,
             "priority": priority,
-        }
+            "assigned_agent": assignment_result.get("agent"),
+            "assigned": assignment_result.get("assigned", False),
+        },
     )
 
     return ticket

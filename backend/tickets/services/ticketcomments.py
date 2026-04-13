@@ -78,5 +78,3 @@ def can_delete_comment(user, comment):
 
     if comment.user != user:
         raise PermissionDenied("You can only delete your own comments.")
-
-    return True

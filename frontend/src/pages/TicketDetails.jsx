@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getTicketById } from "../services/api";
+import { getTicketById,getTicketPredictionFeedback } from "../services/api";
 import { ArrowLeft, Tag, AlertCircle, Clock } from "lucide-react";
 import TicketComments from "./TicketComments";
-import { getTicketPredictionFeedback } from "../services/api";
-
-
 
 const STATUS_META = {
   open:        { color: "text-red-400", bg: "bg-red-500/10 border-red-500/20", label: "Open" },

@@ -5,6 +5,7 @@ from .views import (
     TicketViewSet,
     CategoryViewSet,
     TicketCommentViewSet,
+    predict_view,
     ticket_stats,
     assign_ticket,
     ticket_prediction_feedback,
@@ -31,7 +32,7 @@ urlpatterns = [
     path("", include(router.urls)),
 
     path("test/", test_backend.as_view(), name="test-backend"),
-    path("predict/", predict_ticket, name="predict-ticket"),
+    path("predict/", predict_view, name="predict"),
     path("stats/", ticket_stats, name="ticket-stats"),
     path("prediction-stats/", prediction_stats, name="prediction-stats"),
 

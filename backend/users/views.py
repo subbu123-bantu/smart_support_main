@@ -94,8 +94,4 @@ def get_agents(request):
             'is_available': profile.is_available,
         })
 
-<<<<<<< HEAD
     return Response(result)
-=======
-    return Response(result)
->>>>>>> 22dff1a4b55bf986ea02cb45207212f1f44e42aa

@@ -66,9 +66,7 @@ function Dashboard() {
   const [loadingTickets, setLoadingTickets] = useState(false);
 
   useEffect(() => {
-    const token =
-      localStorage.getItem("token") || localStorage.getItem("access");
-
+  const token = localStorage.getItem("access");
     if (!token) return;
 
     setLoadingStats(true);

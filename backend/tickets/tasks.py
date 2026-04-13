@@ -3,7 +3,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 import requests
 import logging
-
+from tickets.exceptions import EmailSendError
 logger = logging.getLogger(__name__)
 
 
@@ -35,8 +35,11 @@ def send_email_task(self, recipient_email, subject, template_name="emails/ticket
         )
 
         if response.status_code not in (200, 201):
-            raise Exception(
-                f"Brevo API error {response.status_code}: {response.text}"
+           
+
+            raise EmailSendError(
+                status_code=response.status_code,
+                message=response.text
             )
 
         logger.info(f"✅ Email sent → {recipient_email}")

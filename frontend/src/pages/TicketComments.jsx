@@ -25,7 +25,7 @@ function TicketComments({ ticketId, role }) {
 
   useEffect(() => {
     if (ticketId) fetchComments();
-  }, [ticketId]);
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();

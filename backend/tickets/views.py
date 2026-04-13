@@ -1,23 +1,23 @@
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.views.decorators.csrf import csrf_exempt
+from django_filters.rest_framework import DjangoFilterBackend
+
 from rest_framework import viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from tickets.models import Ticket, Category, TicketPredictionLog, TicketComment
-from tickets.serializers import (
-    TicketSerializer,
-    CategorySerializer,
-    TicketCommentSerializer,
-)
+from tickets.models import Ticket, Category, TicketPredictionLog
+from tickets.serializers import TicketSerializer, CategorySerializer, TicketCommentSerializer
 from tickets.tasks import send_email_task
 from users.permissions import IsAdmin
 from users.pagination import CustomPagination
 
+from .ai import predict_ticket
 from .services.assignment import assign_ticket_to_agent, auto_assign_ticket
 from .services.ticketcomments import (
     get_ticket_or_raise,
@@ -27,7 +27,7 @@ from .services.ticketcomments import (
 )
 from .services.ticket_prediction_update import update_prediction_feedback, get_prediction_feedback
 from .services.ticketstats import build_ticket_stats
-from .services.ticket_prediction_feedback import ticket_prediction_feedback
+
 
 class test_backend(APIView):
     def get(self, request):
@@ -55,17 +55,11 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        print("AUTH USER:", user)
-        print("AUTHENTICATED:", user.is_authenticated)
-        print("ROLE:", getattr(user, "role", None))
-
-        queryset = Ticket.objects.all()
-
         if not user.is_authenticated:
-            print("NOT AUTHENTICATED")
             return Ticket.objects.none()
 
         role = str(user.role).lower().strip()
+        queryset = Ticket.objects.select_related("category", "assigned_to", "customer").all()
 
         if role == "admin":
             assigned = self.request.query_params.get("assigned")
@@ -73,8 +67,6 @@ class TicketViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(assigned_to__isnull=False)
             elif assigned == "false":
                 queryset = queryset.filter(assigned_to__isnull=True)
-
-            print("ADMIN COUNT:", queryset.count())
             return queryset
 
         if role == "agent":
@@ -83,13 +75,12 @@ class TicketViewSet(viewsets.ModelViewSet):
         if role == "customer":
             return queryset.filter(customer=user)
 
-        print("FALLBACK NONE")
         return Ticket.objects.none()
 
     def perform_create(self, serializer):
         if self.request.user.role.lower() != "customer":
             raise PermissionDenied("Only customers can create tickets.")
-        serializer.save(customer=self.request.user)
+        serializer.save()
 
     def update(self, request, *args, **kwargs):
         ticket = self.get_object()
@@ -106,7 +97,6 @@ class TicketViewSet(viewsets.ModelViewSet):
             if not set(request.data.keys()).issubset(allowed_fields):
                 raise PermissionDenied("Agents can only update ticket status.")
 
-        # 🔥 Let serializer handle everything
         response = super().update(request, *args, **kwargs)
 
         ticket.refresh_from_db()
@@ -125,9 +115,26 @@ class TicketViewSet(viewsets.ModelViewSet):
 
         return response
 
-        return response
-    
-    
+
+@csrf_exempt
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def predict_view(request):
+    text = request.data.get("text", "").strip()
+    if not text:
+        return Response({"detail": "Text is required"}, status=400)
+
+    result = predict_ticket(text)
+
+    return Response({
+        "predicted_category": result["category"],
+        "predicted_priority": result["priority"],
+        "category_confidence": result["confidence"],
+        "source": result["source"],
+        "needs_manual_review": result["needs_manual_review"],
+    })
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -148,7 +155,6 @@ def assign_ticket(request, ticket_id):
         return Response({"error": "Ticket not found"}, status=404)
 
     agent_id = request.data.get("agent_id")
-
     if agent_id:
         data, status_code = assign_ticket_to_agent(ticket, agent_id)
         return Response(data, status=status_code)
@@ -170,7 +176,7 @@ def prediction_stats(request):
     priority_accuracy = round((correct_priority / total) * 100, 2) if total else 0
 
     by_source = list(
-        logs.values("source").annotate(count=Q("id")).order_by("-count")
+        logs.values("source").annotate(count=Count("id")).order_by("-count")
     )
 
     review_needed = TicketPredictionLog.objects.filter(
@@ -184,6 +190,7 @@ def prediction_stats(request):
         "by_source": by_source,
         "review_needed": review_needed,
     })
+
 
 class TicketCommentViewSet(viewsets.ModelViewSet):
     serializer_class = TicketCommentSerializer
