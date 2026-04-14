@@ -14,7 +14,7 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 CATEGORIES = ["billing", "technical", "authentication", "network", "account"]
 
-#  THRESHOLDS 
+# ─── THRESHOLDS ───────────────────────────────────────────────────────────────
 CATEGORY_THRESHOLDS = {
     "billing":        0.82,
     "technical":      0.78,
@@ -23,45 +23,58 @@ CATEGORY_THRESHOLDS = {
     "account":        0.78,
 }
 
-# KEYWORD LISTS
+# ─── NAMED CONSTANTS (replaces fragile index access) ─────────────────────────
+PAYMENT_FAILED    = "payment failed"
+CHARGED_TWICE     = "charged twice"
+MONEY_DEDUCTED    = "money deducted"
+SERVER_ERROR      = "server error"
+ERROR_500         = "500 error"
+ACCESS_DENIED     = "access denied"
+VERIFICATION_LINK = "verification link"
+CANNOT_CONNECT    = "cannot connect"
+DELETE_ACCOUNT    = "delete account"
+NOT_WORKING       = "not working"
+
+# ─── KEYWORD LISTS ────────────────────────────────────────────────────────────
 CATEGORY_KEYWORDS = {
     "billing": [
-        "payment failed", "charged twice", "money deducted", "refund not received",
-        "billing issue", "invoice not generated", "wrong bill", "incorrectly billed",
-        "subscription renewal", "payment deducted", "transaction failed", "overcharged",
-        "refund", "invoice", "billing", "charged", "deducted", "subscription",
-        "upi", "payment",
+        PAYMENT_FAILED, CHARGED_TWICE, MONEY_DEDUCTED,
+        "refund not received", "billing issue", "invoice not generated",
+        "wrong bill", "incorrectly billed", "subscription renewal",
+        "payment deducted", "transaction failed", "overcharged",
+        "refund", "invoice", "billing", "charged", "deducted",
+        "subscription", "upi", "payment",
     ],
     "technical": [
+        SERVER_ERROR, ERROR_500,
         "app crash", "app crashed", "website crash", "dashboard not loading",
-        "upload failed", "file upload failed", "server error", "500 error",
+        "upload failed", "file upload failed", "dashboard", "upload",
         "unexpected exception", "invalid response", "wrong data shown",
         "page broken", "feature not working", "report incorrect",
-        "analytics wrong", "data mismatch",
-        "crash", "bug", "broken", "exception", "dashboard", "upload",
+        "analytics wrong", "data mismatch", "crash", "bug", "broken", "exception",
     ],
     "authentication": [
+        ACCESS_DENIED, VERIFICATION_LINK,
         "cannot login", "unable to login", "login failed", "invalid credentials",
         "account locked", "otp not received", "password reset link",
-        "access denied", "session expired", "verification failed",
-        "verify email", "email verification", "verification link",
-        "login", "password", "otp", "signin", "sign in",
-        "verify", "credentials", "locked",
+        "session expired", "verification failed", "verify email",
+        "email verification", "sign in", "locked",
+        "login", "password", "otp", "signin", "verify", "credentials",
     ],
     "network": [
-        "cannot connect", "unable to connect", "server unreachable",
-        "connection timeout", "request timed out", "network error",
-        "internet issue", "wifi issue", "slow internet", "high latency",
-        "frequent disconnect", "connection lost",
+        CANNOT_CONNECT,
+        "unable to connect", "server unreachable", "connection timeout",
+        "request timed out", "network error", "internet issue", "wifi issue",
+        "slow internet", "high latency", "frequent disconnect", "connection lost",
         "timeout", "latency", "disconnect", "network", "wifi", "internet", "connection",
     ],
     "account": [
-        "change email", "change phone", "update profile", "delete account",
-        "remove account", "account settings", "profile update",
-        "registered number", "email address change", "phone number change",
+        DELETE_ACCOUNT,
+        "change email", "change phone", "update profile", "remove account",
+        "account settings", "profile update", "registered number",
+        "email address change", "phone number change",
         "registered phone number", "registered mobile number",
-        "update phone number",
-        "profile", "display name",
+        "update phone number", "profile", "display name",
     ],
 }
 
@@ -69,9 +82,6 @@ AUTH_DEBOOST_PHRASES = [
     "login works", "able to login", "logged in successfully", "can login",
 ]
 
-# FIX #11 — "immediately" was in URGENT_PHRASES causing false urgents
-# Removed "immediately" and "right now" — these are user frustration words,
-# not actual system-wide outage signals
 URGENT_PHRASES = [
     "production down", "system down", "site down", "all users affected",
     "cannot process payments", "critical issue", "urgent", "asap",
@@ -83,12 +93,11 @@ SUPPORT_HINTS = [
     "login", "password", "otp", "payment", "refund", "charged", "deducted",
     "invoice", "subscription", "dashboard", "upload", "server", "connection",
     "timeout", "network", "wifi", "profile", "account", "email", "phone",
-    "access denied", "error", "crash", "not working", "failed", "bug",
-    "delete",
+    ACCESS_DENIED, "error", "crash", NOT_WORKING, "failed", "bug", "delete",
 ]
 
 
-#  HELPERS 
+# ─── HELPERS ──────────────────────────────────────────────────────────────────
 
 def preprocess(text: str) -> str:
     text = text.lower().strip()
@@ -117,92 +126,101 @@ def count_generic_only(words: list) -> bool:
     return all(w in GENERIC_WEAK_WORDS for w in words)
 
 
-# PRIORITY 
+# ─── PRIORITY HELPERS ─────────────────────────────────────────────────────────
+
+def bill_category(text: str) -> str:
+    if contains_any(text, [
+        PAYMENT_FAILED, CHARGED_TWICE, MONEY_DEDUCTED, "deducted twice",
+        "refund", "transaction failed", "wrong amount", "overcharged",
+        "charged", "deducted",
+    ]):
+        return "high"
+    if contains_any(text, [
+        "invoice not", "invoice page", "invoice not visible", "invoice not loading",
+    ]):
+        return "high"
+    if contains_any(text, ["gst", "details", "information", "how to"]):
+        return "low"
+    if contains_any(text, ["invoice", "billing page", "payment history", "payment record"]):
+        return "medium"
+    return "medium"
+
+
+def tech_category(text: str) -> str:
+    if contains_any(text, ["all users", "everyone", "for all admins", "production down"]):
+        return "urgent"
+    if contains_any(text, [SERVER_ERROR, ERROR_500, "crash", "exception"]):
+        return "high"
+    if contains_any(text, ["dashboard not loading", "upload failed", "file upload", "page freezes"]):
+        return "high"
+    if contains_any(text, [NOT_WORKING, "failed", "broken", "bug", "wrong data", "slow"]):
+        return "medium"
+    return "medium"
+
+
+def network_category(text: str) -> str:
+    # FIX: nested correctly — "dashboard"/"repeatedly"/"after" downgrades
+    # from high to medium only when the high condition was triggered
+    if contains_any(text, [
+        CANNOT_CONNECT, "server unreachable",
+        "connection timeout", "request timed out", "connection lost",
+    ]):
+        if contains_any(text, ["dashboard", "repeatedly", "after"]):
+            return "medium"
+        return "high"
+    if "fails on" in text and contains_any(text, ["wifi", "network"]):
+        return "high"
+    if contains_any(text, ["timeout", "disconnect", "latency", "slow internet", "wifi"]):
+        return "medium"
+    return "medium"
+
+
+def auth_category(text: str) -> str:
+    if contains_any(text, [
+        "cannot login", "unable to login", "account locked",
+        "otp not received", "invalid credentials", "two factor", "2fa",
+        ACCESS_DENIED, "cannot sign in", "otp not working",
+        "otp verification", "otp isnt working",
+    ]):
+        return "high"
+    if contains_any(text, [
+        VERIFICATION_LINK, "password reset", "verification", "session expired",
+    ]):
+        return "medium"
+    return "medium"
+
+
+# ─── PRIORITY ─────────────────────────────────────────────────────────────────
+
 def get_priority(text: str, category: str = None) -> str:
     if contains_any(text, URGENT_PHRASES):
         return "urgent"
 
-    if category == "billing":
-        # FIX #01 #04: "deducted", "charged", "wrong amount" → high (money impact)
-        if contains_any(text, [
-            "payment failed", "charged twice", "money deducted", "deducted twice",
-            "refund", "transaction failed", "wrong amount", "overcharged",
-            "charged", "deducted",
-        ]):
-            return "high"
-        # FIX #48 #56: invoice not loading / not visible → high (can't access billing)
-        if contains_any(text, ["invoice not", "invoice page", "invoice not visible",
-                                "invoice not loading"]):
-            return "high"
-        if contains_any(text, ["gst", "details", "information", "how to"]):
-            return "low"
-        if contains_any(text, ["invoice", "billing page", "payment history",
-                                "payment record"]):
-            return "medium"
-        return "medium"
+    priority_map = {
+        "billing":        bill_category,
+        "technical":      tech_category,
+        "network":        network_category,
+        "authentication": auth_category,
+    }
 
-    if category == "authentication":
-        if contains_any(text, [
-            "cannot login", "unable to login", "account locked",
-            "otp not received", "invalid credentials", "two factor", "2fa",
-            "access denied", "cannot sign in", "otp not working",
-            "otp verification", "otp is not working",
-        ]):
-            return "high"
-        if contains_any(text, ["password reset", "verification", "verification link",
-                                "session expired"]):
-            return "medium"
-        return "medium"
-
-    if category == "technical":
-        if contains_any(text, ["all users", "everyone", "for all admins",
-                                "production down"]):
-            return "urgent"
-        if contains_any(text, ["500 error", "server error", "crash", "exception"]):
-            return "high"
-        if contains_any(text, ["dashboard not loading", "upload failed",
-                                "file upload", "page freezes"]):
-            return "high"
-        if contains_any(text, ["not working", "failed", "broken", "bug",
-                                "wrong data", "slow"]):
-            return "medium"
-        return "medium"
-
-    if category == "network":
-        if contains_any(text, [
-            "cannot connect", "server unreachable",
-            "connection timeout", "request timed out", "connection lost",
-        ]):
-            # FIX #31: timeout + dashboard = medium (not high) — it's a slow issue
-            # FIX #32: connection lost repeatedly = medium — intermittent, not down
-            if contains_any(text, ["dashboard", "repeatedly", "after"]):
-                return "medium"
-            return "high"
-        # FIX #30: "fails on wifi" = high — service unusable on wifi
-        if "fails on" in text and contains_any(text, ["wifi", "network"]):
-            return "high"
-        if contains_any(text, ["timeout", "disconnect", "latency",
-                                "slow internet", "wifi"]):
-            return "medium"
-        return "medium"
+    handler = priority_map.get(category)
+    if handler:
+        return handler(text)
 
     if category == "account":
-        if "delete account" in text:
+        if DELETE_ACCOUNT in text:
             return "medium"
-        # FIX #36: display name change = low (cosmetic, not blocking)
         return "low"
 
-    # "other" category
-    if contains_any(text, ["error", "failed", "not working", "crash"]):
-        # FIX #43: "system not working" → other → should be low not medium
-        # Only medium if there's a specific blocking signal
+    # "other" — only medium if truly blocking
+    if contains_any(text, ["error", "failed", NOT_WORKING, "crash"]):
         if contains_any(text, ["cannot", "unable", "blocked", "not access"]):
             return "medium"
         return "low"
     return "low"
 
 
-#  RULE ENGINE 
+# ─── RULE ENGINE ──────────────────────────────────────────────────────────────
 
 def rule_engine(text: str):
     if len(text.split()) < 2:
@@ -222,14 +240,13 @@ def rule_engine(text: str):
     if contains_any(text, ["payment", "refund", "charged", "invoice", "deducted"]):
         scores["billing"] += 2
 
-    if contains_any(text, ["dashboard", "server error", "upload", "crash", "500"]):
+    if contains_any(text, ["dashboard", SERVER_ERROR, "upload", "crash", "500"]):
         scores["technical"] += 2
 
-    if contains_any(text, ["cannot connect", "timeout", "latency", "disconnect"]):
+    if contains_any(text, [CANNOT_CONNECT, "timeout", "latency", "disconnect"]):
         scores["network"] += 2
 
-    if contains_any(text, ["change email", "change phone", "update profile",
-                            "delete account"]):
+    if contains_any(text, ["change email", "change phone", "update profile", DELETE_ACCOUNT]):
         scores["account"] += 2
 
     best_category = max(scores, key=scores.get)
@@ -274,7 +291,7 @@ def best_keyword_category(text: str):
     }
 
 
-#AI CLASSIFICATION 
+# ─── AI CLASSIFICATION ────────────────────────────────────────────────────────
 
 def call_groq(prompt: str):
     if not GROQ_API_KEY:
@@ -319,43 +336,40 @@ def call_groq(prompt: str):
 
 def ai_classification(text: str):
     prompt = f"""Classify this support ticket into exactly one of:
-    billing, technical, authentication, network, account, other
+billing, technical, authentication, network, account, other
 
-    Return only JSON:
-    {{
-    "category": "billing|technical|authentication|network|account|other",
-    "confidence": 0.00
-    }}
+Return only JSON:
+{{
+  "category": "billing|technical|authentication|network|account|other",
+  "confidence": 0.00
+}}
 
-    Ticket:
-    {text}"""
+Ticket:
+{text}"""
 
     result = call_groq(prompt)
     if not result:
         return None
 
     try:
-        clean = re.sub(r"```(?:json)?|```", "", result).strip()
-        parsed = json.loads(clean)
+        cleaned = re.sub(r"```(?:json)?```", "", result).strip()
+        parsed = json.loads(cleaned)
         category = str(parsed.get("category", "")).lower().strip()
         confidence = float(parsed.get("confidence", 0.65))
         confidence = round(max(0.25, min(confidence, 0.88)), 2)
 
         if category in CATEGORIES or category == "other":
-            return {
-                "category": category,
-                "confidence": confidence,
-                "source": "AI",
-            }
+            return {"category": category, "confidence": confidence, "source": "AI"}
 
-    except (json.JSONDecodeError, ValueError, TypeError) as e:
-        logger.warning("Failed to parse Groq classification response: %s | raw=%r", e, result)
+    except (json.JSONDecodeError, TypeError) as e :
+        logger.warning("Failed to parse Groq response: %s | raw=%r", e, result)
 
     return None
 
-#  DECISION LOGIC 
 
-def choose_final(rule_result, ai_result, keyword_result, text: str) -> dict:
+# ─── DECISION LOGIC ───────────────────────────────────────────────────────────
+
+def choose_final(rule_result, ai_result, keyword_result) -> dict:
     candidates = [r for r in [rule_result, ai_result, keyword_result] if r]
 
     if not candidates:
@@ -365,95 +379,101 @@ def choose_final(rule_result, ai_result, keyword_result, text: str) -> dict:
         boosted = round(min(
             max(rule_result["confidence"], ai_result["confidence"]) + 0.04, 0.97
         ), 2)
-        return {"category": rule_result["category"], "confidence": boosted,
-                "source": "rule+AI"}
+        return {"category": rule_result["category"], "confidence": boosted, "source": "rule+AI"}
 
     if rule_result and keyword_result and rule_result["category"] == keyword_result["category"]:
         boosted = round(min(
             max(rule_result["confidence"], keyword_result["confidence"]) + 0.03, 0.95
         ), 2)
-        return {"category": rule_result["category"], "confidence": boosted,
-                "source": "rule+keyword"}
+        return {"category": rule_result["category"], "confidence": boosted, "source": "rule+keyword"}
 
     candidates.sort(key=lambda x: x.get("confidence", 0), reverse=True)
     return candidates[0]
 
 
-def apply_conflict_overrides(text: str, final: dict) -> dict:
+def apply_override(final: dict, category: str, source: str, confidence: float) -> None:
+    final["category"] = category
+    final["source"] = source
+    final["confidence"] = max(final.get("confidence", 0.0), confidence)
+
+
+def starts_with_refund_request(text: str) -> bool:
+    stripped = text.strip()
+    return stripped.startswith("need refund") or stripped.startswith("refund")
+
+
+def apply_billing_overrides(text: str, final: dict) -> None:
     cat = final.get("category")
 
-    # billing beats account only for clear payment signals
-    if contains_any(text, CATEGORY_KEYWORDS["billing"]) and cat == "account":
-        if contains_any(text, ["payment", "refund", "charged", "invoice", "deducted"]):
-            final.update({"category": "billing", "source": "billing_override",
-                         "confidence": max(final["confidence"], 0.88)})
+    if (
+        cat == "account"
+        and contains_any(text, CATEGORY_KEYWORDS["billing"])
+        and contains_any(text, ["payment", "refund", "charged", "invoice", "deducted"])
+    ):
+        apply_override(final, "billing", "billing_override", 0.88)
 
-    # billing beats auth for clear payment outcomes
-    if contains_any(text, ["charged twice", "refund", "invoice", "payment failed",
-                            "money deducted"]) and cat == "authentication":
-        final.update({"category": "billing", "source": "billing_override",
-                     "confidence": max(final["confidence"], 0.90)})
+    if cat == "authentication" and contains_any(
+        text, [CHARGED_TWICE, "refund", "invoice", PAYMENT_FAILED, MONEY_DEDUCTED]
+    ):
+        apply_override(final, "billing", "billing_override", 0.90)
 
-    # FIX #49: "need refund because app crashed during payment"
-    # billing beats technical ONLY when outcome is financial (refund/charged)
-    # NOT when the technical failure is the main complaint
-    if cat == "technical" and contains_any(text, ["refund", "charged twice",
-                                                   "money deducted"]):
-        if not contains_any(text, ["crash", "error", "not loading",
-                                   "broken", "failed to load"]):
-            final.update({"category": "billing", "source": "billing_override",
-                         "confidence": max(final["confidence"], 0.88)})
-        else:
-            # App crashed during payment — refund is a side effect, technical is the cause
-            # Keep billing if refund is the primary ask, else keep technical
-            if text.strip().startswith("need refund") or text.strip().startswith("refund"):
-                final.update({"category": "billing", "source": "billing_override",
-                             "confidence": max(final["confidence"], 0.88)})
+    if cat == "technical" and contains_any(text, ["refund", CHARGED_TWICE, MONEY_DEDUCTED]):
+        has_technical_failure = contains_any(
+            text, ["crash", "error", "not loading", "broken", "failed to load"]
+        )
+        if not has_technical_failure or starts_with_refund_request(text):
+            apply_override(final, "billing", "billing_override", 0.88)
 
-    # auth beats account for verification/access
-    if "verification link" in text:
-        final.update({"category": "authentication", "source": "auth_override",
-                     "confidence": max(final["confidence"], 0.88)})
 
-    if contains_any(text, CATEGORY_KEYWORDS["authentication"]) and cat == "account":
-        if contains_any(text, ["login", "password", "otp", "access denied", "locked"]):
-            final.update({"category": "authentication", "source": "auth_override",
-                         "confidence": max(final["confidence"], 0.88)})
+def apply_auth_overrides(text: str, final: dict) -> None:
+    cat = final.get("category")
 
-    # technical beats auth when login works fine
-    if contains_any(text, AUTH_DEBOOST_PHRASES) and cat == "authentication":
-        if contains_any(text, ["dashboard", "server error", "slow", "upload", "crash"]):
-            final.update({"category": "technical", "source": "technical_override",
-                         "confidence": max(final["confidence"], 0.86)})
+    if VERIFICATION_LINK in text:
+        apply_override(final, "authentication", "auth_override", 0.88)
 
-    # technical beats network for app-level failures
-    if contains_any(text, ["dashboard", "upload", "server error", "500 error",
-                            "exception"]) and cat == "network":
-        final.update({"category": "technical", "source": "technical_override",
-                     "confidence": max(final["confidence"], 0.86)})
+    if (
+        cat == "account"
+        and contains_any(text, CATEGORY_KEYWORDS["authentication"])
+        and contains_any(text, [ACCESS_DENIED, "login", "password", "otp", "locked"])
+    ):
+        apply_override(final, "authentication", "auth_override", 0.88)
 
-    if contains_any(text, ["analytics", "report incorrect", "data mismatch",
-                            "wrong data shown"]):
-        final.update({"category": "technical", "source": "technical_override",
-                     "confidence": max(final["confidence"], 0.88)})
 
-    # FIX #35: "delete my account permanently" was falling through to other
-    # Ensure delete account always hits account category
+def apply_technical_overrides(text: str, final: dict) -> None:
+    cat = final.get("category")
+
+    if (
+        cat == "authentication"
+        and contains_any(text, AUTH_DEBOOST_PHRASES)
+        and contains_any(text, ["dashboard", SERVER_ERROR, "slow", "upload", "crash"])
+    ):
+        apply_override(final, "technical", "technical_override", 0.86)
+
+    if cat == "network" and contains_any(
+        text, ["dashboard", "upload", SERVER_ERROR, ERROR_500, "exception"]
+    ):
+        apply_override(final, "technical", "technical_override", 0.86)
+
+    if contains_any(text, ["analytics", "report incorrect", "data mismatch", "wrong data shown"]):
+        apply_override(final, "technical", "technical_override", 0.88)
+
+
+def apply_account_overrides(text: str, final: dict) -> None:
     if "delete" in text and contains_any(text, ["account", "my account", "permanently"]):
-        final.update({"category": "account", "source": "account_override",
-                     "confidence": max(final["confidence"], 0.90)})
+        apply_override(final, "account", "account_override", 0.90)
 
     if "display name" in text:
-        final.update({"category": "account", "source": "account_override",
-                     "confidence": max(final["confidence"], 0.88)})
+        apply_override(final, "account", "account_override", 0.88)
 
-    # FIX #31: timeout + dashboard = network medium (not high)
-    # This is handled in get_priority, no category change needed here
 
+def apply_conflict_overrides(text: str, final: dict) -> dict:
+    apply_billing_overrides(text, final)
+    apply_auth_overrides(text, final)
+    apply_technical_overrides(text, final)
+    apply_account_overrides(text, final)
     return final
 
-
-#  LOGGING 
+# ─── LOGGING ──────────────────────────────────────────────────────────────────
 
 def log_prediction(text: str, result: dict, ticket=None) -> None:
     TicketPredictionLog.objects.create(
@@ -466,13 +486,12 @@ def log_prediction(text: str, result: dict, ticket=None) -> None:
     )
 
 
-#  MAIN PIPELINE 
+# ─── MAIN PIPELINE ────────────────────────────────────────────────────────────
 
 def predict_ticket(text: str) -> dict:
     clean = preprocess(text)
     words = clean.split()
 
-    # Reject very weak input
     if len(words) < 3 and not contains_any(clean, SUPPORT_HINTS):
         return {
             "category": "other", "confidence": 0.30,
@@ -491,7 +510,7 @@ def predict_ticket(text: str) -> dict:
     keyword_result = best_keyword_category(clean)
     ai_result      = ai_classification(text)
 
-    final = choose_final(rule_result, ai_result, keyword_result, clean)
+    final = choose_final(rule_result, ai_result, keyword_result)
     final = apply_conflict_overrides(clean, final)
 
     category   = final.get("category", "other")

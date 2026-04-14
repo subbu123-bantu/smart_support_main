@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,Link  } from "react-router-dom";
 import { createTicket, predictTicket } from "../services/api";
 import { toast } from "react-toastify";
-
 const CATEGORY_META = {
   billing:        { icon: "💳", label: "Billing" },
   technical:      { icon: "🔧", label: "Technical" },
@@ -98,6 +97,25 @@ function CreateTicket() {
       }
     }
 
+    let statusContent = null;
+
+if (predicting) {
+  statusContent = (
+    <span className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+      <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+      </svg>
+      AI analyzing...
+    </span>
+  );
+} else if (confidence != null) {   // cleaner check
+  statusContent = (
+    <span className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400">
+      {catMeta.icon} {catMeta.label} · <span className={priMeta.color}>{priority}</span>
+    </span>
+  );
+}
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }} className="flex min-h-screen bg-[#0c0e14]">
 
@@ -197,40 +215,26 @@ function CreateTicket() {
 
           {/* Mobile — AI pill */}
           <div className="flex lg:hidden items-center gap-2 mb-6">
-            {predicting ? (
-              <span className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                </svg>
-                AI analyzing...
-              </span>
-            ) : confidence !== null && confidence !== undefined? (
-              <span className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400">
-                {catMeta.icon} {catMeta.label} · <span className={priMeta.color}>{priority}</span>
-              </span>
-            ) : null}
+            {statusContent}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
 
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
-                Ticket title
-              </label>
-              <input
+                <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Brief summary of the issue"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500 focus:bg-indigo-500/5 transition-all duration-200"
-              />
+              />Ticket title
+              </label>
             </div>
 
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
-                Description
-              </label>
+                
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -243,6 +247,8 @@ function CreateTicket() {
                   ? `${10 - description.length} more characters for AI analysis`
                   : "AI is analyzing your description…"}
               </p>
+              Description
+              </label>
             </div>
 
             <button
@@ -263,15 +269,17 @@ function CreateTicket() {
 
           </form>
 
+          
+
           <div className="mt-6 pt-6 border-t border-white/5 text-center">
             <p className="text-gray-600 text-sm">
               Changed your mind?{" "}
-              <span
-                onClick={() => navigate("/tickets")}
-                className="text-indigo-400 cursor-pointer hover:text-indigo-300 transition-colors"
+              <Link
+                to="/tickets"
+                className="text-indigo-400 hover:text-indigo-300 transition-colors"
               >
                 Back to tickets
-              </span>
+              </Link>
             </p>
           </div>
 

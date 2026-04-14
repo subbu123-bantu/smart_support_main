@@ -47,8 +47,8 @@ class Ticket(models.Model):
         blank=True,
         related_name="assigned_tickets"
     )
-    predicted_category = models.CharField(max_length=20, null=True, blank=True)
-    predicted_priority = models.CharField(max_length=10, null=True, blank=True)
+    predicted_category = models.CharField(max_length=20, default="", blank=True)
+    predicted_priority = models.CharField(max_length=10, default="", blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -78,9 +78,9 @@ class TicketPredictionLog(models.Model):
     source = models.CharField(max_length=50)
     confidence = models.FloatField(default=0.0)
 
-    actual_category = models.CharField(max_length=100, null=True, blank=True)
-    actual_priority = models.CharField(max_length=50, null=True, blank=True)
-    category_correct = models.BooleanField(null=True, blank=True)
-    priority_correct = models.BooleanField(null=True, blank=True)
+    actual_category = models.CharField(max_length=100, default="", blank=True)
+    actual_priority = models.CharField(max_length=50, default="", blank=True)
+    category_correct = models.BooleanField(default="", blank=True)
+    priority_correct = models.BooleanField(default="", blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
