@@ -83,9 +83,18 @@ function Dashboard() {
           agent_workload: res.data?.agent_workload ?? [],
         });
       })
-      .catch((err) => {
-        console.error("Error loading stats:", err);
-      })
+      .catch(() => {
+      setStats({
+        total: 0,
+        open: 0,
+        in_progress: 0,
+        closed: 0,
+        by_category: [],
+        by_priority: [],
+        by_date: [],
+        agent_workload: [],
+      });
+    })
       .finally(() => setLoadingStats(false));
   }, []);
 
@@ -97,8 +106,8 @@ function Dashboard() {
       .then((res) => {
         setRecentTickets(res.data?.results?.slice(0, 5) || []);
       })
-      .catch((err) => {
-        console.error("Error loading recent tickets:", err);
+      .catch(() => {
+        setRecentTickets([]);
       })
       .finally(() => setLoadingTickets(false));
   }, [role]);

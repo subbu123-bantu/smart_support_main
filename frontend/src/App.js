@@ -26,7 +26,7 @@ function App() {
     <>
 
       {/* <ToastContainer position="top-right" autoClose={1000} /> */}
-      
+
       <ToastContainer />
 
       <Routes>
@@ -37,9 +37,9 @@ function App() {
 
         <Route path="/dashboard" element={<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>} />
 
-        <Route path="/create-ticket" element={<PrivateRoute>{<CreateTicket />}</PrivateRoute>}/>
+        <Route path="/create-ticket" element={<PrivateRoute><Layout>{<CreateTicket />}</Layout></PrivateRoute>}/>
 
-        <Route path="/tickets" element={<PrivateRoute>{<Tickets />}</PrivateRoute> }/>
+        <Route path="/tickets" element={<PrivateRoute><Layout>{<Tickets />}</Layout></PrivateRoute> }/>
 
         <Route path="/tickets/:id" element={<PrivateRoute>{<TicketDetails />}</PrivateRoute>} />
 

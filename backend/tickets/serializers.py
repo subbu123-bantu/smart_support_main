@@ -48,12 +48,10 @@ class TicketSerializer(serializers.ModelSerializer):
         return create_ticket(validated_data, request.user)
 
     def update(self, instance, validated_data):
-        for field in ["category", "priority", "status"]:
-            if field in validated_data:
-                setattr(instance, field, validated_data[field])
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
         instance.save()
         return instance
-
 class TicketCommentSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     user_role = serializers.CharField(source="user.role", read_only=True)

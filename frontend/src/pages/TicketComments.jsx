@@ -15,9 +15,9 @@ function TicketComments({ ticketId, role }) {
       const res = await getTicketComments(ticketId);
       const data = res.data.results || res.data;
       setComments(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load comments");
+    } catch {
+      setComments([]);
+      toast.error("Failed to load comments");  
     } finally {
       setLoading(false);
     }
@@ -46,8 +46,7 @@ function TicketComments({ ticketId, role }) {
       setMessage("");
       setIsInternal(false);
       fetchComments();
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error("Failed to add comment");
     } finally {
       setSubmitting(false);

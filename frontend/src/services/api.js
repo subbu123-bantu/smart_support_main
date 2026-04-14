@@ -1,5 +1,4 @@
 import axios from "axios";
-
 const API = axios.create({
   baseURL: "http://localhost:8000/api/",
 });
@@ -31,7 +30,7 @@ API.interceptors.response.use(
       localStorage.removeItem("access");
       localStorage.removeItem("role");
       localStorage.removeItem("username");
-      globalThis.location.href = "login";
+      window.location.href = "login";
     }
 
     return Promise.reject(error);

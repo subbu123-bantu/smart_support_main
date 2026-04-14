@@ -82,8 +82,10 @@ function Tickets() {
       setTickets(res.data.results || []);
       setNextPage(res.data.next);
       setPrevPage(res.data.previous);
-    } catch (err) {
-      console.error(err);
+    }catch {
+      setTickets([]);
+      setNextPage(null);
+      setPrevPage(null);
     } finally {
       setLoading(false);
     }
@@ -105,7 +107,7 @@ function Tickets() {
         const res = await getCategories();
         setCategories(res.data.results || res.data);
       } catch {
-        console.error("Failed to load categories");
+        setCategories([]);
       }
     };
 

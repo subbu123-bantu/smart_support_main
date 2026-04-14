@@ -1,11 +1,13 @@
 import re
 import os
 import json
+import logging
 import requests
 from dotenv import load_dotenv
 from .models import TicketPredictionLog
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -317,16 +319,16 @@ def call_groq(prompt: str):
 
 def ai_classification(text: str):
     prompt = f"""Classify this support ticket into exactly one of:
-billing, technical, authentication, network, account, other
+    billing, technical, authentication, network, account, other
 
-Return only JSON:
-{{
-  "category": "billing|technical|authentication|network|account|other",
-  "confidence": 0.00
-}}
+    Return only JSON:
+    {{
+    "category": "billing|technical|authentication|network|account|other",
+    "confidence": 0.00
+    }}
 
-Ticket:
-{text}"""
+    Ticket:
+    {text}"""
 
     result = call_groq(prompt)
     if not result:
@@ -340,13 +342,16 @@ Ticket:
         confidence = round(max(0.25, min(confidence, 0.88)), 2)
 
         if category in CATEGORIES or category == "other":
-            return {"category": category, "confidence": confidence, "source": "AI"}
+            return {
+                "category": category,
+                "confidence": confidence,
+                "source": "AI",
+            }
 
-    except Exception:
-        pass
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        logger.warning("Failed to parse Groq classification response: %s | raw=%r", e, result)
 
     return None
-
 
 #  DECISION LOGIC 
 

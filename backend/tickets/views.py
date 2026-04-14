@@ -115,8 +115,6 @@ class TicketViewSet(viewsets.ModelViewSet):
 
         return response
 
-
-@csrf_exempt
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])

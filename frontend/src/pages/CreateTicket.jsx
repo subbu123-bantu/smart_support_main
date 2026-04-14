@@ -12,17 +12,6 @@ const CATEGORY_META = {
   other:          { icon: "📂", label: "Other" },
 };
 
-let bgColor = "#6366f1";
-
-if (confidence !== null && confidence !== undefined) {
-  if (confidence >= 0.8) {
-    bgColor = "#16a34a";
-  } else if (confidence >= 0.6) {
-    bgColor = "#f59e0b";
-  } else {
-    bgColor = "#ef4444";
-  }
-}
 
 const PRIORITY_META = {
   low:    { color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", dot: "bg-emerald-400" },
@@ -86,7 +75,6 @@ function CreateTicket() {
       toast.success("Ticket submitted!");
       navigate("/tickets");
     } catch (err) {
-      console.log(err.response?.data);
       toast.error(
         err.response?.data?.detail ||
         err.response?.data?.category?.[0] ||
@@ -98,6 +86,17 @@ function CreateTicket() {
   };
   const catMeta  = CATEGORY_META[category]  || CATEGORY_META.other;
   const priMeta  = PRIORITY_META[priority]   || PRIORITY_META.low;
+  let bgColor = "#6366f1";
+  // const confidence =res.data.category_confidence || 0 
+    if (confidence !== null && confidence !== undefined) {
+      if (confidence >= 0.8) {
+        bgColor = "#16a34a";
+      } else if (confidence >= 0.6) {
+        bgColor = "#f59e0b";
+      } else {
+        bgColor = "#ef4444";
+      }
+    }
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }} className="flex min-h-screen bg-[#0c0e14]">

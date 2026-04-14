@@ -25,10 +25,8 @@ function Login() {
       localStorage.setItem("username",loggedInUsername );
 
       toast.success("Login successful!", { autoClose: 800 });
-      console.log(res.data);
       navigate("/dashboard");
     } catch (error) {
-      console.log(error.response?.data); // 🔥 IMPORTANT
       toast.error(error.response?.data?.error || "Login failed");
     } finally {
       setLoading(false);

@@ -12,13 +12,12 @@ function Sidebar() {
   const handleLogout = async () => {
     try {
       await API.post("logout/");
-    } catch (err) {
-      console.error("Logout failed:", err.response?.data || err.message);
+    } catch {
     } finally {
       localStorage.removeItem("access");
       localStorage.removeItem("role");
       localStorage.removeItem("username");
-      globalThis.location.href = "/login";
+      window.location.href = "/login";
     }
   };
 

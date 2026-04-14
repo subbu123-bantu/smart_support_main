@@ -31,7 +31,9 @@ function TicketDetails() {
   useEffect(() => {
     getTicketById(id)
       .then(res => setTicket(res.data))
-      .catch(console.error)
+      .catch(() => {
+        setTicket(null);
+      })
       .finally(() => setLoading(false));
   }, [id]);
     useEffect(() => {
@@ -40,8 +42,7 @@ function TicketDetails() {
     setLoadingFeedback(true);
     getTicketPredictionFeedback(id)
       .then((res) => setPredictionFeedback(res.data))
-      .catch((err) => {
-        console.error("Error loading prediction feedback:", err);
+      .catch(() => {
         setPredictionFeedback(null);
       })
       .finally(() => setLoadingFeedback(false));

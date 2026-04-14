@@ -6,7 +6,7 @@ from users.models import AgentProfile
 
 def assign_ticket_to_agent(ticket, agent_id):
     try:
-        profile = AgentProfile.objects.select_related("user").get(user__id=agent_id)
+        profile = AgentProfile.objects.select_related("user").filter(user__role__iexact="agent").get(user__id=agent_id)
     except AgentProfile.DoesNotExist:
         return {"error": f"No AgentProfile found for user id {agent_id}"}, 404
 
