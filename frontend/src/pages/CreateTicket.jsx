@@ -12,6 +12,18 @@ const CATEGORY_META = {
   other:          { icon: "📂", label: "Other" },
 };
 
+let bgColor = "#6366f1";
+
+if (confidence !== null && confidence !== undefined) {
+  if (confidence >= 0.8) {
+    bgColor = "#16a34a";
+  } else if (confidence >= 0.6) {
+    bgColor = "#f59e0b";
+  } else {
+    bgColor = "#ef4444";
+  }
+}
+
 const PRIORITY_META = {
   low:    { color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", dot: "bg-emerald-400" },
   medium: { color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",   dot: "bg-amber-400"   },
@@ -140,17 +152,15 @@ function CreateTicket() {
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-gray-600 text-xs">Confidence</span>
                 <span className="text-gray-500 text-xs">
-                  {confidence != null ? `${Math.round(confidence * 100)}%` : "0%"}
+                  {confidence !== null && confidence !== undefined ? `${Math.round(confidence * 100)}%` : "0%"}
                 </span>
               </div>
               <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
-                    width: confidence != null ? `${Math.round(confidence * 100)}%` : "0%",
-                    background: confidence != null
-                      ? confidence >= 0.8 ? "#6366f1" : confidence >= 0.6 ? "#f59e0b" : "#ef4444"
-                      : "#6366f1",
+                    width: confidence !== null && confidence !== undefined ? `${Math.round(confidence * 100)}%` : "0%",
+                    background: bgColor
                   }}
                 />
               </div>
@@ -196,7 +206,7 @@ function CreateTicket() {
                 </svg>
                 AI analyzing...
               </span>
-            ) : confidence != null ? (
+            ) : confidence !== null && confidence !== undefined? (
               <span className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400">
                 {catMeta.icon} {catMeta.label} · <span className={priMeta.color}>{priority}</span>
               </span>
