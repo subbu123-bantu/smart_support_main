@@ -26,7 +26,6 @@ def register_view(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
@@ -39,7 +38,7 @@ def login_view(request):
 
     refresh = RefreshToken.for_user(user)
 
-    response = Response({
+    return Response({
         "message": "Login successful",
         "user": {
             "role": user.role.lower(),
@@ -49,33 +48,11 @@ def login_view(request):
         }
     })
 
-    response.set_cookie(
-        key="access",
-        value=str(refresh.access_token),
-        httponly=True,
-        secure=False,
-        samesite='Lax',
-        max_age=3000
-    )
-    response.set_cookie(
-        key="refresh",
-        value=str(refresh),
-        httponly=True,
-        secure=False,
-        samesite='Lax',
-        max_age=86400
-    )
-
-    return response
-
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def logout_view(request):
-    response = Response({"message": "Logged out successfully"})
-    response.delete_cookie("access")
-    response.delete_cookie("refresh")
-    return response
+    return Response({"message": "Logged out successfully"})
 
 
 @api_view(['GET'])

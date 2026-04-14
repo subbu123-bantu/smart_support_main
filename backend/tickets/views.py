@@ -14,7 +14,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from tickets.models import Ticket, Category, TicketPredictionLog
 from tickets.serializers import TicketSerializer, CategorySerializer, TicketCommentSerializer
 from tickets.tasks import send_email_task
-from users.permissions import IsAdmin
+from users.permissions import IsAdminOrReadOnly
 from users.pagination import CustomPagination
 
 from .ai import predict_ticket
@@ -37,7 +37,7 @@ class test_backend(APIView):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdminOrReadOnly]
     pagination_class = None
 
 
@@ -93,9 +93,9 @@ class TicketViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You can only update your assigned tickets.")
 
         if user.role.lower() == "agent":
-            allowed_fields = {"status"}
+            allowed_fields = {"status", "priority"}
             if not set(request.data.keys()).issubset(allowed_fields):
-                raise PermissionDenied("Agents can only update ticket status.")
+                raise PermissionDenied("Agents can only update ticket status and priority.")
 
         response = super().update(request, *args, **kwargs)
 

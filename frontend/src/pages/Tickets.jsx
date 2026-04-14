@@ -265,7 +265,7 @@ function Tickets() {
             return (
               <div
                 key={ticket.id}
-                onClick={() => role !== "customer" && navigate(`/tickets/${ticket.id}`)}
+                onClick={() => navigate(`/tickets/${ticket.id}`)}
                 className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 hover:border-indigo-500/30 hover:bg-indigo-500/5 transition cursor-pointer"
               >
                 <div className="flex justify-between gap-4">

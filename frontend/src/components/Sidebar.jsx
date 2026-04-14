@@ -18,7 +18,7 @@ function Sidebar() {
       localStorage.removeItem("access");
       localStorage.removeItem("role");
       localStorage.removeItem("username");
-      window.location.href = "/login";
+      globalThis.location.href = "/login";
     }
   };
 

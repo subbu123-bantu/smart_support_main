@@ -26,8 +26,8 @@ function App() {
     <>
 
       {/* <ToastContainer position="top-right" autoClose={1000} /> */}
+      
       <ToastContainer />
-      {/* {!hideSidebar && <Sidebar />} */}
 
       <Routes>
 
@@ -41,7 +41,7 @@ function App() {
 
         <Route path="/tickets" element={<PrivateRoute>{<Tickets />}</PrivateRoute> }/>
 
-        <Route path="/tickets/:id" element={<TicketDetails />} />
+        <Route path="/tickets/:id" element={<PrivateRoute>{<TicketDetails />}</PrivateRoute>} />
 
         <Route path="/register" element={<Register />} />
 

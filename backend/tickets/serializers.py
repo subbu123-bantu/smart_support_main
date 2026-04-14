@@ -54,16 +54,6 @@ class TicketSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        request = self.context.get("request")
-
-        if request and request.user.is_authenticated and request.user.role == "customer":
-            data.pop("id", None)
-
-        return data
-
-
 class TicketCommentSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     user_role = serializers.CharField(source="user.role", read_only=True)
