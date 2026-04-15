@@ -15,22 +15,40 @@ def update_prediction_feedback(ticket):
         return
 
     actual_category = ticket.category.name if ticket.category else None
-    actual_priority = ticket.priority
+    actual_priority = ticket.priority if ticket.priority else None
 
     log.actual_category = actual_category
     log.actual_priority = actual_priority
-    log.category_correct = (log.predicted_category == actual_category)
-    log.priority_correct = (log.predicted_priority == actual_priority)
-    log.save()
+
+    if actual_category is None:
+        log.category_correct = None
+    else:
+        log.category_correct = (
+            (log.predicted_category or "").strip().lower()
+            == actual_category.strip().lower()
+        )
+
+    if actual_priority is None:
+        log.priority_correct = None
+    else:
+        log.priority_correct = (
+            (log.predicted_priority or "").strip().lower()
+            == actual_priority.strip().lower()
+        )
+
+    log.save(update_fields=[
+        "actual_category",
+        "actual_priority",
+        "category_correct",
+        "priority_correct",
+    ])
 
 
 def get_prediction_feedback(ticket_id, user):
     try:
         ticket = Ticket.objects.get(id=ticket_id)
     except Ticket.DoesNotExist:
-        return None, {
-            "error": "Ticket not found"
-        }, 404
+        return None, {"error": "Ticket not found"}, 404
 
     role = user.role.lower()
 

@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.db.models import Max
 
-from tickets.ai import predict_ticket, log_prediction
+from tickets.ai.ai import predict_ticket, log_prediction
 from tickets.models import Ticket, Category
 from tickets.services.assignment import auto_assign_ticket
 from tickets.tasks import send_email_task

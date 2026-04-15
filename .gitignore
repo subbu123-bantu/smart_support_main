@@ -39,6 +39,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+<<<<<<< HEAD
 # ----------------------
 # IDE / Editor
 # ----------------------
@@ -54,3 +55,34 @@ Thumbs.db
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+=======
+# environment variables - SECRETS
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# python
+__pycache__/
+*.pyc
+env/
+venv/
+backend/env/
+
+# IDE
+/.vscode/
+
+# misc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+>>>>>>> 7628533beac1923e0810ac079f57442f2086cbd5

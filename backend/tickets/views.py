@@ -17,7 +17,7 @@ from tickets.tasks import send_email_task
 from users.permissions import IsAdminOrReadOnly
 from users.pagination import CustomPagination
 
-from .ai import predict_ticket
+from .ai.ai import predict_ticket
 from .services.assignment import assign_ticket_to_agent, auto_assign_ticket
 from .services.ticketcomments import (
     get_ticket_or_raise,

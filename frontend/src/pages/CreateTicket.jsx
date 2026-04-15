@@ -1,23 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate,Link  } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createTicket, predictTicket } from "../services/api";
 import { toast } from "react-toastify";
-const CATEGORY_META = {
-  billing:        { icon: "💳", label: "Billing" },
-  technical:      { icon: "🔧", label: "Technical" },
-  authentication: { icon: "🔐", label: "Authentication" },
-  network:        { icon: "📡", label: "Network" },
-  account:        { icon: "👤", label: "Account" },
-  other:          { icon: "📂", label: "Other" },
-};
-
-
-const PRIORITY_META = {
-  low:    { color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", dot: "bg-emerald-400" },
-  medium: { color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",   dot: "bg-amber-400"   },
-  high:   { color: "text-orange-400",  bg: "bg-orange-500/10 border-orange-500/20",  dot: "bg-orange-400"  },
-  urgent: { color: "text-red-400",     bg: "bg-red-500/10 border-red-500/20",        dot: "bg-red-400"     },
-};
+import { CATEGORY_META, PRIORITY_META } from "../constants";
 
 function CreateTicket() {
   const [title, setTitle]           = useState("");

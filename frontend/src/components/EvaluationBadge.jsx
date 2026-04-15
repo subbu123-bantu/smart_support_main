@@ -1,25 +1,25 @@
+import PropTypes from "prop-types";
+
 function EvaluationBadge({ value }) {
+  let label = "Pending";
+  let styles =
+    "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
+
   if (value === true) {
-    return (
-      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-        Correct
-      </span>
-    );
+    label = "Correct";
+    styles =
+      "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium bg-green-500/10 text-green-400 border-green-500/20";
+  } else if (value === false) {
+    label = "Incorrect";
+    styles =
+      "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium bg-red-500/10 text-red-400 border-red-500/20";
   }
 
-  if (value === false) {
-    return (
-      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-400">
-        Incorrect
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 border border-amber-500/20 text-amber-400">
-      Not evaluated
-    </span>
-  );
+  return <span className={styles}>{label}</span>;
 }
+
+EvaluationBadge.propTypes = {
+  value: PropTypes.oneOfType([PropTypes.bool, PropTypes.oneOf([null])]),
+};
 
 export default EvaluationBadge;

@@ -106,10 +106,11 @@ function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+              <label htmlFor="username" className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
                 Username
               </label>
               <input
+                id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -119,10 +120,11 @@ function Login() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+              <label htmlFor="password" className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
                 Password
               </label>
               <input
+                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -152,12 +154,14 @@ function Login() {
           <div className="mt-6 pt-6 border-t border-white/5 text-center">
             <p className="text-gray-600 text-sm">
               Don't have an account?{" "}
-              <span
+              <button
+                type="button"
                 onClick={() => navigate("/register")}
+                onKeyDown={(e) => e.key === "Enter" && navigate("/register")}
                 className="text-indigo-400 cursor-pointer hover:text-indigo-300 transition-colors"
               >
                 Create one
-              </span>
+              </button>
             </p>
           </div>
 
