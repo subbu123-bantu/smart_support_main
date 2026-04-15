@@ -31,9 +31,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# environment variables
-.env*
-
+# environment variables - SECRETS
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
 # vercel
 .vercel
 
@@ -48,27 +53,10 @@ env/
 venv/
 backend/env/
 
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# production
-/build
+# IDE
+/.vscode/
 
 # misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*s
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+yarn-error.log*

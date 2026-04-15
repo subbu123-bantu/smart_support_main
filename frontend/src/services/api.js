@@ -1,21 +1,31 @@
 import axios from "axios";
+
+const clearAuthStorage = () => {
+  localStorage.removeItem("access");
+  localStorage.removeItem("role");
+  localStorage.removeItem("username");
+};
+
 const API = axios.create({
   baseURL: "http://localhost:8000/api/",
 });
 
 API.interceptors.request.use(
-  (req) => {
+  (request) => {
     const publicRoutes = ["login/", "register/"];
-    const isPublicRoute = publicRoutes.some((route) => req.url?.includes(route));
+    const isPublicRoute = publicRoutes.some((route) =>
+      request.url?.includes(route)
+    );
 
     if (!isPublicRoute) {
       const token = localStorage.getItem("access");
+
       if (token) {
-        req.headers.Authorization = `Bearer ${token}`;
+        request.headers.Authorization = `Bearer ${token}`;
       }
     }
 
-    return req;
+    return request;
   },
   (error) => Promise.reject(error)
 );
@@ -23,14 +33,12 @@ API.interceptors.request.use(
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    const url = error.config?.url || "";
-    const isLoginRequest = url.includes("login/");
+    const requestUrl = error.config?.url || "";
+    const isLoginRequest = requestUrl.includes("login/");
 
     if (error.response?.status === 401 && !isLoginRequest) {
-      localStorage.removeItem("access");
-      localStorage.removeItem("role");
-      localStorage.removeItem("username");
-      window.location.href = "login";
+      clearAuthStorage();
+      window.location.href = "/login";
     }
 
     return Promise.reject(error);
@@ -52,15 +60,15 @@ export const getTickets = (
   assigned = "",
   category = ""
 ) => {
-  let url = `v1/tickets/?page=${page}`;
+  const params = { page };
 
-  if (ticketStatus) url += `&status=${ticketStatus}`;
-  if (priority && priority !== "all") url += `&priority=${priority}`;
-  if (search) url += `&search=${encodeURIComponent(search)}`;
-  if (assigned !== "") url += `&assigned=${assigned}`;
-  if (category) url += `&category=${category}`;
+  if (ticketStatus) params.status = ticketStatus;
+  if (priority && priority !== "all") params.priority = priority;
+  if (search) params.search = search;
+  if (assigned !== "") params.assigned = assigned;
+  if (category) params.category = category;
 
-  return API.get(url);
+  return API.get("tickets/", { params });
 };
 
 export const createTicket = (data) => API.post("tickets/", data);
@@ -74,8 +82,10 @@ export const assignTicket = (ticketId, agentId) =>
 
 export const getAgents = () => API.get("agents/");
 export const getCategories = () => API.get("categories/");
-export const getTicketComments = (ticketId) => API.get(`tickets/${ticketId}/comments/`);
-export const addTicketComment = (ticketId, data) => API.post(`tickets/${ticketId}/comments/`, data);
+export const getTicketComments = (ticketId) =>
+  API.get(`tickets/${ticketId}/comments/`);
+export const addTicketComment = (ticketId, data) =>
+  API.post(`tickets/${ticketId}/comments/`, data);
 export const getTicketPredictionFeedback = (ticketId) =>
   API.get(`tickets/${ticketId}/prediction-feedback/`);
 

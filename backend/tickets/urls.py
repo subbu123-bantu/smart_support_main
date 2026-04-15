@@ -12,7 +12,7 @@ from .views import (
     prediction_stats,
     test_backend,
 )
-from .ai import predict_ticket
+from .ai.ai import predict_ticket
 
 
 router = DefaultRouter()

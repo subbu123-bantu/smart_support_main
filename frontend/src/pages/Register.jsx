@@ -81,8 +81,8 @@ function Register() {
 
           {/* Feature list */}
           <div className="space-y-5">
-            {features.map((f, i) => (
-              <div key={i} className="flex items-start gap-4">
+            {features.map((f) => (
+              <div key={f.title} className="flex items-start gap-4">
                 <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-base flex-shrink-0">
                   {f.icon}
                 </div>
@@ -121,10 +121,11 @@ function Register() {
           <form onSubmit={handleSubmit} className="space-y-4">
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+              <label htmlFor="username" className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
                 Username
               </label>
               <input
+                id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -134,10 +135,11 @@ function Register() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+              <label htmlFor="email" className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
                 Email
               </label>
               <input
+                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -147,10 +149,11 @@ function Register() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+              <label htmlFor="password" className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
                 Password
               </label>
               <input
+                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -160,10 +163,11 @@ function Register() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+              <label htmlFor="confirm-password" className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
                 Confirm password
               </label>
               <input
+                id="confirm-password"
                 type="password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
@@ -199,12 +203,14 @@ function Register() {
           <div className="mt-6 pt-6 border-t border-white/5 text-center">
             <p className="text-gray-600 text-sm">
               Already have an account?{" "}
-              <span
+              <button
+                type="button"
                 onClick={() => navigate("/")}
+                onKeyDown={(e) => e.key === "Enter" && navigate("/")}
                 className="text-indigo-400 cursor-pointer hover:text-indigo-300 transition-colors"
               >
                 Sign in
-              </span>
+              </button>
             </p>
           </div>
 

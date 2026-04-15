@@ -34,7 +34,7 @@ function AgentWorkloadTable({ agentWorkload }) {
                 </td>
               </tr>
             ) : (
-              agentWorkload.map((agent, i) => {
+              agentWorkload.map((agent) => {
                 const solveRate =
                   agent.assigned > 0
                     ? Math.round((agent.solved / agent.assigned) * 100)
@@ -42,7 +42,7 @@ function AgentWorkloadTable({ agentWorkload }) {
 
                 return (
                   <tr
-                    key={i}
+                    key={agent.agent}
                     className="border-t border-white/5 hover:bg-white/[0.02] transition"
                   >
                     <td className="py-3 px-4 font-medium text-white">
@@ -71,9 +71,9 @@ function AgentWorkloadTable({ agentWorkload }) {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-center text-gray-400 text-sm">
-                      {agent.avg_resolution_hours != null
-                        ? `${agent.avg_resolution_hours}h`
-                        : "—"}
+                      {agent.avg_resolution_hours == null
+                        ? "—"
+                        : `${agent.avg_resolution_hours}h`}
                     </td>
                   </tr>
                 );

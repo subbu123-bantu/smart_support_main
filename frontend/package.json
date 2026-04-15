@@ -34,7 +34,7 @@
     ],
     "rules": {
       "no-unused-vars": "warn",
-      "no-console": "warn",
+      "no-console": "off",
       "eqeqeq": "error",
       "no-duplicate-imports": "error",
       "react-hooks/exhaustive-deps": "error",

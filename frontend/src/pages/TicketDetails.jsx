@@ -89,6 +89,74 @@ function TicketDetails() {
 
   const status = STATUS_META[ticket.status] || STATUS_META.open;
 
+  const renderFeedbackContent = () => {
+    if (loadingFeedback) {
+      return <p className="text-gray-500 text-sm">Loading feedback...</p>;
+    }
+    if (!predictionFeedback?.has_feedback) {
+      return <p className="text-gray-500 text-sm">No prediction feedback available for this ticket.</p>;
+    }
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FeedbackCard title="Category">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Predicted</p>
+                <p className="text-white font-medium capitalize">
+                  {predictionFeedback.predicted_category || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-400">Actual</p>
+                <p className="text-white font-medium capitalize">
+                  {predictionFeedback.actual_category || "—"}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3">
+              <EvaluationBadge value={predictionFeedback.category_correct} />
+            </div>
+          </FeedbackCard>
+
+          <FeedbackCard title="Priority">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Predicted</p>
+                <p className="text-white font-medium capitalize">
+                  {predictionFeedback.predicted_priority || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-400">Actual</p>
+                <p className="text-white font-medium capitalize">
+                  {predictionFeedback.actual_priority || "—"}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3">
+              <EvaluationBadge value={predictionFeedback.priority_correct} />
+            </div>
+          </FeedbackCard>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FeedbackCard title="Prediction Source">
+            <p className="text-white font-medium capitalize">
+              {predictionFeedback.source?.replaceAll("_", " ") || "—"}
+            </p>
+          </FeedbackCard>
+
+          <FeedbackCard title="Confidence">
+            <p className="text-white font-medium">
+              {Math.round((predictionFeedback.confidence || 0) * 100)}%
+            </p>
+          </FeedbackCard>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#0c0e14] text-white p-6">
       <button
@@ -177,74 +245,7 @@ function TicketDetails() {
           <p className="text-xs text-gray-600 mb-5">
             Compare predicted values with the final ticket decision
           </p>
-
-          {loadingFeedback ? (
-            <p className="text-gray-500 text-sm">Loading feedback...</p>
-          ) : !predictionFeedback || !predictionFeedback.has_feedback ? (
-            <p className="text-gray-500 text-sm">
-              No prediction feedback available for this ticket.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FeedbackCard title="Category">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">Predicted</p>
-                      <p className="text-white font-medium capitalize">
-                        {predictionFeedback.predicted_category || "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Actual</p>
-                      <p className="text-white font-medium capitalize">
-                        {predictionFeedback.actual_category || "—"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3">
-                    <EvaluationBadge value={predictionFeedback.category_correct} />
-                  </div>
-                </FeedbackCard>
-
-                <FeedbackCard title="Priority">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">Predicted</p>
-                      <p className="text-white font-medium capitalize">
-                        {predictionFeedback.predicted_priority || "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Actual</p>
-                      <p className="text-white font-medium capitalize">
-                        {predictionFeedback.actual_priority || "—"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3">
-                    <EvaluationBadge value={predictionFeedback.priority_correct} />
-                  </div>
-                </FeedbackCard>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FeedbackCard title="Prediction Source">
-                  <p className="text-white font-medium capitalize">
-                    {predictionFeedback.source?.replaceAll("_", " ") || "—"}
-                  </p>
-                </FeedbackCard>
-
-                <FeedbackCard title="Confidence">
-                  <p className="text-white font-medium">
-                    {Math.round((predictionFeedback.confidence || 0) * 100)}%
-                  </p>
-                </FeedbackCard>
-              </div>
-            </div>
-          )}
+          {renderFeedbackContent()}
         </div>
       </div>
     </div>
