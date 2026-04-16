@@ -1,0 +1,100 @@
+
+1.0PythonFrontend"1776315571649*py2.B°
+
+imports1
+
+extends2
+
+returns3
+
+	has param4
+
+module5
+
+
+class6
+
+function7
+!
+backend/users/permissions.py9
+
+users.permissions11
+/
+)rest_framework.permissions.BasePermission12
+0
+*rest_framework.permissions.IsAuthenticated14
+-
+'rest_framework.permissions.SAFE_METHODS16
+ 
+rest_framework.permissions18
+
+users.permissions.IsAdmin20
+.
+(users.permissions.IsAdmin.has_permission22
+"
+users.permissions.IsCustomer24
+1
++users.permissions.IsCustomer.has_permission26
+
+users.permissions.IsAgent28
+.
+(users.permissions.IsAgent.has_permission30
+)
+#users.permissions.IsAdminOrReadOnly32
+8
+2users.permissions.IsAdminOrReadOnly.has_permission34J
+
+8
+89 j¶
+ 
+10
+10115 *
+8 (
+
+13
+13125
+
+15
+15145
+
+17
+17165
+
+19
+19185
+
+21
+21206 210
+
+23
+23227 221
+
+25
+25246 210
+
+27
+27267 225
+
+29
+29286 210
+
+31
+31307 229
+
+33
+33326 210
+
+35
+35347 233rh
+
+10131*
+8( (6
+
+10151*
+88 (G
+
+10171*
+8I (U
+
+10191*
+8 (U

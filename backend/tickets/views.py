@@ -1,5 +1,6 @@
 from django.db.models import Q, Count
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import viewsets
@@ -115,6 +116,7 @@ class TicketViewSet(viewsets.ModelViewSet):
 
         return response
 
+@require_POST
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -134,6 +136,7 @@ def predict_view(request):
     })
 
 
+@require_GET
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def ticket_stats(request):
@@ -141,6 +144,7 @@ def ticket_stats(request):
     return Response(data, status=status_code)
 
 
+@require_http_methods(["PATCH"])
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
 def assign_ticket(request, ticket_id):
@@ -161,6 +165,7 @@ def assign_ticket(request, ticket_id):
     return Response(data, status=status_code)
 
 
+@require_GET
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def prediction_stats(request):
@@ -213,6 +218,7 @@ class TicketCommentViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
+@require_GET
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def ticket_prediction_feedback(request, ticket_id):

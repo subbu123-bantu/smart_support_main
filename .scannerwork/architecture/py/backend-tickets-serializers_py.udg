@@ -1,0 +1,95 @@
+
+1.0PythonFrontend"1776315572162*py2.BÑ
+
+imports1
+
+extends2
+
+returns3
+
+	has param4
+
+module5
+
+
+class6
+
+function7
+#
+backend/tickets/serializers.py9
+
+tickets.serializers11
+ 
+rest_framework.serializers12
+
+rest_framework14
+
+tickets.models16
+#
+tickets.services.ticketcreate18
+,
+&tickets.serializers.CategorySerializer20
+*
+$tickets.serializers.TicketSerializer22
+1
++tickets.serializers.TicketSerializer.create24
+9
+3tickets.serializers.TicketSerializer.validate_title26
+1
++tickets.serializers.TicketSerializer.update28
+?
+9tickets.serializers.TicketSerializer.validate_description30
+1
++tickets.serializers.TicketCommentSerializer32J
+
+8
+89 jù
+ 
+10
+10115 *
+8 (
+
+13
+13125
+
+15
+15145
+
+17
+17165
+
+19
+19185
+
+21
+21206 210
+
+23
+23226 210
+
+25
+25247 223
+
+27
+27267 223
+
+29
+29287 223
+
+31
+31307 223
+
+33
+33326 210rh
+
+10131*
+8 ('
+
+10151*
+8 ('
+
+10171*
+8 (4
+
+10191*
+8 (8

@@ -7,6 +7,7 @@ from .permissions import IsAdmin
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from django.views.decorators.http import require_GET, require_POST
 from rest_framework.exceptions import PermissionDenied
 
 
@@ -16,6 +17,7 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdmin]
 
 
+@require_POST
 @authentication_classes([])
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -26,6 +28,7 @@ def register_view(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@require_POST
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
@@ -49,12 +52,14 @@ def login_view(request):
     })
 
 
+@require_POST
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def logout_view(request):
     return Response({"message": "Logged out successfully"})
 
 
+@require_GET
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_agents(request):

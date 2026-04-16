@@ -1,3 +1,4 @@
+/* global globalThis */
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { LogOut, Menu, X } from "lucide-react";
@@ -25,8 +26,7 @@ function Sidebar() {
       localStorage.removeItem("access");
       localStorage.removeItem("role");
       localStorage.removeItem("username");
-      // sonarlint-disable-next-line javascript:S7764
-      window.location.href = "/login";
+      globalThis.location.href = "/login";
     }
   };
 

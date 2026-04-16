@@ -1,4 +1,3 @@
-/* sonarlint-disable */
 import PropTypes from "prop-types";
 import {
   BarChart,
@@ -7,7 +6,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Cell,
   PieChart,
   Pie,
   LineChart,
@@ -53,6 +51,21 @@ const tooltipStyle = {
 };
 
 function ChartsSection({ pieData, lineData, categoryData, priorityData }) {
+  const statusChartData = pieData.map((entry) => ({
+    ...entry,
+    fill: STATUS_COLORS[entry.name] || "#6366f1",
+  }));
+
+  const categoryChartData = categoryData.map((entry, index) => ({
+    ...entry,
+    fill: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+  }));
+
+  const priorityChartData = priorityData.map((entry) => ({
+    ...entry,
+    fill: PRIORITY_COLORS[entry.name] || "#6366f1",
+  }));
+
   return (
     <>
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
@@ -67,7 +80,7 @@ function ChartsSection({ pieData, lineData, categoryData, priorityData }) {
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie
-                data={pieData}
+                data={statusChartData}
                 cx="50%"
                 cy="50%"
                 innerRadius={62}
@@ -78,12 +91,7 @@ function ChartsSection({ pieData, lineData, categoryData, priorityData }) {
                   `${name} ${((percent || 0) * 100).toFixed(0)}%`
                 }
                 labelLine={false}
-              >
-                {/* sonarlint-disable */}
-                {pieData.map((entry) => (
-                  <Cell key={`status-${entry.name}`} fill={STATUS_COLORS[entry.name] || "#6366f1"} />
-                ))}
-              </Pie>
+              />
               <Tooltip contentStyle={tooltipStyle} />
             </PieChart>
           </ResponsiveContainer>
@@ -129,7 +137,7 @@ function ChartsSection({ pieData, lineData, categoryData, priorityData }) {
           </p>
 
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={categoryData} barSize={34}>
+            <BarChart data={categoryChartData} barSize={34}>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="rgba(255,255,255,0.05)"
@@ -137,12 +145,7 @@ function ChartsSection({ pieData, lineData, categoryData, priorityData }) {
               <XAxis dataKey="name" tick={chartAxisStyle} />
               <YAxis allowDecimals={false} tick={chartAxisStyle} />
               <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                {/* sonarlint-disable */}
-                {categoryData.map((entry, index) => (
-                  <Cell key={`cat-${entry.name}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
-                ))}
-              </Bar>
+              <Bar dataKey="count" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -156,7 +159,7 @@ function ChartsSection({ pieData, lineData, categoryData, priorityData }) {
           </p>
 
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={priorityData} barSize={34}>
+            <BarChart data={priorityChartData} barSize={34}>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="rgba(255,255,255,0.05)"
@@ -164,12 +167,7 @@ function ChartsSection({ pieData, lineData, categoryData, priorityData }) {
               <XAxis dataKey="name" tick={chartAxisStyle} />
               <YAxis allowDecimals={false} tick={chartAxisStyle} />
               <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                {/* sonarlint-disable */}
-                {priorityData.map((entry) => (
-                  <Cell key={`pri-${entry.name}`} fill={PRIORITY_COLORS[entry.name] || "#6366f1"} />
-                ))}
-              </Bar>
+              <Bar dataKey="count" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

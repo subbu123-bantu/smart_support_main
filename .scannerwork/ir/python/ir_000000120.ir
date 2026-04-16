@@ -1,0 +1,51 @@
+
+"model"str
+"role"str
+"user"str
+
+0int
+	"system"str
+
+"messages"str
+"temperature"str
+˚Ò"You classify support tickets. Return only valid JSON. Choose exactly one category from: billing, technical, authentication, network, account, other. If the ticket is vague or not clearly a support request, return other with low confidence."str
+	"content"str
+0.1floatprompt ("list"ç$
+"
+ )("#new-object#Bdict!
+
+ ("#unknown-value# 
+
+ ("	#map-set#:$
+"
+ %("#new-object#Bdict 
+
+ ( 
+"	#map-set#:	 
+
+ $("	#map-set#:$
+"
+& &(/"#new-object#Bdict 
+
+& &("	#map-set#: 
+
+& &(."	#map-set#:'
+%
+ '(	"#unknown-value#Blist&
+$
+ '(	"
+#is-exact#:Bbool
+
+ '(	"
+#assume#:8
+6
+ '(	"#set-field# __collection_size:Bint&
+$
+ '(	"#array-add-last#:&
+$
+ '(	"#array-add-last#: 
+
+ '(	"	#map-set#: 
+
+( (("	#map-set#:
+ )(*WC:\Users\bantu\SMART_SUPPORT\smart_support\subrahmanyam\backend\tickets\ai\ai_client.py

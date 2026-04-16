@@ -1,3 +1,4 @@
+/* global globalThis */
 import axios from "axios";
 
 const clearAuthStorage = () => {
@@ -38,7 +39,7 @@ API.interceptors.response.use(
 
     if (error.response?.status === 401 && !isLoginRequest) {
       clearAuthStorage();
-      window.location.href = "/login";
+      globalThis.location.href = "/login";
     }
 
     return Promise.reject(error);

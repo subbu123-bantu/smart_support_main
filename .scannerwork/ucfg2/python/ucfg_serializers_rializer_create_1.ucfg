@@ -1,0 +1,68 @@
+
++users.serializers.RegisterSerializer.create^
+TC:\Users\bantu\SMART_SUPPORT\smart_support\subrahmanyam\backend\users\serializers.py ("2*Õ
+2 (	X
+V
+ (
+%1"__id*>
+
+__unknown_file ("* 
+users.models.User"	
+objectsÑÅ
+ (/
+%2"__mapGet*.
+
+__unknown_file (
+
+validated_data*(
+
+__unknown_file (
+
+username2__getitem__nl
+ (-
+%3*.
+
+__unknown_file (
+
+validated_data*%
+
+__unknown_file (	
+email2getÑÅ
+ (/
+%4"__mapGet*.
+
+__unknown_file (
+
+validated_data*(
+
+__unknown_file (
+
+password2__getitem__—
+Œ
+ (	
+%5"2django.contrib.auth.models.UserManager.create_user*"
+
+__unknown_file (
+
+%12
+username
+
+%22
+email
+
+%32
+password
+
+%42
+role
+
+customer2
+	is_active
+
+True"
+ (	
+
+%5:
+ (#
+validated_dataB(&
+$users.serializers.RegisterSerializerH
