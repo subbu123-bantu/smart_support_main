@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from django.test import TestCase
+from django.utils.crypto import get_random_string
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -9,36 +10,49 @@ from tickets.services.ticketcomments import create_comment_for_user, get_comment
 from users.models import AgentProfile, User
 
 
+PASSWORD_FIELD = "password"
+
+
+def build_test_password():
+    return f"test-{get_random_string(16)}-Aa1!"
+
+
 class TicketApiTests(APITestCase):
     def setUp(self):
+        self.admin_password = build_test_password()
+        self.agent_password = build_test_password()
+        self.other_agent_password = build_test_password()
+        self.customer_password = build_test_password()
+        self.other_customer_password = build_test_password()
+
         self.admin_user = User.objects.create_user(
             username="adminuser",
             email="admin@example.com",
-            password="AdminPass123!",
+            **{PASSWORD_FIELD: self.admin_password},
             role="admin",
         )
         self.agent_user = User.objects.create_user(
             username="agentuser",
             email="agent@example.com",
-            password="AgentPass123!",
+            **{PASSWORD_FIELD: self.agent_password},
             role="agent",
         )
         self.other_agent = User.objects.create_user(
             username="otheragent",
             email="otheragent@example.com",
-            password="OtherAgent123!",
+            **{PASSWORD_FIELD: self.other_agent_password},
             role="agent",
         )
         self.customer_user = User.objects.create_user(
             username="customeruser",
             email="customer@example.com",
-            password="CustomerPass123!",
+            **{PASSWORD_FIELD: self.customer_password},
             role="customer",
         )
         self.other_customer = User.objects.create_user(
             username="othercustomer",
             email="othercustomer@example.com",
-            password="OtherCustomer123!",
+            **{PASSWORD_FIELD: self.other_customer_password},
             role="customer",
         )
 
@@ -318,28 +332,33 @@ class TicketApiTests(APITestCase):
 
 class TicketCommentServiceTests(TestCase):
     def setUp(self):
+        self.admin_password = build_test_password()
+        self.agent_password = build_test_password()
+        self.customer_password = build_test_password()
+        self.other_customer_password = build_test_password()
+
         self.admin_user = User.objects.create_user(
             username="admincomments",
             email="admincomments@example.com",
-            password="AdminPass123!",
+            **{PASSWORD_FIELD: self.admin_password},
             role="admin",
         )
         self.agent_user = User.objects.create_user(
             username="agentcomments",
             email="agentcomments@example.com",
-            password="AgentPass123!",
+            **{PASSWORD_FIELD: self.agent_password},
             role="agent",
         )
         self.customer_user = User.objects.create_user(
             username="customercomments",
             email="customercomments@example.com",
-            password="CustomerPass123!",
+            **{PASSWORD_FIELD: self.customer_password},
             role="customer",
         )
         self.other_customer = User.objects.create_user(
             username="othercomments",
             email="othercomments@example.com",
-            password="OtherCustomer123!",
+            **{PASSWORD_FIELD: self.other_customer_password},
             role="customer",
         )
 

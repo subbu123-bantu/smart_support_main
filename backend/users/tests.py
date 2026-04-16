@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.utils.crypto import get_random_string
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -6,13 +7,21 @@ from users.models import AgentProfile, User
 from users.serializers import RegisterSerializer
 
 
+PASSWORD_FIELD = "password"
+
+
+def build_test_password():
+    return f"test-{get_random_string(16)}-Aa1!"
+
+
 class RegisterSerializerTests(TestCase):
     def test_create_sets_customer_defaults_and_hashes_password(self):
+        password = build_test_password()
         serializer = RegisterSerializer(
             data={
                 "username": "newcustomer",
                 "email": "newcustomer@example.com",
-                "password": "StrongPass123!",
+                PASSWORD_FIELD: password,
             }
         )
 
@@ -21,8 +30,8 @@ class RegisterSerializerTests(TestCase):
 
         self.assertEqual(user.role, "customer")
         self.assertTrue(user.is_active)
-        self.assertNotEqual(user.password, "StrongPass123!")
-        self.assertTrue(user.check_password("StrongPass123!"))
+        self.assertNotEqual(user.password, password)
+        self.assertTrue(user.check_password(password))
 
 
 class UserApiTests(APITestCase):
@@ -31,35 +40,39 @@ class UserApiTests(APITestCase):
         self.login_url = "/api/login/"
         self.logout_url = "/api/logout/"
         self.agents_url = "/api/agents/"
+        self.admin_password = build_test_password()
+        self.agent_password = build_test_password()
+        self.customer_password = build_test_password()
 
         self.admin_user = User.objects.create_user(
             username="adminuser",
             email="admin@example.com",
-            password="AdminPass123!",
+            **{PASSWORD_FIELD: self.admin_password},
             role="admin",
         )
         self.agent_user = User.objects.create_user(
             username="agentuser",
             email="agent@example.com",
-            password="AgentPass123!",
+            **{PASSWORD_FIELD: self.agent_password},
             role="agent",
         )
         self.customer_user = User.objects.create_user(
             username="customeruser",
             email="customer@example.com",
-            password="CustomerPass123!",
+            **{PASSWORD_FIELD: self.customer_password},
             role="customer",
         )
 
         AgentProfile.objects.create(user=self.agent_user, is_available=True)
 
     def test_register_view_creates_customer_user(self):
+        password = build_test_password()
         response = self.client.post(
             self.register_url,
             {
                 "username": "freshuser",
                 "email": "fresh@example.com",
-                "password": "FreshPass123!",
+                PASSWORD_FIELD: password,
             },
             format="json",
         )
@@ -67,8 +80,8 @@ class UserApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         created_user = User.objects.get(username="freshuser")
         self.assertEqual(created_user.role, "customer")
-        self.assertTrue(created_user.check_password("FreshPass123!"))
-        self.assertNotIn("password", response.data)
+        self.assertTrue(created_user.check_password(password))
+        self.assertNotIn(PASSWORD_FIELD, response.data)
 
     def test_register_view_rejects_invalid_payload(self):
         response = self.client.post(
@@ -76,7 +89,7 @@ class UserApiTests(APITestCase):
             {
                 "username": "",
                 "email": "invalid@example.com",
-                "password": "short",
+                PASSWORD_FIELD: build_test_password(),
             },
             format="json",
         )
@@ -89,7 +102,7 @@ class UserApiTests(APITestCase):
             self.login_url,
             {
                 "username": self.admin_user.username,
-                "password": "AdminPass123!",
+                PASSWORD_FIELD: self.admin_password,
             },
             format="json",
         )
@@ -101,11 +114,12 @@ class UserApiTests(APITestCase):
         self.assertIn("access", response.data["user"])
 
     def test_login_view_rejects_invalid_credentials(self):
+        invalid_password = build_test_password()
         response = self.client.post(
             self.login_url,
             {
                 "username": self.admin_user.username,
-                "password": "WrongPass123!",
+                PASSWORD_FIELD: invalid_password,
             },
             format="json",
         )
