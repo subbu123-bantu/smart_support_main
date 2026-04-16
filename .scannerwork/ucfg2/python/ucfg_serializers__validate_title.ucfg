@@ -1,35 +1,0 @@
-
-3tickets.serializers.TicketSerializer.validate_title`
-VC:\Users\bantu\SMART_SUPPORT\smart_support\subrahmanyam\backend\tickets\serializers.py" "("2*W
-2# #(@>
-# #(
-%2*%
-
-__unknown_file (	
-
-value2strip*
-4
-5*4
-3
-serializers.py"
-' '(
-implicit return*$
-4% %("
-% %(	
-
-value*¸
-5$ $(F£
- 
-$ $(F
-%1"*rest_framework.serializers.ValidationError*+
-
-__unknown_file (
-
-serializers*5
-
-__unknown_file (
-Title cannot be empty*
-3:
-" "("
-valueB(&
-$tickets.serializers.TicketSerializerH

@@ -1,76 +1,0 @@
-
-1.0PythonFrontend"1776315572513*py2.B¶
-
-imports1
-
-extends2
-
-returns3
-
-	has param4
-
-module5
-
-
-class6
-
-function7
-
-backend/tickets/urls.py9
-
-tickets.urls11
-
-django.urls.include12
-
-django.urls14
-*
-$rest_framework.routers.DefaultRouter16
-
-rest_framework.routers18
-
-tickets.views20
-
-tickets.ai.ai22J
-
-8
-89 j”
- 
-10
-10115 *
-8 (
-
-13
-13125
-
-15
-15145
-
-17
-17165
-
-19
-19185
-
-21
-21205
-
-23
-23225rœ
-
-10131*
-8 (&
-
-10151*
-8 (&
-
-10171*
-8$ (1
-
-10191*
-8 (1
-
-10211*
-8 (
-
-10231*
-8 ("

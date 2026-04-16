@@ -1,7 +1,0 @@
-organization=subbu123-bantu
-projectKey=subbu123-bantu_smart_support_main
-serverUrl=https://sonarcloud.io
-serverVersion=8.0.0.85499
-dashboardUrl=https://sonarcloud.io/dashboard?id=subbu123-bantu_smart_support_main
-ceTaskId=AZ2UrW0se31_Mrhfm4Ng
-ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZ2UrW0se31_Mrhfm4Ng

@@ -1,62 +1,0 @@
-
-1.0PythonFrontend"1776315572381*py2.B¨
-
-imports1
-
-extends2
-
-returns3
-
-	has param4
-
-module5
-
-
-class6
-
-function7
-
-backend/tickets/apps.py9
-
-tickets.apps11
-
-django.apps12
-
-tickets.signals14
- 
-tickets.apps.TicketsConfig16
-"
-django.apps.config.AppConfig18
-&
- tickets.apps.TicketsConfig.ready20J
-
-8
-89 jç
- 
-10
-10115 *
-8 (
-
-13
-13125
-
-15
-15145
-
-17
-17166 210
-
-19
-19186
-
-21
-21207 217rN
-
-10131*
-8 ("
-
-10151*
-8 (
-
-17192*
-8 (

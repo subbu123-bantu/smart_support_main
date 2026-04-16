@@ -1,78 +1,0 @@
-
-1.0PythonFrontend"1776315571095*py2.Bœ
-
-imports1
-
-extends2
-
-returns3
-
-	has param4
-
-module5
-
-
-class6
-
-function7
-+
-&backend/tickets/services/assignment.py9
-!
-tickets.services.assignment11
-
-django.db.models.Count12
-
-django.db.models.Q14
-
-django.db.models16
-
-tickets.models18
-
-users.models20
-8
-2tickets.services.assignment.assign_ticket_to_agent22
-4
-.tickets.services.assignment.auto_assign_ticket24J
-
-8
-89 j³
- 
-10
-10115 *
-8 (
-
-13
-13125
-
-15
-15145
-
-17
-17165
-
-19
-19185
-
-21
-21205
-
-23
-23227 210
-
-25
-25247 210r‚
-
-10131*
-8 (#
-
-10151*
-8% (&
-
-10171*
-8 (&
-
-10191*
-8 ("
-
-10211*
-8 (&

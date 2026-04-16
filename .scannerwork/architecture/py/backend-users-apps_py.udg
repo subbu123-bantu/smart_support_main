@@ -1,50 +1,0 @@
-
-1.0PythonFrontend"1776315571081*py2.Bå
-
-imports1
-
-extends2
-
-returns3
-
-	has param4
-
-module5
-
-
-class6
-
-function7
-
-backend/users/apps.py9
-
-
-users.apps11
-
-django.apps12
-
-users.apps.UsersConfig14
-"
-django.apps.config.AppConfig16J
-
-8
-89 ja
- 
-10
-10115 *
-8 (
-
-13
-13125
-
-15
-15146 210
-
-17
-17166r4
-
-10131*
-8 ("
-
-15172*
-8 (

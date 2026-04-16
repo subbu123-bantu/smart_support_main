@@ -1,46 +1,0 @@
-
-1.0PythonFrontend"1776315571758*py2.BŒ
-
-imports1
-
-extends2
-
-returns3
-
-	has param4
-
-module5
-
-
-class6
-
-function7
-"
-backend/tickets/exceptions.py9
-
-tickets.exceptions11
-'
-!tickets.exceptions.EmailSendError12
-
-	Exception14
-0
-*tickets.exceptions.EmailSendError.__init__16J
-
-8
-89 jg
- 
-10
-10115 *
-8 (
-
-13
-13126 210
-
-15
-15146
-
-17
-17167 213r
-
-13152*
-8 (
