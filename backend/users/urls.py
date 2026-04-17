@@ -1,9 +1,16 @@
 from django.urls import path
-from .views import login_view, logout_view, register_view,get_agents
+from .views import (
+    AgentListView,
+    AgentProfileUpdateView,
+    LoginView,
+    LogoutView,
+    RegisterView,
+)
 
 urlpatterns = [
-    path('login/', login_view),
-    path('logout/', logout_view),
-    path('register/', register_view),
-    path('agents/', get_agents), 
+    path('login/', LoginView.as_view()),
+    path('logout/', LogoutView.as_view()),
+    path('register/', RegisterView.as_view()),
+    path('agents/', AgentListView.as_view()),
+    path('agents/<int:agent_id>/', AgentProfileUpdateView.as_view()),
 ]

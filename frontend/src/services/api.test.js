@@ -175,12 +175,14 @@ describe("api service", () => {
 
   test("auxiliary fetch helpers call the expected endpoints", () => {
     apiModule.getAgents();
+    apiModule.updateAgentProfile(3, { categories: [1, 2] });
     apiModule.getCategories();
     apiModule.getTicketComments(4);
     apiModule.addTicketComment(4, { message: "Hello" });
     apiModule.getTicketPredictionFeedback(4);
 
     expect(mockApi.get).toHaveBeenCalledWith("agents/");
+    expect(mockApi.patch).toHaveBeenCalledWith("agents/3/", { categories: [1, 2] });
     expect(mockApi.get).toHaveBeenCalledWith("categories/");
     expect(mockApi.get).toHaveBeenCalledWith("tickets/4/comments/");
     expect(mockApi.post).toHaveBeenCalledWith("tickets/4/comments/", { message: "Hello" });

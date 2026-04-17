@@ -183,6 +183,23 @@ class TicketApiTests(APITestCase):
         mock_feedback.assert_called_once()
         mock_delay.assert_called_once()
 
+    @patch("tickets.views.send_email_task.delay", side_effect=Exception("broker unavailable"))
+    @patch("tickets.views.update_prediction_feedback")
+    def test_ticket_update_succeeds_when_email_queue_fails(self, mock_feedback, mock_delay):
+        self.client.force_authenticate(user=self.agent_user)
+
+        response = self.client.patch(
+            f"{self.ticket_list_url}{self.assigned_ticket.id}/",
+            {"priority": Ticket.Priority.MEDIUM},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assigned_ticket.refresh_from_db()
+        self.assertEqual(self.assigned_ticket.priority, Ticket.Priority.MEDIUM)
+        mock_feedback.assert_called_once()
+        mock_delay.assert_called_once()
+
     def test_ticket_update_blocks_agent_from_editing_disallowed_fields(self):
         self.client.force_authenticate(user=self.agent_user)
 
@@ -400,3 +417,14 @@ class TicketCommentServiceTests(TestCase):
 
         self.assertFalse(comment.is_internal)
         mock_delay.assert_not_called()
+
+    @patch("tickets.services.ticketcomments.send_email_task.delay", side_effect=Exception("broker unavailable"))
+    def test_create_comment_for_agent_succeeds_when_email_queue_fails(self, mock_delay):
+        class DummySerializer:
+            def save(self, **kwargs):
+                return TicketComment.objects.create(message="Agent reply", **kwargs)
+
+        comment = create_comment_for_user(DummySerializer(), self.agent_user, self.ticket)
+
+        self.assertEqual(comment.message, "Agent reply")
+        mock_delay.assert_called_once()

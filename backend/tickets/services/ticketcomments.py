@@ -1,7 +1,11 @@
+import logging
+
 from rest_framework.exceptions import PermissionDenied
 
 from tickets.models import Ticket, TicketComment
 from tickets.tasks import send_email_task
+
+logger = logging.getLogger(__name__)
 
 
 def get_ticket_or_raise(ticket_id):
@@ -30,7 +34,7 @@ def get_comment_queryset_for_user(user, ticket):
     else:
         raise PermissionDenied("Invalid role.")
 
-    return queryset.select_related("user", "ticket")
+    return queryset.select_related("user", "ticket").order_by("created_at")
 
 
 def create_comment_for_user(serializer, user, ticket):
@@ -53,19 +57,26 @@ def create_comment_for_user(serializer, user, ticket):
         raise PermissionDenied("Invalid role.")
 
     if role in ["admin", "agent"] and not comment.is_internal:
-        send_email_task.delay(
-            ticket.customer.email,
-            subject=f"[Ticket #{ticket.id}] New comment on your ticket",
-            template_name="emails/ticket_comment_added.html",
-            context={
-                "customer_name": ticket.customer.username,
-                "ticket_title": ticket.title,
-                "ticket_id": ticket.id,
-                "comment_by": user.username,
-                "comment_message": comment.message[:300],
-                "comment_role": role,
-            }
-        )
+        try:
+            send_email_task.delay(
+                ticket.customer.email,
+                subject=f"[Ticket #{ticket.id}] New comment on your ticket",
+                template_name="emails/ticket_comment_added.html",
+                context={
+                    "customer_name": ticket.customer.username,
+                    "ticket_title": ticket.title,
+                    "ticket_id": ticket.id,
+                    "comment_by": user.username,
+                    "comment_message": comment.message[:300],
+                    "comment_role": role,
+                }
+            )
+        except Exception:
+            logger.exception(
+                "Failed to queue comment email for ticket_id=%s comment_id=%s",
+                ticket.id,
+                comment.id,
+            )
 
     return comment
 

@@ -3,6 +3,7 @@ from django.utils.crypto import get_random_string
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from tickets.models import Category
 from users.models import AgentProfile, User
 from users.serializers import RegisterSerializer
 
@@ -40,6 +41,7 @@ class UserApiTests(APITestCase):
         self.login_url = "/api/login/"
         self.logout_url = "/api/logout/"
         self.agents_url = "/api/agents/"
+        self.agent_profile_url = None
         self.admin_password = build_test_password()
         self.agent_password = build_test_password()
         self.customer_password = build_test_password()
@@ -63,7 +65,12 @@ class UserApiTests(APITestCase):
             role="customer",
         )
 
-        AgentProfile.objects.create(user=self.agent_user, is_available=True)
+        self.agent_profile = AgentProfile.objects.create(user=self.agent_user, is_available=True)
+        self.billing_category = Category.objects.create(name="Billing")
+        self.technical_category = Category.objects.create(name="Technical")
+        self.account_category = Category.objects.create(name="Account")
+        self.agent_profile.categories.add(self.billing_category)
+        self.agent_profile_url = f"/api/agents/{self.agent_user.id}/"
 
     def test_register_view_creates_customer_user(self):
         password = build_test_password()
@@ -142,6 +149,8 @@ class UserApiTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["username"], self.agent_user.username)
         self.assertTrue(response.data[0]["is_available"])
+        self.assertEqual(response.data[0]["categories"], [self.billing_category.id])
+        self.assertEqual(response.data[0]["category_names"], [self.billing_category.name])
 
     def test_get_agents_requires_authenticated_user(self):
         response = self.client.get(self.agents_url, format="json")
@@ -155,3 +164,51 @@ class UserApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertIn("Only admins can view agents.", str(response.data))
+
+    def test_update_agent_profile_updates_multiple_categories_for_admin(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.patch(
+            self.agent_profile_url,
+            {
+                "is_available": False,
+                "categories": [self.billing_category.id, self.technical_category.id, self.account_category.id],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.agent_profile.refresh_from_db()
+        self.assertFalse(self.agent_profile.is_available)
+        self.assertCountEqual(
+            self.agent_profile.categories.values_list("id", flat=True),
+            [self.billing_category.id, self.technical_category.id, self.account_category.id],
+        )
+        self.assertCountEqual(
+            response.data["category_names"],
+            [self.billing_category.name, self.technical_category.name, self.account_category.name],
+        )
+
+    def test_update_agent_profile_rejects_invalid_category_ids(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.patch(
+            self.agent_profile_url,
+            {"categories": [99999]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("categories", response.data)
+
+    def test_update_agent_profile_requires_admin_user(self):
+        self.client.force_authenticate(user=self.customer_user)
+
+        response = self.client.patch(
+            self.agent_profile_url,
+            {"categories": [self.technical_category.id]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("Only admins can update agents.", str(response.data))

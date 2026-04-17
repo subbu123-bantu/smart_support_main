@@ -82,6 +82,7 @@ export const assignTicket = (ticketId, agentId) =>
   API.patch(`tickets/${ticketId}/assign/`, { agent_id: agentId });
 
 export const getAgents = () => API.get("agents/");
+export const updateAgentProfile = (agentId, data) => API.patch(`agents/${agentId}/`, data);
 export const getCategories = () => API.get("categories/");
 export const getTicketComments = (ticketId) =>
   API.get(`tickets/${ticketId}/comments/`);

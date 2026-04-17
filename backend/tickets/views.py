@@ -1,6 +1,6 @@
+import logging
+
 from django.db.models import Q, Count
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import viewsets
@@ -28,6 +28,8 @@ from .services.ticketcomments import (
 )
 from .services.ticket_prediction_update import update_prediction_feedback, get_prediction_feedback
 from .services.ticketstats import build_ticket_stats
+
+logger = logging.getLogger(__name__)
 
 
 class test_backend(APIView):
@@ -103,20 +105,24 @@ class TicketViewSet(viewsets.ModelViewSet):
         ticket.refresh_from_db()
         update_prediction_feedback(ticket)
 
-        send_email_task.delay(
-            ticket.customer.email,
-            subject=f"Your ticket '{ticket.title}' updated",
-            template_name="emails/ticket_status_updated.html",
-            context={
-                "customer_name": ticket.customer.username,
-                "ticket_title": ticket.title,
-                "new_status": ticket.status,
-            }
-        )
+        try:
+            send_email_task.delay(
+                ticket.customer.email,
+                subject=f"Your ticket '{ticket.title}' updated",
+                template_name="emails/ticket_status_updated.html",
+                context={
+                    "customer_name": ticket.customer.username,
+                    "ticket_title": ticket.title,
+                    "new_status": ticket.status,
+                }
+            )
+        except Exception:
+            logger.exception(
+                "Failed to queue ticket update email for ticket_id=%s", ticket.id
+            )
 
         return response
 
-@require_POST
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -136,7 +142,6 @@ def predict_view(request):
     })
 
 
-@require_GET
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def ticket_stats(request):
@@ -144,7 +149,6 @@ def ticket_stats(request):
     return Response(data, status=status_code)
 
 
-@require_http_methods(["PATCH"])
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
 def assign_ticket(request, ticket_id):
@@ -165,7 +169,6 @@ def assign_ticket(request, ticket_id):
     return Response(data, status=status_code)
 
 
-@require_GET
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def prediction_stats(request):
@@ -218,7 +221,6 @@ class TicketCommentViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-@require_GET
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def ticket_prediction_feedback(request, ticket_id):

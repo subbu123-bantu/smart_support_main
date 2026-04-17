@@ -19,6 +19,16 @@ function TicketCard({ ticket, role, categories, agents, onFieldUpdate, onStatusU
     if (onAssign) onAssign(ticket.id, agentId);
   };
 
+  const formatAgentLabel = (agent) => {
+    const categoryNames = agent.category_names?.filter(Boolean) || [];
+
+    if (categoryNames.length === 0) {
+      return agent.username;
+    }
+
+    return `${agent.username} - ${categoryNames.join(", ")}`;
+  };
+
   return (
     <button
       type="button"
@@ -101,7 +111,7 @@ function TicketCard({ ticket, role, categories, agents, onFieldUpdate, onStatusU
               <option value="">Unassigned</option>
               {agents.map((agent) => (
                 <option key={agent.id} value={agent.id}>
-                  {agent.username}
+                  {formatAgentLabel(agent)}
                 </option>
               ))}
             </select>
