@@ -4,6 +4,7 @@ anyascii==0.3.3
 anyio==4.12.1
 asgiref==3.11.1
 certifi==2026.2.25
+celery==5.5.3
 charset-normalizer==3.4.6
 click==8.3.1
 colorama==0.4.6

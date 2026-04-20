@@ -19,6 +19,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class RegisterView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    http_method_names = ["post"]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -30,6 +31,7 @@ class RegisterView(APIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    http_method_names = ["post"]
 
     def post(self, request):
         username = request.data.get("username")
@@ -54,6 +56,7 @@ class LoginView(APIView):
 
 class LogoutView(APIView):
     permission_classes = [AllowAny]
+    http_method_names = ["post"]
 
     def post(self, request):
         return Response({"message": "Logged out successfully"})
@@ -61,6 +64,7 @@ class LogoutView(APIView):
 
 class AgentListView(APIView):
     permission_classes = [IsAuthenticated]
+    http_method_names = ["get"]
 
     def get(self, request):
         if request.user.role.lower() != 'admin':
@@ -73,6 +77,7 @@ class AgentListView(APIView):
 
 class AgentProfileUpdateView(APIView):
     permission_classes = [IsAuthenticated]
+    http_method_names = ["patch"]
 
     def patch(self, request, agent_id):
         if request.user.role.lower() != 'admin':

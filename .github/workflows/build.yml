@@ -1,0 +1,140 @@
+name: Coverage
+
+on:
+  push:
+    branches:
+      - clean-branch
+      - dev
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SECRET_KEY: ci-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: postgres
+      DB_USER: postgres
+      DB_PASSWORD_LOCAL: postgres
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      GROQ_API_KEY: dummy-groq-key
+      BREVO_API_KEY: dummy-brevo-key
+      BREVO_SMTP_USER: dummy-user
+      BREVO_SMTP_PASS: dummy-pass
+      BREVO_SENDER_EMAIL: ci@example.com
+      CI: "true"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install coverage
+
+      - name: Run backend coverage
+        working-directory: backend
+        run: |
+          python manage.py migrate
+          coverage erase
+          coverage run manage.py test
+          coverage xml -o coverage.xml
+          coverage report -m
+
+      - name: Add backend coverage summary
+        working-directory: backend
+        shell: python
+        run: |
+          import re
+          from pathlib import Path
+
+          xml = Path("coverage.xml").read_text(encoding="utf-8")
+          match = re.search(r'line-rate="([0-9.]+)"', xml)
+          percent = round(float(match.group(1)) * 100, 2) if match else "unknown"
+
+          summary_path = Path(__import__("os").environ["GITHUB_STEP_SUMMARY"])
+          with summary_path.open("a", encoding="utf-8") as summary:
+              summary.write("## Coverage Summary\n")
+              summary.write(f"- Backend: {percent}%\n")
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Run frontend coverage
+        working-directory: frontend
+        run: npm test -- --coverage --watchAll=false --runInBand --passWithNoTests --coverageReporters=lcov --coverageReporters=json-summary --coverageReporters=text-summary
+
+      - name: Add frontend coverage summary
+        working-directory: frontend
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          coverage = json.loads(Path("coverage/coverage-summary.json").read_text(encoding="utf-8"))
+          percent = coverage["total"]["lines"]["pct"]
+
+          summary_path = Path(__import__("os").environ["GITHUB_STEP_SUMMARY"])
+          with summary_path.open("a", encoding="utf-8") as summary:
+              summary.write(f"- Frontend: {percent}%\n")
+
+      - name: Upload backend coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+
+      - name: Upload frontend coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: |
+            frontend/coverage/lcov.info
+            frontend/coverage
+
+      - name: Run SonarCloud analysis
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

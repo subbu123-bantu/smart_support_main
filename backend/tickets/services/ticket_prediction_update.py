@@ -14,13 +14,13 @@ def update_prediction_feedback(ticket):
     if not log:
         return
 
-    actual_category = ticket.category.name if ticket.category else None
-    actual_priority = ticket.priority if ticket.priority else None
+    actual_category = ticket.category.name if ticket.category else ""
+    actual_priority = ticket.priority if ticket.priority else ""
 
     log.actual_category = actual_category
     log.actual_priority = actual_priority
 
-    if actual_category is None:
+    if not actual_category:
         log.category_correct = None
     else:
         log.category_correct = (
@@ -28,7 +28,7 @@ def update_prediction_feedback(ticket):
             == actual_category.strip().lower()
         )
 
-    if actual_priority is None:
+    if not actual_priority:
         log.priority_correct = None
     else:
         log.priority_correct = (
