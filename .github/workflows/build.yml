@@ -70,6 +70,22 @@ jobs:
           coverage xml -o coverage.xml
           coverage report -m
 
+      - name: Add backend coverage summary
+        working-directory: backend
+        shell: python
+        run: |
+          import re
+          from pathlib import Path
+
+          xml = Path("coverage.xml").read_text(encoding="utf-8")
+          match = re.search(r'line-rate="([0-9.]+)"', xml)
+          percent = round(float(match.group(1)) * 100, 2) if match else "unknown"
+
+          summary_path = Path(__import__("os").environ["GITHUB_STEP_SUMMARY"])
+          with summary_path.open("a", encoding="utf-8") as summary:
+              summary.write("## Coverage Summary\n")
+              summary.write(f"- Backend: {percent}%\n")
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -84,6 +100,20 @@ jobs:
       - name: Run frontend coverage
         working-directory: frontend
         run: npm test -- --coverage --watchAll=false --runInBand --passWithNoTests
+
+      - name: Add frontend coverage summary
+        working-directory: frontend
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          coverage = json.loads(Path("coverage/coverage-summary.json").read_text(encoding="utf-8"))
+          percent = coverage["total"]["lines"]["pct"]
+
+          summary_path = Path(__import__("os").environ["GITHUB_STEP_SUMMARY"])
+          with summary_path.open("a", encoding="utf-8") as summary:
+              summary.write(f"- Frontend: {percent}%\n")
 
       - name: Upload backend coverage artifact
         uses: actions/upload-artifact@v4
