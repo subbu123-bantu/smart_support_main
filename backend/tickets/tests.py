@@ -2,12 +2,18 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils.crypto import get_random_string
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from tickets.models import Category, Ticket, TicketComment, TicketPredictionLog
 from tickets.services.assignment import assign_ticket_to_agent, auto_assign_ticket
-from tickets.services.ticketcomments import create_comment_for_user, get_comment_queryset_for_user
+from tickets.services.ticketcomments import (
+    can_delete_comment,
+    create_comment_for_user,
+    get_comment_queryset_for_user,
+    get_ticket_or_raise,
+)
 from tickets.services.ticket_prediction_update import get_prediction_feedback, update_prediction_feedback
 from tickets.services.ticketcreate import create_ticket
 from users.models import AgentProfile, User
@@ -410,6 +416,50 @@ class TicketCommentServiceTests(TestCase):
 
         self.assertEqual(list(queryset), [self.public_comment])
 
+    def test_get_ticket_or_raise_returns_ticket_for_existing_id(self):
+        self.assertEqual(get_ticket_or_raise(self.ticket.id), self.ticket)
+
+    def test_get_ticket_or_raise_denies_missing_ticket(self):
+        with self.assertRaisesMessage(PermissionDenied, "Ticket not found."):
+            get_ticket_or_raise(999999)
+
+    def test_get_comment_queryset_for_admin_returns_all_comments(self):
+        queryset = get_comment_queryset_for_user(self.admin_user, self.ticket)
+
+        self.assertEqual(list(queryset), [self.public_comment, self.internal_comment])
+
+    def test_get_comment_queryset_for_assigned_agent_returns_all_ticket_comments(self):
+        queryset = get_comment_queryset_for_user(self.agent_user, self.ticket)
+
+        self.assertEqual(list(queryset), [self.public_comment, self.internal_comment])
+
+    def test_get_comment_queryset_for_unassigned_agent_denies_access(self):
+        other_agent = User.objects.create_user(
+            username="outsider-agent",
+            email="outsider-agent@example.com",
+            **{PASSWORD_FIELD: build_test_password()},
+            role="agent",
+        )
+
+        with self.assertRaisesMessage(PermissionDenied, "You can only view comments on your assigned tickets."):
+            get_comment_queryset_for_user(other_agent, self.ticket)
+
+    def test_get_comment_queryset_for_wrong_customer_denies_access(self):
+        with self.assertRaisesMessage(PermissionDenied, "You can only view comments on your own tickets."):
+            get_comment_queryset_for_user(self.other_customer, self.ticket)
+
+    def test_get_comment_queryset_rejects_invalid_role(self):
+        outsider = User.objects.create_user(
+            username="invalid-role-user",
+            email="invalid-role@example.com",
+            **{PASSWORD_FIELD: build_test_password()},
+            role="admin",
+        )
+        outsider.role = "manager"
+
+        with self.assertRaisesMessage(PermissionDenied, "Invalid role."):
+            get_comment_queryset_for_user(outsider, self.ticket)
+
     @patch("tickets.services.ticketcomments.send_email_task.delay")
     def test_create_comment_for_customer_forces_non_internal(self, mock_delay):
         class DummySerializer:
@@ -431,6 +481,63 @@ class TicketCommentServiceTests(TestCase):
 
         self.assertEqual(comment.message, "Agent reply")
         mock_delay.assert_called_once()
+
+    @patch("tickets.services.ticketcomments.send_email_task.delay")
+    def test_create_comment_for_admin_allows_internal_comment_without_email(self, mock_delay):
+        class DummySerializer:
+            def save(self, **kwargs):
+                return TicketComment.objects.create(message="Internal admin note", is_internal=True, **kwargs)
+
+        comment = create_comment_for_user(DummySerializer(), self.admin_user, self.ticket)
+
+        self.assertTrue(comment.is_internal)
+        mock_delay.assert_not_called()
+
+    def test_create_comment_for_unassigned_agent_denies_access(self):
+        outsider = User.objects.create_user(
+            username="comment-outsider-agent",
+            email="comment-outsider-agent@example.com",
+            **{PASSWORD_FIELD: build_test_password()},
+            role="agent",
+        )
+
+        class DummySerializer:
+            def save(self, **kwargs):
+                return TicketComment.objects.create(message="Should not save", **kwargs)
+
+        with self.assertRaisesMessage(PermissionDenied, "You can only comment on your assigned tickets."):
+            create_comment_for_user(DummySerializer(), outsider, self.ticket)
+
+    def test_create_comment_for_wrong_customer_denies_access(self):
+        class DummySerializer:
+            def save(self, **kwargs):
+                return TicketComment.objects.create(message="Should not save", **kwargs)
+
+        with self.assertRaisesMessage(PermissionDenied, "You can only comment on your own tickets."):
+            create_comment_for_user(DummySerializer(), self.other_customer, self.ticket)
+
+    def test_create_comment_rejects_invalid_role(self):
+        outsider = User.objects.create_user(
+            username="comment-invalid-role",
+            email="comment-invalid-role@example.com",
+            **{PASSWORD_FIELD: build_test_password()},
+            role="admin",
+        )
+        outsider.role = "manager"
+
+        class DummySerializer:
+            def save(self, **kwargs):
+                return TicketComment.objects.create(message="Should not save", **kwargs)
+
+        with self.assertRaisesMessage(PermissionDenied, "Invalid role."):
+            create_comment_for_user(DummySerializer(), outsider, self.ticket)
+
+    def test_can_delete_comment_returns_true_for_admin(self):
+        self.assertTrue(can_delete_comment(self.admin_user, self.public_comment))
+
+    def test_can_delete_comment_denies_other_users(self):
+        with self.assertRaisesMessage(PermissionDenied, "You can only delete your own comments."):
+            can_delete_comment(self.customer_user, self.public_comment)
 
 
 class TicketAssignmentServiceTests(TestCase):
