@@ -1,9 +1,11 @@
 from django.test import TestCase
 from django.utils.crypto import get_random_string
+from types import SimpleNamespace
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from tickets.models import Category
+from users.permissions import IsAdmin, IsAdminOrReadOnly, IsAgent, IsCustomer
 from users.models import AgentProfile, User
 from users.serializers import RegisterSerializer
 
@@ -212,3 +214,28 @@ class UserApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertIn("Only admins can update agents.", str(response.data))
+
+
+class PermissionClassTests(TestCase):
+    def test_role_permissions_require_authenticated_matching_role(self):
+        admin_request = SimpleNamespace(user=SimpleNamespace(is_authenticated=True, role="admin"))
+        agent_request = SimpleNamespace(user=SimpleNamespace(is_authenticated=True, role="agent"))
+        customer_request = SimpleNamespace(user=SimpleNamespace(is_authenticated=True, role="customer"))
+        anonymous_request = SimpleNamespace(user=SimpleNamespace(is_authenticated=False, role="admin"))
+
+        self.assertTrue(IsAdmin().has_permission(admin_request, None))
+        self.assertFalse(IsAdmin().has_permission(anonymous_request, None))
+        self.assertTrue(IsAgent().has_permission(agent_request, None))
+        self.assertTrue(IsCustomer().has_permission(customer_request, None))
+
+    def test_is_admin_or_read_only_allows_safe_methods_for_authenticated_users(self):
+        request = SimpleNamespace(method="GET", user=SimpleNamespace(is_authenticated=True, role="customer"))
+
+        self.assertTrue(IsAdminOrReadOnly().has_permission(request, None))
+
+    def test_is_admin_or_read_only_requires_admin_for_write_methods(self):
+        customer_request = SimpleNamespace(method="POST", user=SimpleNamespace(is_authenticated=True, role="customer"))
+        admin_request = SimpleNamespace(method="POST", user=SimpleNamespace(is_authenticated=True, role="admin"))
+
+        self.assertFalse(IsAdminOrReadOnly().has_permission(customer_request, None))
+        self.assertTrue(IsAdminOrReadOnly().has_permission(admin_request, None))
