@@ -40,7 +40,7 @@ describe("api service", () => {
     delete globalThis.location;
     globalThis.location = { href: "http://localhost/" };
 
-    apiModule = await import("./api");
+    apiModule = await import("../services/api");
   });
 
   afterEach(() => {
