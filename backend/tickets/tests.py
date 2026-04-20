@@ -6,7 +6,10 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from tickets.models import Category, Ticket, TicketComment, TicketPredictionLog
+from tickets.services.assignment import assign_ticket_to_agent, auto_assign_ticket
 from tickets.services.ticketcomments import create_comment_for_user, get_comment_queryset_for_user
+from tickets.services.ticket_prediction_update import get_prediction_feedback, update_prediction_feedback
+from tickets.services.ticketcreate import create_ticket
 from users.models import AgentProfile, User
 
 
@@ -428,3 +431,325 @@ class TicketCommentServiceTests(TestCase):
 
         self.assertEqual(comment.message, "Agent reply")
         mock_delay.assert_called_once()
+
+
+class TicketAssignmentServiceTests(TestCase):
+    def setUp(self):
+        self.customer_password = build_test_password()
+        self.agent_one_password = build_test_password()
+        self.agent_two_password = build_test_password()
+
+        self.customer = User.objects.create_user(
+            username="svc-customer",
+            email="svc-customer@example.com",
+            **{PASSWORD_FIELD: self.customer_password},
+            role="customer",
+        )
+        self.agent_one = User.objects.create_user(
+            username="svc-agent-one",
+            email="svc-agent-one@example.com",
+            **{PASSWORD_FIELD: self.agent_one_password},
+            role="agent",
+        )
+        self.agent_two = User.objects.create_user(
+            username="svc-agent-two",
+            email="svc-agent-two@example.com",
+            **{PASSWORD_FIELD: self.agent_two_password},
+            role="agent",
+        )
+
+        self.network = Category.objects.create(name="network")
+        self.billing = Category.objects.create(name="billing")
+
+        self.agent_one_profile = AgentProfile.objects.create(user=self.agent_one, is_available=True)
+        self.agent_two_profile = AgentProfile.objects.create(user=self.agent_two, is_available=True)
+        self.agent_one_profile.categories.add(self.network)
+        self.agent_two_profile.categories.add(self.network)
+
+        self.ticket = Ticket.objects.create(
+            title="Needs assignment",
+            description="Please assign me",
+            category=self.network,
+            customer=self.customer,
+            user_ticket_id=1,
+        )
+
+        Ticket.objects.create(
+            title="Existing workload",
+            description="Already on agent one",
+            category=self.network,
+            customer=self.customer,
+            assigned_to=self.agent_one,
+            status=Ticket.Status.OPEN,
+            user_ticket_id=2,
+        )
+
+    def test_assign_ticket_to_agent_returns_error_for_missing_profile(self):
+        payload, status_code = assign_ticket_to_agent(self.ticket, 999999)
+
+        self.assertEqual(status_code, 404)
+        self.assertIn("No AgentProfile found", payload["error"])
+
+    def test_assign_ticket_to_agent_updates_ticket_and_returns_agent_name(self):
+        payload, status_code = assign_ticket_to_agent(self.ticket, self.agent_one.id)
+
+        self.assertEqual(status_code, 200)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.assigned_to, self.agent_one)
+        self.assertEqual(self.ticket.status, Ticket.Status.IN_PROGRESS)
+        self.assertEqual(payload["agent"], self.agent_one.username)
+
+    def test_auto_assign_ticket_returns_missing_category_when_ticket_has_no_category(self):
+        self.ticket.category = None
+
+        payload, status_code = auto_assign_ticket(self.ticket)
+
+        self.assertEqual(status_code, 200)
+        self.assertEqual(payload, {"assigned": False, "reason": "missing_category"})
+
+    def test_auto_assign_ticket_returns_no_available_agent_when_no_profile_matches(self):
+        self.agent_one_profile.categories.clear()
+        self.agent_two_profile.categories.clear()
+
+        payload, status_code = auto_assign_ticket(self.ticket)
+
+        self.assertEqual(status_code, 200)
+        self.assertEqual(payload, {"assigned": False, "reason": "no_available_agent"})
+
+    def test_auto_assign_ticket_prefers_agent_with_lowest_active_ticket_count(self):
+        payload, status_code = auto_assign_ticket(self.ticket)
+
+        self.assertEqual(status_code, 200)
+        self.ticket.refresh_from_db()
+        self.assertTrue(payload["assigned"])
+        self.assertEqual(payload["agent"], self.agent_two.username)
+        self.assertEqual(payload["active_ticket_count"], 0)
+        self.assertEqual(self.ticket.assigned_to, self.agent_two)
+        self.assertEqual(self.ticket.status, Ticket.Status.IN_PROGRESS)
+
+
+class TicketPredictionFeedbackServiceTests(TestCase):
+    def setUp(self):
+        self.customer_password = build_test_password()
+        self.agent_password = build_test_password()
+        self.other_agent_password = build_test_password()
+
+        self.customer = User.objects.create_user(
+            username="feedback-customer",
+            email="feedback-customer@example.com",
+            **{PASSWORD_FIELD: self.customer_password},
+            role="customer",
+        )
+        self.agent = User.objects.create_user(
+            username="feedback-agent",
+            email="feedback-agent@example.com",
+            **{PASSWORD_FIELD: self.agent_password},
+            role="agent",
+        )
+        self.other_agent = User.objects.create_user(
+            username="feedback-other-agent",
+            email="feedback-other-agent@example.com",
+            **{PASSWORD_FIELD: self.other_agent_password},
+            role="agent",
+        )
+
+        self.category = Category.objects.create(name="Hardware")
+        self.ticket = Ticket.objects.create(
+            title="Prediction feedback ticket",
+            description="Track feedback",
+            category=self.category,
+            priority=Ticket.Priority.HIGH,
+            customer=self.customer,
+            assigned_to=self.agent,
+            user_ticket_id=1,
+        )
+
+    def test_update_prediction_feedback_returns_without_log(self):
+        update_prediction_feedback(self.ticket)
+
+        self.assertEqual(TicketPredictionLog.objects.count(), 0)
+
+    def test_update_prediction_feedback_sets_correctness_flags(self):
+        log = TicketPredictionLog.objects.create(
+            ticket=self.ticket,
+            text="Laptop keeps shutting down",
+            predicted_category=" hardware ",
+            predicted_priority="HIGH",
+            source="ai",
+            confidence=0.98,
+        )
+
+        update_prediction_feedback(self.ticket)
+
+        log.refresh_from_db()
+        self.assertEqual(log.actual_category, "Hardware")
+        self.assertEqual(log.actual_priority, Ticket.Priority.HIGH)
+        self.assertTrue(log.category_correct)
+        self.assertTrue(log.priority_correct)
+
+    def test_update_prediction_feedback_handles_missing_actual_values(self):
+        self.ticket.category = None
+        self.ticket.priority = ""
+        log = TicketPredictionLog.objects.create(
+            ticket=self.ticket,
+            text="No actual values yet",
+            predicted_category="hardware",
+            predicted_priority="low",
+            source="rules",
+            confidence=0.44,
+        )
+
+        update_prediction_feedback(self.ticket)
+
+        log.refresh_from_db()
+        self.assertIsNone(log.category_correct)
+        self.assertIsNone(log.priority_correct)
+
+    def test_get_prediction_feedback_returns_404_for_missing_ticket(self):
+        ticket, payload, status_code = get_prediction_feedback(999999, self.customer)
+
+        self.assertIsNone(ticket)
+        self.assertEqual(status_code, 404)
+        self.assertEqual(payload, {"error": "Ticket not found"})
+
+    def test_get_prediction_feedback_returns_message_when_log_missing(self):
+        ticket, payload, status_code = get_prediction_feedback(self.ticket.id, self.customer)
+
+        self.assertEqual(status_code, 200)
+        self.assertEqual(ticket, self.ticket)
+        self.assertFalse(payload["has_feedback"])
+        self.assertIn("No prediction feedback found", payload["message"])
+
+    def test_get_prediction_feedback_blocks_unassigned_agents(self):
+        with self.assertRaisesMessage(Exception, "You can only view feedback for your assigned tickets."):
+            get_prediction_feedback(self.ticket.id, self.other_agent)
+
+    def test_get_prediction_feedback_returns_latest_log_payload(self):
+        TicketPredictionLog.objects.create(
+            ticket=self.ticket,
+            text="Older prediction",
+            predicted_category="billing",
+            predicted_priority="low",
+            source="rules",
+            confidence=0.4,
+        )
+        latest = TicketPredictionLog.objects.create(
+            ticket=self.ticket,
+            text="Latest prediction",
+            predicted_category="hardware",
+            predicted_priority="high",
+            source="ai",
+            confidence=0.91,
+            actual_category="Hardware",
+            actual_priority=Ticket.Priority.HIGH,
+            category_correct=True,
+            priority_correct=True,
+        )
+
+        ticket, payload, status_code = get_prediction_feedback(self.ticket.id, self.agent)
+
+        self.assertEqual(status_code, 200)
+        self.assertEqual(ticket, self.ticket)
+        self.assertTrue(payload["has_feedback"])
+        self.assertEqual(payload["predicted_category"], latest.predicted_category)
+        self.assertEqual(payload["confidence"], latest.confidence)
+        self.assertTrue(payload["category_correct"])
+
+
+class TicketCreateServiceTests(TestCase):
+    def setUp(self):
+        self.customer_password = build_test_password()
+        self.agent_password = build_test_password()
+
+        self.customer = User.objects.create_user(
+            username="create-customer",
+            email="create-customer@example.com",
+            **{PASSWORD_FIELD: self.customer_password},
+            role="customer",
+        )
+        self.agent = User.objects.create_user(
+            username="create-agent",
+            email="create-agent@example.com",
+            **{PASSWORD_FIELD: self.agent_password},
+            role="agent",
+        )
+
+    @patch("tickets.services.ticketcreate.send_email_task.delay")
+    @patch("tickets.services.ticketcreate.auto_assign_ticket")
+    @patch("tickets.services.ticketcreate.log_prediction")
+    @patch("tickets.services.ticketcreate.predict_ticket")
+    def test_create_ticket_uses_prediction_and_auto_assignment(self, mock_predict_ticket, mock_log_prediction, mock_auto_assign, mock_send_email):
+        mock_predict_ticket.return_value = {
+            "category": "Network ",
+            "priority": "HIGH",
+            "confidence": 0.88,
+            "source": "ai",
+        }
+        mock_auto_assign.return_value = ({"assigned": True, "agent": self.agent.username}, 200)
+
+        ticket = create_ticket(
+            {"title": "Router issue", "description": "Router is down"},
+            self.customer,
+        )
+
+        ticket.refresh_from_db()
+        self.assertEqual(ticket.customer, self.customer)
+        self.assertEqual(ticket.category.name, "network")
+        self.assertEqual(ticket.priority, Ticket.Priority.HIGH)
+        self.assertEqual(ticket.predicted_category, "network")
+        self.assertEqual(ticket.predicted_priority, Ticket.Priority.HIGH)
+        self.assertEqual(ticket.user_ticket_id, 1)
+        mock_log_prediction.assert_called_once()
+        mock_auto_assign.assert_called_once_with(ticket)
+        mock_send_email.assert_called_once()
+
+    @patch("tickets.services.ticketcreate.send_email_task.delay")
+    @patch("tickets.services.ticketcreate.auto_assign_ticket", side_effect=RuntimeError("assignment failed"))
+    @patch("tickets.services.ticketcreate.log_prediction")
+    @patch("tickets.services.ticketcreate.predict_ticket")
+    def test_create_ticket_still_sends_email_when_auto_assignment_fails(self, mock_predict_ticket, mock_log_prediction, mock_auto_assign, mock_send_email):
+        mock_predict_ticket.return_value = {
+            "category": "Billing",
+            "priority": "low",
+            "confidence": 0.55,
+            "source": "rules",
+        }
+
+        ticket = create_ticket(
+            {"title": "Billing issue", "description": "Need invoice help"},
+            self.customer,
+        )
+
+        self.assertEqual(ticket.user_ticket_id, 1)
+        mock_log_prediction.assert_called_once()
+        mock_auto_assign.assert_called_once_with(ticket)
+        _, kwargs = mock_send_email.call_args
+        self.assertFalse(kwargs["context"]["assigned"])
+        self.assertIsNone(kwargs["context"]["assigned_agent"])
+
+    @patch("tickets.services.ticketcreate.send_email_task.delay")
+    @patch("tickets.services.ticketcreate.auto_assign_ticket")
+    @patch("tickets.services.ticketcreate.log_prediction")
+    @patch("tickets.services.ticketcreate.predict_ticket")
+    def test_create_ticket_increments_user_ticket_id_per_customer(self, mock_predict_ticket, mock_log_prediction, mock_auto_assign, mock_send_email):
+        mock_predict_ticket.return_value = {
+            "category": "Account",
+            "priority": "medium",
+            "confidence": 0.73,
+            "source": "ai",
+        }
+        mock_auto_assign.return_value = ({"assigned": False, "agent": None}, 200)
+
+        first_ticket = create_ticket(
+            {"title": "First issue", "description": "First description"},
+            self.customer,
+        )
+        second_ticket = create_ticket(
+            {"title": "Second issue", "description": "Second description"},
+            self.customer,
+        )
+
+        self.assertEqual(first_ticket.user_ticket_id, 1)
+        self.assertEqual(second_ticket.user_ticket_id, 2)
+        self.assertEqual(mock_log_prediction.call_count, 2)
+        self.assertEqual(mock_send_email.call_count, 2)
