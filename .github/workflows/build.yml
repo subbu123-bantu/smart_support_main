@@ -28,6 +28,7 @@ jobs:
           --health-retries 5
 
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       SECRET_KEY: ci-secret-key
       DEBUG: "True"
       ALLOWED_HOSTS: localhost,127.0.0.1
@@ -54,14 +55,14 @@ jobs:
           python-version: "3.13"
 
       - name: Install backend dependencies
-        working-directory: subrahmanyam/backend
+        working-directory: backend
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install coverage
 
       - name: Run backend coverage
-        working-directory: subrahmanyam/backend
+        working-directory: backend
         run: |
           python manage.py migrate
           coverage erase
@@ -74,26 +75,26 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: subrahmanyam/frontend/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
-        working-directory: subrahmanyam/frontend
+        working-directory: frontend
         run: npm ci
 
       - name: Run frontend coverage
-        working-directory: subrahmanyam/frontend
+        working-directory: frontend
         run: npm test -- --coverage --watchAll=false --runInBand --passWithNoTests
 
       - name: Upload backend coverage artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
-          path: subrahmanyam/backend/coverage.xml
+          path: backend/coverage.xml
 
       - name: Upload frontend coverage artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage
           path: |
-            subrahmanyam/frontend/coverage/lcov.info
-            subrahmanyam/frontend/coverage
+            frontend/coverage/lcov.info
+            frontend/coverage
