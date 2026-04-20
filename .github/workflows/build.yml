@@ -29,6 +29,7 @@ jobs:
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SECRET_KEY: ci-secret-key
       DEBUG: "True"
       ALLOWED_HOSTS: localhost,127.0.0.1
@@ -101,7 +102,7 @@ jobs:
 
       - name: Run frontend coverage
         working-directory: frontend
-        run: npm test -- --coverage --watchAll=false --runInBand --passWithNoTests
+        run: npm test -- --coverage --watchAll=false --runInBand --passWithNoTests --coverageReporters=lcov --coverageReporters=json-summary --coverageReporters=text-summary
 
       - name: Add frontend coverage summary
         working-directory: frontend
@@ -132,8 +133,8 @@ jobs:
             frontend/coverage
 
       - name: Run SonarCloud analysis
-        if: ${{ secrets.SONAR_TOKEN != '' }}
+        if: ${{ env.SONAR_TOKEN != '' }}
         uses: SonarSource/sonarqube-scan-action@v6
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
