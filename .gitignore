@@ -72,3 +72,12 @@ yarn-error.log*
 
 # SonarQube / SonarCloud
 .scannerwork/
+
+
+backend/env/
+backend/.coverage
+backend/coverage.xml
+backend/.pytest_cache/
+backend/htmlcov/
+frontend/coverage/
+node_modules/
