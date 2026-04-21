@@ -43,22 +43,26 @@ describe("CreateTicket page", () => {
     );
   }
 
+  function getForm() {
+    return {
+      title: screen.getByPlaceholderText(/brief summary of the issue/i),
+      description: screen.getByPlaceholderText(/describe the issue in detail/i),
+      submit: screen.getByRole("button", { name: /submit ticket/i }),
+    };
+  }
+
   function fillForm({
     title = "Printer issue",
     description = "The office printer is showing error code 500 and not printing.",
   } = {}) {
-    fireEvent.change(screen.getByPlaceholderText(/brief summary of the issue/i), {
-      target: { value: title },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/describe the issue in detail/i), {
-      target: { value: description },
-    });
+    const form = getForm();
+    fireEvent.change(form.title, { target: { value: title } });
+    fireEvent.change(form.description, { target: { value: description } });
   }
 
   test("shows validation error when title or description is missing", async () => {
     renderPage();
-
-    fireEvent.click(screen.getByRole("button", { name: /submit ticket/i }));
+    fireEvent.click(getForm().submit);
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Please fill in both fields");
@@ -68,10 +72,7 @@ describe("CreateTicket page", () => {
 
   test("does not trigger AI prediction for short descriptions", async () => {
     renderPage();
-
-    fireEvent.change(screen.getByPlaceholderText(/describe the issue in detail/i), {
-      target: { value: "short" },
-    });
+    fireEvent.change(getForm().description, { target: { value: "short" } });
 
     await act(async () => {
       jest.advanceTimersByTime(700);
@@ -134,7 +135,7 @@ describe("CreateTicket page", () => {
       description: " Users cannot login after the latest deployment. ",
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /submit ticket/i }));
+    fireEvent.click(getForm().submit);
 
     await waitFor(() => {
       expect(createTicket).toHaveBeenCalledWith({
@@ -153,7 +154,7 @@ describe("CreateTicket page", () => {
     renderPage();
     fillForm();
 
-    fireEvent.click(screen.getByRole("button", { name: /submit ticket/i }));
+    fireEvent.click(getForm().submit);
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to create ticket");

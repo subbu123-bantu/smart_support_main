@@ -4,12 +4,11 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from tickets.models import Category
 from users.permissions import IsAdmin, IsAdminOrReadOnly, IsAgent, IsCustomer
-from users.models import AgentProfile, User
+from users.models import User
 from users.serializers import RegisterSerializer
 
-from .test_utils import PASSWORD_FIELD, build_test_password
+from .test_utils import PASSWORD_FIELD, build_test_password, make_agent_profile, make_category, make_user
 
 
 class RegisterSerializerTests(TestCase):
@@ -32,32 +31,16 @@ class UserApiTests(APITestCase):
         self.login_url = "/api/login/"
         self.logout_url = "/api/logout/"
         self.agents_url = "/api/agents/"
-        self.admin_password = build_test_password()
-        self.agent_password = build_test_password()
-        self.customer_password = build_test_password()
-        self.admin_user = User.objects.create_user(
-            username="adminuser",
-            email="admin@example.com",
-            **{PASSWORD_FIELD: self.admin_password},
-            role="admin",
-        )
-        self.agent_user = User.objects.create_user(
-            username="agentuser",
-            email="agent@example.com",
-            **{PASSWORD_FIELD: self.agent_password},
-            role="agent",
-        )
-        self.customer_user = User.objects.create_user(
-            username="customeruser",
-            email="customer@example.com",
-            **{PASSWORD_FIELD: self.customer_password},
-            role="customer",
-        )
-        self.agent_profile = AgentProfile.objects.create(user=self.agent_user, is_available=True)
-        self.billing_category = Category.objects.create(name="Billing")
-        self.technical_category = Category.objects.create(name="Technical")
-        self.account_category = Category.objects.create(name="Account")
-        self.agent_profile.categories.add(self.billing_category)
+        self.admin_user = make_user(role="admin", username="adminuser")
+        self.agent_user = make_user(role="agent", username="agentuser")
+        self.customer_user = make_user(role="customer", username="customeruser")
+        self.admin_password = self.admin_user.raw_password
+        self.agent_password = self.agent_user.raw_password
+        self.customer_password = self.customer_user.raw_password
+        self.billing_category = make_category("Billing")
+        self.technical_category = make_category("Technical")
+        self.account_category = make_category("Account")
+        self.agent_profile = make_agent_profile(self.agent_user, categories=[self.billing_category])
         self.agent_profile_url = f"/api/agents/{self.agent_user.id}/"
 
     def authenticate(self, user):

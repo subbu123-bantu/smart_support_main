@@ -1,46 +1,20 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from tickets.models import Category, Ticket, TicketPredictionLog
-from users.models import User
+from tickets.models import Ticket, TicketPredictionLog
 
-from .test_utils import PASSWORD_FIELD, build_test_password
+from .test_utils import make_category, make_prediction_log, make_ticket, make_user
 
 
 class TicketPredictionApiTests(APITestCase):
     def setUp(self):
-        self.admin_user = User.objects.create_user(
-            username="pred-admin",
-            email="pred-admin@example.com",
-            **{PASSWORD_FIELD: build_test_password()},
-            role="admin",
-        )
-        self.customer_user = User.objects.create_user(
-            username="pred-customer",
-            email="pred-customer@example.com",
-            **{PASSWORD_FIELD: build_test_password()},
-            role="customer",
-        )
-        self.other_customer = User.objects.create_user(
-            username="pred-other-customer",
-            email="pred-other@example.com",
-            **{PASSWORD_FIELD: build_test_password()},
-            role="customer",
-        )
-        self.agent_user = User.objects.create_user(
-            username="pred-agent",
-            email="pred-agent@example.com",
-            **{PASSWORD_FIELD: build_test_password()},
-            role="agent",
-        )
-        self.other_agent = User.objects.create_user(
-            username="pred-other-agent",
-            email="pred-other-agent@example.com",
-            **{PASSWORD_FIELD: build_test_password()},
-            role="agent",
-        )
-        self.category = Category.objects.create(name="network")
-        self.assigned_ticket = Ticket.objects.create(
+        self.admin_user = make_user(role="admin", username="pred-admin")
+        self.customer_user = make_user(role="customer", username="pred-customer")
+        self.other_customer = make_user(role="customer", username="pred-other-customer")
+        self.agent_user = make_user(role="agent", username="pred-agent")
+        self.other_agent = make_user(role="agent", username="pred-other-agent")
+        self.category = make_category("network")
+        self.assigned_ticket = make_ticket(
             title="Assigned issue",
             description="Assigned to agent",
             category=self.category,
@@ -49,7 +23,7 @@ class TicketPredictionApiTests(APITestCase):
             assigned_to=self.agent_user,
             user_ticket_id=1,
         )
-        self.other_ticket = Ticket.objects.create(
+        self.other_ticket = make_ticket(
             title="Other customer issue",
             description="Owned by somebody else",
             category=self.category,
@@ -61,7 +35,7 @@ class TicketPredictionApiTests(APITestCase):
         self.prediction_stats_url = "/api/prediction-stats/"
 
     def test_prediction_stats_returns_accuracy_summary(self):
-        TicketPredictionLog.objects.create(
+        make_prediction_log(
             ticket=self.assigned_ticket,
             text="Assigned issue",
             predicted_category="network",
@@ -73,7 +47,7 @@ class TicketPredictionApiTests(APITestCase):
             category_correct=True,
             priority_correct=True,
         )
-        TicketPredictionLog.objects.create(
+        make_prediction_log(
             ticket=self.other_ticket,
             text="Other issue",
             predicted_category="other",
@@ -94,7 +68,7 @@ class TicketPredictionApiTests(APITestCase):
         self.assertEqual(response.data["review_needed"], 1)
 
     def test_ticket_prediction_feedback_returns_latest_log(self):
-        TicketPredictionLog.objects.create(
+        make_prediction_log(
             ticket=self.assigned_ticket,
             text="Old prediction",
             predicted_category="hardware",
@@ -106,7 +80,7 @@ class TicketPredictionApiTests(APITestCase):
             category_correct=False,
             priority_correct=False,
         )
-        TicketPredictionLog.objects.create(
+        make_prediction_log(
             ticket=self.assigned_ticket,
             text="Latest prediction",
             predicted_category="network",
