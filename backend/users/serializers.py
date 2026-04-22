@@ -1,3 +1,4 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from tickets.models import Category
 
@@ -56,3 +57,38 @@ class RegisterSerializer(serializers.ModelSerializer):
             role="customer",
             is_active=True,
         )
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+
+        validate_password(attrs["password"])
+        return attrs
+
+
+class ChangeEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    current_password = serializers.CharField(write_only=True)
+
+    def validate_email(self, value):
+        user = self.context["request"].user
+        if User.objects.exclude(id=user.id).filter(email__iexact=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+
+    def validate_current_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Current password is incorrect.")
+        return value

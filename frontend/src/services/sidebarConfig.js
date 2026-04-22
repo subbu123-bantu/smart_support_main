@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Ticket,
   PlusCircle,
+  Mail,
 } from "lucide-react";
 
 export const sidebarLinks = [
@@ -28,5 +29,11 @@ export const sidebarLinks = [
     path: "/create-ticket",
     icon: PlusCircle,
     roles: ["customer"],
+  },
+  {
+    label: "Change Email",
+    path: "/settings/email",
+    icon: Mail,
+    roles: ["admin", "agent", "customer"],
   },
 ];

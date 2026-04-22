@@ -81,3 +81,4 @@ backend/.pytest_cache/
 backend/htmlcov/
 frontend/coverage/
 node_modules/
+frontend/node_modules/

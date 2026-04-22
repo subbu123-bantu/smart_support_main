@@ -5,6 +5,7 @@ const clearAuthStorage = () => {
   localStorage.removeItem("access");
   localStorage.removeItem("role");
   localStorage.removeItem("username");
+  localStorage.removeItem("email");
 };
 
 const API = axios.create({
@@ -13,7 +14,7 @@ const API = axios.create({
 
 API.interceptors.request.use(
   (request) => {
-    const publicRoutes = ["login/", "register/"];
+    const publicRoutes = ["login/", "register/", "forgot-password/", "reset-password/"];
     const isPublicRoute = publicRoutes.some((route) =>
       request.url?.includes(route)
     );
@@ -49,6 +50,9 @@ API.interceptors.response.use(
 // AUTH
 export const loginUser = (data) => API.post("login/", data);
 export const registerUser = (data) => API.post("register/", data);
+export const requestPasswordReset = (data) => API.post("forgot-password/", data);
+export const resetPassword = (data) => API.post("reset-password/", data);
+export const changeEmail = (data) => API.patch("change-email/", data);
 
 // TICKETS
 export const getTicketStats = () => API.get("stats/");
