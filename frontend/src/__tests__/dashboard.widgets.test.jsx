@@ -15,11 +15,21 @@ import {
 jest.mock("recharts", () => ({
   ResponsiveContainer: ({ children }) => <div data-testid="responsive">{children}</div>,
   PieChart: ({ children }) => <div data-testid="pie-chart">{children}</div>,
-  Pie: () => <div data-testid="pie" />,
+  Pie: ({ data, label }) => (
+    <div data-testid="pie">
+      <span data-testid="pie-data">{JSON.stringify(data)}</span>
+      <span data-testid="pie-label">{label({ name: "Open" })}</span>
+    </div>
+  ),
   LineChart: ({ children }) => <div data-testid="line-chart">{children}</div>,
   Line: () => <div data-testid="line" />,
   CartesianGrid: () => <div data-testid="grid" />,
-  BarChart: ({ children }) => <div data-testid="bar-chart">{children}</div>,
+  BarChart: ({ data, children }) => (
+    <div data-testid="bar-chart">
+      <span data-testid="bar-data">{JSON.stringify(data)}</span>
+      {children}
+    </div>
+  ),
   Bar: () => <div data-testid="bar" />,
   XAxis: () => <div data-testid="x-axis" />,
   YAxis: () => <div data-testid="y-axis" />,
@@ -69,10 +79,10 @@ describe("dashboard widgets", () => {
   test("renders chart widgets with transformed datasets", () => {
     render(
       <ChartsSection
-        pieData={[{ name: "Open", value: 3 }]}
+        pieData={[{ name: "Unknown", value: 3 }]}
         lineData={[{ date: "Mon", count: 2 }]}
         categoryData={[{ name: "Billing", count: 5 }]}
-        priorityData={[{ name: "high", count: 4 }]}
+        priorityData={[{ name: "mystery", count: 4 }]}
       />,
     );
 
@@ -81,6 +91,10 @@ describe("dashboard widgets", () => {
     expect(screen.getByText("Tickets by Category")).toBeInTheDocument();
     expect(screen.getByText("Tickets by Priority")).toBeInTheDocument();
     expect(screen.getAllByTestId("responsive")).toHaveLength(4);
+    expect(screen.getByTestId("pie-data")).toHaveTextContent("\"fill\":\"#6366f1\"");
+    expect(screen.getByTestId("pie-label")).toHaveTextContent("Open 0%");
+    expect(screen.getAllByTestId("bar-data")[0]).toHaveTextContent("\"fill\":\"#6366f1\"");
+    expect(screen.getAllByTestId("bar-data")[1]).toHaveTextContent("\"fill\":\"#6366f1\"");
   });
 
   test("renders recent tickets loading, empty, and populated states", () => {
@@ -127,5 +141,22 @@ describe("dashboard widgets", () => {
     expect(ExportedChartsSection).toBe(ChartsSection);
     expect(ExportedRecentTicketsSection).toBe(RecentTicketsSection);
     expect(ExportedStatsCards).toBe(StatsCards);
+  });
+
+  test("renders stats cards loading state and stat links", () => {
+    render(
+      <MemoryRouter>
+        <StatsCards stats={null} loadingStats />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getAllByText("...")).toHaveLength(4);
+    expect(screen.getByRole("link", { name: /total tickets/i })).toHaveAttribute("href", "/tickets");
+    expect(screen.getByRole("link", { name: /open/i })).toHaveAttribute("href", "/tickets?status=open");
+    expect(screen.getByRole("link", { name: /in progress/i })).toHaveAttribute(
+      "href",
+      "/tickets?status=in_progress",
+    );
+    expect(screen.getByRole("link", { name: /closed/i })).toHaveAttribute("href", "/tickets?status=closed");
   });
 });

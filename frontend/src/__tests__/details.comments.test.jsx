@@ -184,6 +184,91 @@ describe("ticket comments and details pages", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/tickets");
   });
 
+  test("renders loading feedback then empty feedback state", async () => {
+    let resolveFeedback;
+    const feedbackPromise = new Promise((resolve) => {
+      resolveFeedback = resolve;
+    });
+
+    localStorage.setItem("role", "customer");
+    getTicketById.mockResolvedValueOnce({
+      data: {
+        id: 44,
+        title: "Email issue",
+        description: "Cannot receive mail",
+        status: "mystery",
+        priority: "unknown",
+        category_name: "",
+        category: "",
+        assigned_to_name: "",
+      },
+    });
+    getTicketPredictionFeedback.mockReturnValueOnce(feedbackPromise);
+    getTicketComments.mockResolvedValue({ data: [] });
+
+    render(
+      <MemoryRouter>
+        <TicketDetails />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Email issue")).toBeInTheDocument();
+    expect(screen.getByText("Open")).toBeInTheDocument();
+    expect(screen.getByText("Unassigned")).toBeInTheDocument();
+    expect(screen.getByText("—")).toBeInTheDocument();
+    expect(screen.getByText("Loading feedback...")).toBeInTheDocument();
+
+    resolveFeedback({
+      data: {
+        has_feedback: false,
+      },
+    });
+
+    expect(
+      await screen.findByText("No prediction feedback available for this ticket."),
+    ).toBeInTheDocument();
+  });
+
+  test("renders feedback fallbacks for missing values", async () => {
+    localStorage.setItem("role", "admin");
+    getTicketById.mockResolvedValueOnce({
+      data: {
+        id: 88,
+        title: "Portal issue",
+        description: "Page is blank",
+        status: "open",
+        priority: "low",
+        category_name: null,
+        category: null,
+        assigned_to_name: null,
+      },
+    });
+    getTicketPredictionFeedback.mockResolvedValueOnce({
+      data: {
+        has_feedback: true,
+        predicted_category: "",
+        actual_category: "",
+        category_correct: null,
+        predicted_priority: "",
+        actual_priority: "",
+        priority_correct: null,
+        source: "",
+        confidence: 0,
+      },
+    });
+    getTicketComments.mockResolvedValue({ data: [] });
+
+    render(
+      <MemoryRouter>
+        <TicketDetails />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Portal issue")).toBeInTheDocument();
+    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(4);
+    expect(screen.getByText("0%")).toBeInTheDocument();
+  });
+
   test("renders missing ticket and no-feedback fallback states", async () => {
     getTicketById.mockRejectedValueOnce(new Error("missing"));
     getTicketPredictionFeedback.mockRejectedValueOnce(new Error("no feedback"));
