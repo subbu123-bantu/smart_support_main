@@ -35,16 +35,43 @@ jest.mock("react-toastify", () => ({
   },
 }));
 
-jest.mock("../components/FeedBackCard", () => ({ title, children }) => (
-  <div data-testid="feedback-card">
-    <h4>{title}</h4>
-    {children}
-  </div>
-));
+jest.mock("../components/FeedBackCard", () => {
+  const PropTypes = require("prop-types");
 
-jest.mock("../components/EvaluationBadge", () => ({ value }) => (
-  <span data-testid="evaluation-badge">{String(value)}</span>
-));
+  function MockFeedbackCard({ title, children }) {
+    return (
+      <div data-testid="feedback-card">
+        <h4>{title}</h4>
+        {children}
+      </div>
+    );
+  }
+
+  MockFeedbackCard.propTypes = {
+    title: PropTypes.string.isRequired,
+    children: PropTypes.node.isRequired,
+  };
+
+  return MockFeedbackCard;
+});
+
+jest.mock("../components/EvaluationBadge", () => {
+  const PropTypes = require("prop-types");
+
+  function MockEvaluationBadge({ value }) {
+    return <span data-testid="evaluation-badge">{String(value)}</span>;
+  }
+
+  MockEvaluationBadge.propTypes = {
+    value: PropTypes.bool,
+  };
+
+  MockEvaluationBadge.defaultProps = {
+    value: null,
+  };
+
+  return MockEvaluationBadge;
+});
 
 jest.mock("lucide-react", () => ({
   ArrowLeft: () => <span data-testid="arrow-left" />,

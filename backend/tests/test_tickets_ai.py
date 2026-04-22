@@ -16,7 +16,14 @@ from tickets.ai.ai import (
 from tickets.ai.ai_client import ai_classification, build_groq_payload, call_groq, parse_ai_result
 from tickets.ai.ai_helper import count_generic_only, is_generic_input, is_weak_input, phrase_score, preprocess
 from tickets.ai.ai_overrides import apply_conflict_overrides, apply_override, starts_with_refund_request
-from tickets.ai.ai_priority import get_priority
+from tickets.ai.ai_priority import (
+    acc_category,
+    auth_category,
+    bill_category,
+    get_priority,
+    network_category,
+    tech_category,
+)
 from tickets.exceptions import EmailSendError
 from tickets.models import Category, Ticket, TicketPredictionLog
 from tickets.tasks import send_email_task
@@ -42,6 +49,23 @@ class TicketAiHelpersTests(TestCase):
 
 
 class TicketAiOverrideAndPriorityTests(TestCase):
+    def test_category_specific_priority_helpers_cover_additional_branches(self):
+        self.assertEqual(bill_category("gst details how to update invoice information"), "low")
+        self.assertEqual(bill_category("invoice not visible on invoice page"), "high")
+
+        self.assertEqual(tech_category("server error 500 crash exception"), "high")
+        self.assertEqual(tech_category("feature not working and very slow"), "medium")
+
+        self.assertEqual(network_category("fails on office wifi network"), "high")
+        self.assertEqual(network_category("slow internet latency disconnect issue"), "medium")
+
+        self.assertEqual(auth_category("cannot login due to invalid credentials and 2fa issue"), "high")
+        self.assertEqual(auth_category("session expired after password reset verification link"), "medium")
+
+        self.assertEqual(acc_category("delete my account permanently"), "medium")
+        self.assertEqual(acc_category("change email address change requested"), "medium")
+        self.assertEqual(acc_category("update profile display name"), "low")
+
     def test_apply_override_updates_category_source_and_confidence(self):
         final = {"category": "other", "source": "fallback", "confidence": 0.2}
         apply_override(final, "billing", "billing_override", 0.88)
@@ -70,6 +94,7 @@ class TicketAiOverrideAndPriorityTests(TestCase):
         self.assertEqual(get_priority("cannot connect to dashboard after login", "network"), "medium")
         self.assertEqual(get_priority("password reset verification link expired", "authentication"), "medium")
         self.assertEqual(get_priority("update profile display name", "account"), "low")
+        self.assertEqual(get_priority("cannot access because error failed", None), "medium")
         self.assertEqual(get_priority("error happened but user can still continue", None), "low")
 
 
