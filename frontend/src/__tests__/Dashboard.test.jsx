@@ -145,4 +145,22 @@ describe("Dashboard", () => {
       expect(screen.queryByTestId("charts-section")).not.toBeInTheDocument();
     });
   });
+
+  test("skips stats fetch without an auth token and falls back missing admin data", async () => {
+    localStorage.setItem("role", "admin");
+    localStorage.removeItem("access");
+
+    getTickets.mockResolvedValue({ data: {} });
+
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      expect(getTicketStats).not.toHaveBeenCalled();
+      expect(getTickets).toHaveBeenCalledWith(1);
+      expect(screen.getByTestId("stats-cards")).toHaveTextContent("stats:0|loading:true");
+      expect(screen.getByTestId("charts-section")).toHaveTextContent("pie:3|line:0|category:0|priority:0");
+      expect(screen.getByTestId("agent-workload")).toHaveTextContent("agents:0");
+      expect(screen.getByTestId("recent-tickets")).toHaveTextContent("loading:false|count:0");
+    });
+  });
 });

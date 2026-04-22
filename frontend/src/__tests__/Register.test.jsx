@@ -103,4 +103,55 @@ describe("Register page", () => {
       expect(toast.error).toHaveBeenCalledWith("Email already exists");
     });
   });
+
+  test("shows password match helper and supports footer navigation", () => {
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: "pass123" } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "pass123" } });
+
+    expect(screen.getByText("Passwords match")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+    fireEvent.keyDown(screen.getByRole("button", { name: /sign in/i }), { key: "Enter" });
+
+    expect(mockNavigate).toHaveBeenCalledWith("/");
+  });
+
+  test("shows username error, fallback error, and loading state", async () => {
+    let resolveRequest;
+    registerUser.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRequest = resolve;
+      }),
+    );
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: "subbu" } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "subbu@example.com" } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: "pass123" } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "pass123" } });
+    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+
+    expect(screen.getByRole("button", { name: /creating account/i })).toBeDisabled();
+
+    resolveRequest({ data: {} });
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
+
+    registerUser.mockRejectedValueOnce({
+      response: { data: { username: ["Username already exists"] } },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Username already exists");
+    });
+
+    registerUser.mockRejectedValueOnce(new Error("network"));
+    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Registration failed");
+    });
+  });
 });

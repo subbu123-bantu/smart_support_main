@@ -39,7 +39,7 @@ describe("Sidebar", () => {
   test("shows customer links and toggles collapsed navigation", () => {
     localStorage.setItem("role", "customer");
 
-    render(
+    const { container } = render(
       <MemoryRouter>
         <Sidebar />
       </MemoryRouter>,
@@ -48,11 +48,13 @@ describe("Sidebar", () => {
     expect(screen.getByText("My Tickets")).toBeInTheDocument();
     expect(screen.getByText("Create Ticket")).toBeInTheDocument();
     expect(screen.queryByText(/^Tickets$/)).not.toBeInTheDocument();
+    expect(container.firstChild).toHaveClass("w-60");
 
     fireEvent.click(screen.getByRole("button", { name: "" }));
 
     expect(screen.queryByText("My Tickets")).not.toBeInTheDocument();
     expect(screen.queryByText("Sign out")).not.toBeInTheDocument();
+    expect(container.firstChild).toHaveClass("w-[68px]");
   });
 
   test("shows admin navigation and logs out successfully", async () => {
@@ -97,5 +99,44 @@ describe("Sidebar", () => {
       expect(logger.error).toHaveBeenCalled();
       expect(globalThis.location.href).toBe("/login");
     });
+  });
+
+  test("falls back to default user metadata when storage is empty", () => {
+    localStorage.clear();
+
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("User")).toBeInTheDocument();
+    expect(screen.getByText("customer")).toBeInTheDocument();
+  });
+
+  test("uses active nav styling for the current route", () => {
+    localStorage.setItem("role", "customer");
+
+    render(
+      <MemoryRouter initialEntries={["/create-ticket"]}>
+        <Sidebar />
+      </MemoryRouter>,
+    );
+
+    const activeLink = screen.getByRole("link", { name: /create ticket/i });
+    expect(activeLink).toHaveClass("bg-indigo-600");
+  });
+
+  test("uses fallback role colors for unknown roles", () => {
+    localStorage.setItem("role", "manager");
+    localStorage.setItem("username", "Morgan");
+
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("manager")).toHaveClass("bg-emerald-500/20");
   });
 });

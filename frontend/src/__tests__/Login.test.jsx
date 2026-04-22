@@ -88,4 +88,45 @@ describe("Login page", () => {
       expect(toast.error).toHaveBeenCalledWith("Invalid credentials");
     });
   });
+
+  test("shows fallback login error and toggles loading state", async () => {
+    let resolveRequest;
+    loginUser.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRequest = resolve;
+      }),
+    );
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: "subbu" } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "pass123" } });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(screen.getByRole("button", { name: /signing in/i })).toBeDisabled();
+
+    resolveRequest({ data: { user: { access: "token", role: "agent", username: "subbu" } } });
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
+    });
+
+    loginUser.mockRejectedValueOnce(new Error("network down"));
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "retry-pass" } });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Login failed");
+    });
+  });
+
+  test("navigates from footer actions", () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /forgot password/i }));
+    fireEvent.click(screen.getByRole("button", { name: /create one/i }));
+    fireEvent.keyDown(screen.getByRole("button", { name: /create one/i }), { key: "Enter" });
+
+    expect(mockNavigate).toHaveBeenCalledWith("/forgot-password");
+    expect(mockNavigate).toHaveBeenCalledWith("/register");
+  });
 });

@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { toast } from "react-toastify";
 import ResetPassword from "../pages/ResetPassword";
@@ -52,6 +53,17 @@ describe("ResetPassword page", () => {
       screen.getByText("This reset link is missing required information."),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /reset password/i })).toBeDisabled();
+  });
+
+  test("shows invalid link toast when the form is submitted without link data", async () => {
+    mockSearchParams = new URLSearchParams("");
+    renderPage();
+
+    fireEvent.submit(screen.getByRole("button", { name: /reset password/i }).closest("form"));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Reset link is invalid");
+    });
   });
 
   test("shows validation error when fields are missing", async () => {
@@ -156,5 +168,42 @@ describe("ResetPassword page", () => {
     fireEvent.click(screen.getByRole("button", { name: /request another/i }));
 
     expect(mockNavigate).toHaveBeenCalledWith("/forgot-password");
+  });
+
+  test("shows loading state and password or generic backend fallbacks", async () => {
+    let resolveRequest;
+    resetPassword.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRequest = resolve;
+      }),
+    );
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText(/new password/i), {
+      target: { value: "pass123" },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: "pass123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /reset password/i }));
+
+    expect(screen.getByRole("button", { name: /resetting/i })).toBeDisabled();
+
+    act(() => resolveRequest({ data: {} }));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/login"));
+
+    resetPassword.mockRejectedValueOnce({
+      response: { data: { password: ["Password too weak"] } },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /reset password/i }));
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Password too weak");
+    });
+
+    resetPassword.mockRejectedValueOnce(new Error("network"));
+    fireEvent.click(screen.getByRole("button", { name: /reset password/i }));
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Unable to reset password");
+    });
   });
 });
