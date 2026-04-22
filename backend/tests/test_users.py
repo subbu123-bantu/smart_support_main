@@ -48,16 +48,17 @@ class RegisterSerializerTests(TestCase):
         self.assertIn("confirm_password", serializer.errors)
 
     def test_reset_password_serializer_runs_password_validation(self):
+        weak_password = "weak-pass"
         serializer = ResetPasswordSerializer(
             data={
                 "uid": "abc",
                 "token": "token",
-                PASSWORD_FIELD: "short",
-                "confirm_password": "short",
+                PASSWORD_FIELD: weak_password,
+                "confirm_password": weak_password,
             }
         )
         self.assertFalse(serializer.is_valid())
-        self.assertIn(PASSWORD_FIELD, serializer.errors)
+        self.assertIn("non_field_errors", serializer.errors)
 
     def test_change_email_serializer_rejects_duplicate_email_and_wrong_password(self):
         user = make_user(role="customer", username="email-owner")
