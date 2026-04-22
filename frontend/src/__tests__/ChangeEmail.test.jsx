@@ -28,6 +28,14 @@ describe("ChangeEmail page", () => {
     expect(screen.getByLabelText(/new email/i)).toHaveValue("stored@example.com");
   });
 
+  test("starts with an empty email when nothing is stored", () => {
+    localStorage.clear();
+
+    render(<ChangeEmail />);
+
+    expect(screen.getByLabelText(/new email/i)).toHaveValue("");
+  });
+
   test("shows validation error when fields are missing", async () => {
     render(<ChangeEmail />);
 
@@ -124,6 +132,37 @@ describe("ChangeEmail page", () => {
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Unable to update email");
+    });
+  });
+
+  test("shows password-specific backend errors and saving state", async () => {
+    let rejectRequest;
+    changeEmail.mockReturnValue(
+      new Promise((_, reject) => {
+        rejectRequest = reject;
+      }),
+    );
+
+    render(<ChangeEmail />);
+
+    fireEvent.change(screen.getByLabelText(/current password/i), {
+      target: { value: "wrong-pass" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /update email/i }));
+
+    expect(screen.getByRole("button", { name: /saving/i })).toBeDisabled();
+
+    rejectRequest({
+      response: {
+        data: {
+          current_password: ["Incorrect password"],
+        },
+      },
+    });
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Incorrect password");
+      expect(screen.getByRole("button", { name: /update email/i })).toBeInTheDocument();
     });
   });
 });

@@ -1,25 +1,7 @@
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import { ticketShape } from "./propTypes";
-
-const PRIORITY_META = {
-  low: {
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10 border-emerald-500/20",
-  },
-  medium: {
-    color: "text-amber-400",
-    bg: "bg-amber-500/10 border-amber-500/20",
-  },
-  high: {
-    color: "text-orange-400",
-    bg: "bg-orange-500/10 border-orange-500/20",
-  },
-  urgent: {
-    color: "text-red-400",
-    bg: "bg-red-500/10 border-red-500/20",
-  },
-};
+import PriorityBadge from "../PriorityBadge";
 
 function RecentTicketsSection({ loadingTickets, recentTickets }) {
   let content;
@@ -32,8 +14,6 @@ function RecentTicketsSection({ loadingTickets, recentTickets }) {
     content = (
       <div className="space-y-3">
         {recentTickets.map((ticket) => {
-          const meta = PRIORITY_META[ticket.priority] || PRIORITY_META.low;
-
           return (
             <Link
               key={ticket.id}
@@ -46,11 +26,7 @@ function RecentTicketsSection({ loadingTickets, recentTickets }) {
                 </p>
               </div>
 
-              <span
-                className={`text-xs px-3 py-1 rounded-full border ${meta.bg} ${meta.color}`}
-              >
-                {ticket.priority}
-              </span>
+              <PriorityBadge priority={ticket.priority} />
             </Link>
           );
         })}

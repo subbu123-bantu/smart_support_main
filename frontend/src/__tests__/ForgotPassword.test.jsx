@@ -106,6 +106,30 @@ describe("ForgotPassword page", () => {
     });
   });
 
+  test("shows generic error fallback and loading state", async () => {
+    let rejectRequest;
+    requestPasswordReset.mockReturnValue(
+      new Promise((_, reject) => {
+        rejectRequest = reject;
+      }),
+    );
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "user@example.com" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /send reset link/i }));
+
+    expect(screen.getByRole("button", { name: /sending/i })).toBeDisabled();
+
+    rejectRequest(new Error("network"));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Unable to process request");
+      expect(screen.getByRole("button", { name: /send reset link/i })).toBeInTheDocument();
+    });
+  });
+
   test("navigates back to sign in from the footer", () => {
     renderPage();
 

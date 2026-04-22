@@ -165,6 +165,37 @@ describe("ticket comments and details pages", () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Failed to add comment"));
   });
 
+  test("uses safe fallbacks for non-array comment payloads and customer posts public comments", async () => {
+    getTicketComments
+      .mockResolvedValueOnce({ data: { results: {} } })
+      .mockResolvedValueOnce({ data: [] });
+    addTicketComment.mockResolvedValue({});
+
+    render(<TicketComments ticketId={77} role="customer" />);
+
+    expect(await screen.findByText("No comments yet")).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText("Write a comment..."), {
+      target: { value: "Customer follow-up" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add Comment" }));
+
+    await waitFor(() =>
+      expect(addTicketComment).toHaveBeenCalledWith(77, {
+        message: "Customer follow-up",
+        is_internal: false,
+      }),
+    );
+  });
+
+  test("does not fetch comments when ticket id is missing", () => {
+    render(<TicketComments ticketId={0} role="agent" />);
+
+    expect(getTicketComments).not.toHaveBeenCalled();
+    expect(screen.getByText("Loading comments...")).toBeInTheDocument();
+  });
+
   test("renders ticket details, prediction feedback, and back navigation", async () => {
     localStorage.setItem("role", "admin");
     getTicketById.mockResolvedValueOnce({

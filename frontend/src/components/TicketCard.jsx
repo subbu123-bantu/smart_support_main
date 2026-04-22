@@ -1,11 +1,10 @@
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
-import { PRIORITY_META } from "../constants";
 import StatusBadge from "./StatusBadge";
+import PriorityBadge from "./PriorityBadge";
 
 function TicketCard({ ticket, role, categories, agents, onFieldUpdate, onStatusUpdate, onAssign }) {
   const navigate = useNavigate();
-  const priorityMeta = PRIORITY_META[ticket.priority] || PRIORITY_META.low;
 
   const handleFieldUpdate = (field, value) => {
     if (onFieldUpdate) onFieldUpdate(ticket.id, { [field]: value });
@@ -55,9 +54,7 @@ function TicketCard({ ticket, role, categories, agents, onFieldUpdate, onStatusU
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          <span className={`inline-flex items-center text-xs px-2.5 py-1 rounded-full border ${priorityMeta.bg} ${priorityMeta.color}`}>
-            {priorityMeta.label}
-          </span>
+          <PriorityBadge priority={ticket.priority} />
 
           {role === "admin" && (
             <>

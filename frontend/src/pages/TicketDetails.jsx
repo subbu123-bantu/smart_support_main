@@ -5,6 +5,7 @@ import { ArrowLeft, Tag, AlertCircle, Clock } from "lucide-react";
 import TicketComments from "./TicketComments";
 import FeedbackCard from "../components/FeedBackCard";
 import EvaluationBadge from "../components/EvaluationBadge";
+import PriorityBadge from "../components/PriorityBadge";
 
 const STATUS_META = {
   open: {
@@ -22,13 +23,6 @@ const STATUS_META = {
     bg: "bg-emerald-500/10 border-emerald-500/20",
     label: "Closed",
   },
-};
-
-const PRIORITY_META = {
-  urgent: "text-red-400 bg-red-500/10 border-red-500/20",
-  high: "text-orange-400 bg-orange-500/10 border-orange-500/20",
-  medium: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-  low: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
 };
 
 function TicketDetails() {
@@ -187,11 +181,7 @@ function TicketDetails() {
               </h1>
             </div>
 
-            <span
-              className={`text-xs px-3 py-1 rounded-full border ${PRIORITY_META[ticket.priority]}`}
-            >
-              {ticket.priority}
-            </span>
+            <PriorityBadge priority={ticket.priority} />
           </div>
 
           <div className="mb-8">

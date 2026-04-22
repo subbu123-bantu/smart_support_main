@@ -75,6 +75,14 @@ describe("api service", () => {
     expect(requestFulfilled(resetRequest).headers.Authorization).toBeUndefined();
   });
 
+  test("leaves protected requests unchanged when no token is available", () => {
+    const request = { url: "tickets/", headers: {} };
+
+    const result = requestFulfilled(request);
+
+    expect(result.headers.Authorization).toBeUndefined();
+  });
+
   test("passes request interceptor errors through rejection", async () => {
     const error = new Error("request failed");
 
@@ -116,6 +124,34 @@ describe("api service", () => {
 
     await expect(responseRejected(error)).rejects.toEqual(error);
     expect(localStorage.getItem("access")).toBe("token-123");
+  });
+
+  test("does not redirect for non-401 responses", async () => {
+    localStorage.setItem("access", "token-123");
+
+    const error = {
+      config: { url: "tickets/" },
+      response: { status: 500 },
+    };
+
+    await expect(responseRejected(error)).rejects.toEqual(error);
+    expect(localStorage.getItem("access")).toBe("token-123");
+    expect(globalThis.location.href).toBe("http://localhost/");
+  });
+
+  test("redirects on 401 even when request url is missing", async () => {
+    localStorage.setItem("access", "token-123");
+    localStorage.setItem("role", "agent");
+
+    const error = {
+      config: {},
+      response: { status: 401 },
+    };
+
+    await expect(responseRejected(error)).rejects.toEqual(error);
+    expect(localStorage.getItem("access")).toBeNull();
+    expect(localStorage.getItem("role")).toBeNull();
+    expect(globalThis.location.href).toBe("/login");
   });
 
   test("loginUser posts to login endpoint", () => {

@@ -124,8 +124,8 @@ describe("dashboard widgets", () => {
       </MemoryRouter>,
     );
     expect(screen.getByText("#5 VPN issue")).toBeInTheDocument();
-    expect(screen.getByText("urgent")).toBeInTheDocument();
-    expect(screen.getByText("unknown")).toBeInTheDocument();
+    expect(screen.getByText("Urgent")).toBeInTheDocument();
+    expect(screen.getByText("Low")).toBeInTheDocument();
   });
 
   test("renders stats cards and dashboard barrel exports", () => {
