@@ -20,11 +20,12 @@ function Login() {
     try {
       setLoading(true);
       const res = await loginUser({ username, password });
-      const { access, role, username: loggedInUsername } = res.data.user;
+      const { access, role, username: loggedInUsername, email } = res.data.user;
 
       localStorage.setItem("access", access);
       localStorage.setItem("role", role);
       localStorage.setItem("username", loggedInUsername);
+      localStorage.setItem("email", email);
 
       toast.success("Login successful!", { autoClose: 800 });
       navigate("/dashboard");
@@ -105,6 +106,16 @@ function Login() {
             placeholder="Enter your password"
             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500 focus:bg-indigo-500/5 transition-all duration-200"
           />
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => navigate("/forgot-password")}
+            className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            Forgot password?
+          </button>
         </div>
 
         <button

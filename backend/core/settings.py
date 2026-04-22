@@ -159,6 +159,7 @@ EMAIL_HOST_USER = os.getenv('BREVO_SMTP_USER')     # from Brevo
 EMAIL_HOST_PASSWORD =os.getenv('BREVO_SMTP_PASS')        # SMTP key (NOT API key)
 BREVO_API_KEY=os.getenv('BREVO_API_KEY')
 DEFAULT_FROM_EMAIL = os.getenv('BREVO_SENDER_EMAIL')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']

@@ -69,7 +69,7 @@ jobs:
         run: |
           python manage.py migrate
           coverage erase
-          coverage run manage.py test
+          coverage run manage.py test tests --keepdb --noinput
           coverage xml -o coverage.xml
           coverage report -m
 
