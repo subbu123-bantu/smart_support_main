@@ -21,7 +21,7 @@ describe("api service", () => {
   let apiModule;
   let originalLocation;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
     localStorage.clear();
@@ -40,7 +40,7 @@ describe("api service", () => {
     delete globalThis.location;
     globalThis.location = { href: "http://localhost/" };
 
-    apiModule = await import("../services/api");
+    apiModule = require("../services/api");
   });
 
   afterEach(() => {

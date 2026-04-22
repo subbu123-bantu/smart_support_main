@@ -1,3 +1,5 @@
+const loadLogger = () => require("../utils/logger").default;
+
 describe("logger utility", () => {
   const originalEnv = process.env.NODE_ENV;
 
@@ -10,14 +12,14 @@ describe("logger utility", () => {
     process.env.NODE_ENV = originalEnv;
   });
 
-  test("logs info, warn, debug, and error in development", async () => {
+  test("logs info, warn, debug, and error in development", () => {
     process.env.NODE_ENV = "test";
     const infoSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     const debugSpy = jest.spyOn(console, "debug").mockImplementation(() => {});
 
-    const logger = (await import("../utils/logger")).default;
+    const logger = loadLogger();
 
     logger.info("Info message", { count: 1 });
     logger.warn("Warn message");
@@ -52,14 +54,14 @@ describe("logger utility", () => {
     );
   });
 
-  test("suppresses non-error logs in production", async () => {
+  test("suppresses non-error logs in production", () => {
     process.env.NODE_ENV = "production";
     const infoSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     const debugSpy = jest.spyOn(console, "debug").mockImplementation(() => {});
 
-    const logger = (await import("../utils/logger")).default;
+    const logger = loadLogger();
 
     logger.info("Info message");
     logger.warn("Warn message");

@@ -48,7 +48,7 @@ class RegisterSerializerTests(TestCase):
         self.assertIn("confirm_password", serializer.errors)
 
     def test_reset_password_serializer_runs_password_validation(self):
-        weak_password = "weak-pass"
+        weak_password = "password"
         serializer = ResetPasswordSerializer(
             data={
                 "uid": "abc",
