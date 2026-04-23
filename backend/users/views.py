@@ -106,7 +106,7 @@ class ForgotPasswordView(APIView):
                 logger.exception("Failed to queue password reset email for user_id=%s", user.id)
 
         return Response(
-            {"message": "If an account exists for that email, a reset link has been sent."},
+            {"message": "A reset link has been sent to your registered mail."},
             status=status.HTTP_200_OK,
         )
 
