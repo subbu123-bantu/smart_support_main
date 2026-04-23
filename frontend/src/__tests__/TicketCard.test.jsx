@@ -111,4 +111,58 @@ describe("TicketCard", () => {
 
     expect(onStatusUpdate).toHaveBeenCalledWith(7, "in_progress");
   });
+
+  test("uses fallback values and does not navigate when interacting with admin controls", () => {
+    render(
+      <MemoryRouter>
+        <TicketCard
+          ticket={{
+            ...baseTicket,
+            priority: "unknown-priority",
+            category_name: "",
+            assigned_to: 4,
+          }}
+          role="admin"
+          categories={categories}
+          agents={agents}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getAllByText("Low").length).toBeGreaterThan(0);
+    expect(screen.getByText("2")).toBeInTheDocument();
+
+    const selects = screen.getAllByRole("combobox");
+    selects.forEach((select) => fireEvent.click(select));
+
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  test("handles missing callbacks and agent category metadata safely", () => {
+    render(
+      <MemoryRouter>
+        <TicketCard
+          ticket={{
+            ...baseTicket,
+            user_ticket_id: "CUS-999",
+            category_name: "",
+            assigned_to: "",
+          }}
+          role="admin"
+          categories={categories}
+          agents={[{ id: 9, username: "solo-agent" }]}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("#7")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "solo-agent" })).toBeInTheDocument();
+
+    const selects = screen.getAllByRole("combobox");
+    expect(() => {
+      fireEvent.change(selects[0], { target: { value: "medium" } });
+      fireEvent.change(selects[2], { target: { value: "closed" } });
+      fireEvent.change(selects[3], { target: { value: "9" } });
+    }).not.toThrow();
+  });
 });

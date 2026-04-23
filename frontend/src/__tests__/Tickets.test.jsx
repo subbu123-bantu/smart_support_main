@@ -242,4 +242,46 @@ describe("Tickets page", () => {
 
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
   });
+
+  test("shows loading state, handles admin metadata failures, and paginates backward", async () => {
+    localStorage.setItem("role", "admin");
+    getTickets.mockImplementationOnce(
+      () =>
+        new Promise(() => {}),
+    );
+    getAgents.mockRejectedValueOnce(new Error("agents failed"));
+    getCategories.mockRejectedValueOnce(new Error("categories failed"));
+
+    renderPage();
+
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
+
+    getTickets.mockResolvedValue({
+      data: {
+        results: [ticketResults[0]],
+        next: "next-page",
+        previous: "prev-page",
+      },
+    });
+
+    fireEvent.change(screen.getByPlaceholderText(/search tickets/i), {
+      target: { value: "printer" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /search/i }));
+    fireEvent.click(screen.getByRole("button", { name: /clear/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Printer issue")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    await waitFor(() => {
+      expect(screen.getByText("Page 2")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /previous/i }));
+    await waitFor(() => {
+      expect(getTickets).toHaveBeenLastCalledWith(1, null, null, null, "", "");
+    });
+  });
 });

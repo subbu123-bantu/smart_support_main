@@ -33,6 +33,9 @@ jest.mock("../components/dashboard/ChartsSection", () => {
   const MockChartsSection = ({ pieData, lineData, categoryData, priorityData }) => (
     <div data-testid="charts-section">
       pie:{pieData.length}|line:{lineData.length}|category:{categoryData.length}|priority:{priorityData.length}
+      |category-names:{categoryData.map((item) => item.name).join(",")}
+      |priority-names:{priorityData.map((item) => item.name).join(",")}
+      |line-dates:{lineData.map((item) => item.date).join(",")}
     </div>
   );
 
@@ -143,6 +146,51 @@ describe("Dashboard", () => {
       expect(getTickets).toHaveBeenCalledWith(1);
       expect(screen.getByTestId("recent-tickets")).toHaveTextContent("loading:false|count:0");
       expect(screen.queryByTestId("charts-section")).not.toBeInTheDocument();
+    });
+  });
+
+  test("skips stats fetch without an auth token and falls back missing admin data", async () => {
+    localStorage.setItem("role", "admin");
+    localStorage.removeItem("access");
+
+    getTickets.mockResolvedValue({ data: {} });
+
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      expect(getTicketStats).not.toHaveBeenCalled();
+      expect(getTickets).toHaveBeenCalledWith(1);
+      expect(screen.getByTestId("stats-cards")).toHaveTextContent("stats:0|loading:true");
+      expect(screen.getByTestId("charts-section")).toHaveTextContent("pie:3|line:0|category:0|priority:0");
+      expect(screen.getByTestId("agent-workload")).toHaveTextContent("agents:0");
+      expect(screen.getByTestId("recent-tickets")).toHaveTextContent("loading:false|count:0");
+    });
+  });
+
+  test("uses fallback chart values when stats payload fields are missing", async () => {
+    localStorage.setItem("role", "admin");
+    getTicketStats.mockResolvedValue({
+      data: {
+        total: 3,
+        open: null,
+        in_progress: undefined,
+        closed: 2,
+        by_category: [{ category__name: "", count: null }],
+        by_priority: [{ priority: "", count: null }],
+        by_date: [{ date: null, count: null }],
+        agent_workload: null,
+      },
+    });
+    getTickets.mockResolvedValue({ data: { results: [] } });
+
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("stats-cards")).toHaveTextContent("stats:3|loading:false");
+      expect(screen.getByTestId("charts-section")).toHaveTextContent("category-names:Unknown");
+      expect(screen.getByTestId("charts-section")).toHaveTextContent("priority-names:unknown");
+      expect(screen.getByTestId("charts-section")).toHaveTextContent("line-dates:");
+      expect(screen.getByTestId("agent-workload")).toHaveTextContent("agents:0");
     });
   });
 });

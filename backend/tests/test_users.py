@@ -1,3 +1,8 @@
+from unittest.mock import patch
+
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 from types import SimpleNamespace
 
 from django.test import TestCase
@@ -6,7 +11,13 @@ from rest_framework.test import APITestCase
 
 from users.permissions import IsAdmin, IsAdminOrReadOnly, IsAgent, IsCustomer
 from users.models import User
-from users.serializers import RegisterSerializer
+from users.serializers import (
+    AgentProfileSerializer,
+    ChangeEmailSerializer,
+    ForgotPasswordSerializer,
+    RegisterSerializer,
+    ResetPasswordSerializer,
+)
 
 from .test_utils import PASSWORD_FIELD, build_test_password, make_agent_profile, make_category, make_user
 
@@ -24,6 +35,74 @@ class RegisterSerializerTests(TestCase):
         self.assertNotEqual(user.password, password)
         self.assertTrue(user.check_password(password))
 
+    def test_reset_password_serializer_rejects_mismatch(self):
+        serializer = ResetPasswordSerializer(
+            data={
+                "uid": "abc",
+                "token": "token",
+                PASSWORD_FIELD: build_test_password(),
+                "confirm_password": build_test_password(),
+            }
+        )
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("confirm_password", serializer.errors)
+
+    def test_reset_password_serializer_runs_password_validation(self):
+        weak_password = "password"
+        serializer = ResetPasswordSerializer(
+            data={
+                "uid": "abc",
+                "token": "token",
+                PASSWORD_FIELD: weak_password,
+                "confirm_password": weak_password,
+            }
+        )
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("non_field_errors", serializer.errors)
+
+    def test_change_email_serializer_rejects_duplicate_email_and_wrong_password(self):
+        user = make_user(role="customer", username="email-owner")
+        other_user = make_user(role="customer", username="email-other")
+
+        duplicate_serializer = ChangeEmailSerializer(
+            data={"email": other_user.email, "current_password": user.raw_password},
+            context={"request": SimpleNamespace(user=user)},
+        )
+        self.assertFalse(duplicate_serializer.is_valid())
+        self.assertIn("email", duplicate_serializer.errors)
+
+        password_serializer = ChangeEmailSerializer(
+            data={"email": "unique@example.com", "current_password": build_test_password()},
+            context={"request": SimpleNamespace(user=user)},
+        )
+        self.assertFalse(password_serializer.is_valid())
+        self.assertIn("current_password", password_serializer.errors)
+
+    def test_change_email_serializer_accepts_unique_email_and_valid_password(self):
+        user = make_user(role="customer", username="email-valid")
+        serializer = ChangeEmailSerializer(
+            data={"email": "unique@example.com", "current_password": user.raw_password},
+            context={"request": SimpleNamespace(user=user)},
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_agent_profile_serializer_updates_fields_without_touching_categories_when_missing(self):
+        agent = make_user(role="agent", username="agent-serializer")
+        billing = make_category("BillingSerializer")
+        technical = make_category("TechnicalSerializer")
+        profile = make_agent_profile(agent, categories=[billing, technical])
+
+        serializer = AgentProfileSerializer(profile, data={"is_available": False}, partial=True)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        updated = serializer.save()
+
+        self.assertFalse(updated.is_available)
+        self.assertCountEqual(updated.categories.values_list("id", flat=True), [billing.id, technical.id])
+
+    def test_forgot_password_serializer_accepts_valid_email(self):
+        serializer = ForgotPasswordSerializer(data={"email": "valid@example.com"})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
 
 class UserApiTests(APITestCase):
     def setUp(self):
@@ -31,6 +110,9 @@ class UserApiTests(APITestCase):
         self.login_url = "/api/login/"
         self.logout_url = "/api/logout/"
         self.agents_url = "/api/agents/"
+        self.forgot_password_url = "/api/forgot-password/"
+        self.reset_password_url = "/api/reset-password/"
+        self.change_email_url = "/api/change-email/"
         self.admin_user = make_user(role="admin", username="adminuser")
         self.agent_user = make_user(role="agent", username="agentuser")
         self.customer_user = make_user(role="customer", username="customeruser")
@@ -54,6 +136,94 @@ class UserApiTests(APITestCase):
 
     def get_json(self, url):
         return self.client.get(url, format="json")
+
+    @patch("users.views.send_email_task.delay")
+    def test_forgot_password_view_queues_email_for_existing_user(self, mock_delay):
+        response = self.post_json(self.forgot_password_url, {"email": self.customer_user.email.upper()})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("reset link has been sent", response.data["message"].lower())
+        mock_delay.assert_called_once()
+        args, kwargs = mock_delay.call_args
+        self.assertEqual(args[:2], (self.customer_user.email, "Reset your Smart Support password"))
+        self.assertIn("/reset-password?uid=", kwargs["context"]["reset_url"])
+
+    @patch("users.views.logger")
+    @patch("users.views.send_email_task.delay", side_effect=Exception("queue down"))
+    def test_forgot_password_view_logs_when_email_queue_fails(self, _mock_delay, mock_logger):
+        response = self.post_json(self.forgot_password_url, {"email": self.customer_user.email})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_logger.exception.assert_called_once()
+
+    @patch("users.views.send_email_task.delay")
+    def test_forgot_password_view_skips_email_for_unknown_user(self, mock_delay):
+        response = self.post_json(self.forgot_password_url, {"email": "missing@example.com"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_delay.assert_not_called()
+
+    def test_forgot_password_view_rejects_invalid_email_payload(self):
+        response = self.post_json(self.forgot_password_url, {"email": "not-an-email"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("email", response.data)
+
+    def test_reset_password_view_rejects_invalid_uid(self):
+        password = build_test_password()
+        response = self.post_json(
+            self.reset_password_url,
+            {"uid": "bad-uid", "token": "token", PASSWORD_FIELD: password, "confirm_password": password},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error"], "Invalid reset link.")
+
+    def test_reset_password_view_rejects_invalid_token(self):
+        uid = urlsafe_base64_encode(force_bytes(self.customer_user.pk))
+        password = build_test_password()
+        response = self.post_json(
+            self.reset_password_url,
+            {"uid": uid, "token": "invalid-token", PASSWORD_FIELD: password, "confirm_password": password},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error"], "Reset link is invalid or expired.")
+
+    def test_reset_password_view_updates_password_for_valid_token(self):
+        uid = urlsafe_base64_encode(force_bytes(self.customer_user.pk))
+        token = default_token_generator.make_token(self.customer_user)
+        new_password = build_test_password()
+        response = self.post_json(
+            self.reset_password_url,
+            {"uid": uid, "token": token, PASSWORD_FIELD: new_password, "confirm_password": new_password},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.customer_user.refresh_from_db()
+        self.assertTrue(self.customer_user.check_password(new_password))
+
+    def test_change_email_view_updates_authenticated_user_email(self):
+        self.authenticate(self.customer_user)
+        response = self.patch_json(
+            self.change_email_url,
+            {"email": "updated@example.com", "current_password": self.customer_password},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.customer_user.refresh_from_db()
+        self.assertEqual(self.customer_user.email, "updated@example.com")
+
+    def test_change_email_view_requires_authentication(self):
+        response = self.patch_json(
+            self.change_email_url,
+            {"email": "updated@example.com", "current_password": self.customer_password},
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_change_email_view_returns_serializer_errors(self):
+        self.authenticate(self.customer_user)
+        response = self.patch_json(
+            self.change_email_url,
+            {"email": self.admin_user.email, "current_password": build_test_password()},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("email" in response.data or "current_password" in response.data)
 
     def test_register_view_creates_customer_user(self):
         password = build_test_password()
@@ -130,6 +300,12 @@ class UserApiTests(APITestCase):
         response = self.patch_json(self.agent_profile_url, {"categories": [99999]})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("categories", response.data)
+
+    def test_update_agent_profile_returns_404_for_missing_agent_profile(self):
+        self.authenticate(self.admin_user)
+        response = self.patch_json("/api/agents/999999/", {"is_available": False})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("No AgentProfile found", response.data["error"])
 
     def test_update_agent_profile_requires_admin_user(self):
         self.authenticate(self.customer_user)

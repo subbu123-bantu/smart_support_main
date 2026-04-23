@@ -21,7 +21,7 @@ describe("api service", () => {
   let apiModule;
   let originalLocation;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
     localStorage.clear();
@@ -40,7 +40,7 @@ describe("api service", () => {
     delete globalThis.location;
     globalThis.location = { href: "http://localhost/" };
 
-    apiModule = await import("../services/api");
+    apiModule = require("../services/api");
   });
 
   afterEach(() => {
@@ -65,6 +65,24 @@ describe("api service", () => {
     expect(result.headers.Authorization).toBeUndefined();
   });
 
+  test("treats password reset routes as public", () => {
+    localStorage.setItem("access", "token-123");
+
+    const forgotRequest = { url: "forgot-password/", headers: {} };
+    const resetRequest = { url: "reset-password/", headers: {} };
+
+    expect(requestFulfilled(forgotRequest).headers.Authorization).toBeUndefined();
+    expect(requestFulfilled(resetRequest).headers.Authorization).toBeUndefined();
+  });
+
+  test("leaves protected requests unchanged when no token is available", () => {
+    const request = { url: "tickets/", headers: {} };
+
+    const result = requestFulfilled(request);
+
+    expect(result.headers.Authorization).toBeUndefined();
+  });
+
   test("passes request interceptor errors through rejection", async () => {
     const error = new Error("request failed");
 
@@ -81,6 +99,7 @@ describe("api service", () => {
     localStorage.setItem("access", "token-123");
     localStorage.setItem("role", "admin");
     localStorage.setItem("username", "subbu");
+    localStorage.setItem("email", "subbu@example.com");
 
     const error = {
       config: { url: "tickets/" },
@@ -91,6 +110,7 @@ describe("api service", () => {
     expect(localStorage.getItem("access")).toBeNull();
     expect(localStorage.getItem("role")).toBeNull();
     expect(localStorage.getItem("username")).toBeNull();
+    expect(localStorage.getItem("email")).toBeNull();
     expect(globalThis.location.href).toBe("/login");
   });
 
@@ -104,6 +124,34 @@ describe("api service", () => {
 
     await expect(responseRejected(error)).rejects.toEqual(error);
     expect(localStorage.getItem("access")).toBe("token-123");
+  });
+
+  test("does not redirect for non-401 responses", async () => {
+    localStorage.setItem("access", "token-123");
+
+    const error = {
+      config: { url: "tickets/" },
+      response: { status: 500 },
+    };
+
+    await expect(responseRejected(error)).rejects.toEqual(error);
+    expect(localStorage.getItem("access")).toBe("token-123");
+    expect(globalThis.location.href).toBe("http://localhost/");
+  });
+
+  test("redirects on 401 even when request url is missing", async () => {
+    localStorage.setItem("access", "token-123");
+    localStorage.setItem("role", "agent");
+
+    const error = {
+      config: {},
+      response: { status: 401 },
+    };
+
+    await expect(responseRejected(error)).rejects.toEqual(error);
+    expect(localStorage.getItem("access")).toBeNull();
+    expect(localStorage.getItem("role")).toBeNull();
+    expect(globalThis.location.href).toBe("/login");
   });
 
   test("loginUser posts to login endpoint", () => {
@@ -120,6 +168,28 @@ describe("api service", () => {
     apiModule.registerUser(payload);
 
     expect(mockApi.post).toHaveBeenCalledWith("register/", payload);
+  });
+
+  test("password reset helpers call the expected endpoints", () => {
+    const forgotPayload = { email: "user@example.com" };
+    const resetPayload = {
+      uid: "uid-1",
+      token: "token-1",
+      password: "pass123",
+      confirm_password: "pass123",
+    };
+    const changeEmailPayload = {
+      email: "updated@example.com",
+      current_password: "secret",
+    };
+
+    apiModule.requestPasswordReset(forgotPayload);
+    apiModule.resetPassword(resetPayload);
+    apiModule.changeEmail(changeEmailPayload);
+
+    expect(mockApi.post).toHaveBeenCalledWith("forgot-password/", forgotPayload);
+    expect(mockApi.post).toHaveBeenCalledWith("reset-password/", resetPayload);
+    expect(mockApi.patch).toHaveBeenCalledWith("change-email/", changeEmailPayload);
   });
 
   test("getTicketStats fetches stats endpoint", () => {
