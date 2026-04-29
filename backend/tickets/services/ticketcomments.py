@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
 
 from tickets.models import Ticket, TicketComment
@@ -66,6 +67,7 @@ def create_comment_for_user(serializer, user, ticket):
                     "customer_name": ticket.customer.username,
                     "ticket_title": ticket.title,
                     "ticket_id": ticket.id,
+                    "ticket_url": f"{settings.FRONTEND_URL.rstrip('/')}/tickets/{ticket.id}",
                     "comment_by": user.username,
                     "comment_message": comment.message[:300],
                     "comment_role": role,
