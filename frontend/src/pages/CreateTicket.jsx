@@ -77,9 +77,11 @@ function CreateTicket() {
 
   const categoryMeta = CATEGORY_META[category] || CATEGORY_META.other;
   const priorityMeta = PRIORITY_META[priority] || PRIORITY_META.low;
+  const hasConfidence = confidence !== null;
+  const confidencePercent = hasConfidence ? `${Math.round(confidence * 100)}%` : "0%";
 
   let confidenceBarColor = "#6366f1";
-  if (confidence !== null) {
+  if (hasConfidence) {
     if (confidence >= 0.8) {
       confidenceBarColor = "#16a34a";
     } else if (confidence >= 0.6) {
@@ -100,7 +102,7 @@ function CreateTicket() {
         AI analyzing...
       </span>
     );
-  } else if (confidence !== null) {
+  } else if (hasConfidence) {
     statusContent = (
       <span className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400">
         {categoryMeta.icon} {categoryMeta.label} - <span className={priorityMeta.color}>{priority}</span>
@@ -155,22 +157,20 @@ function CreateTicket() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-gray-600 text-xs">Confidence</span>
-                <span className="text-gray-500 text-xs">
-                  {confidence !== null ? `${Math.round(confidence * 100)}%` : "0%"}
-                </span>
+                <span className="text-gray-500 text-xs">{confidencePercent}</span>
               </div>
               <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
-                    width: confidence !== null ? `${Math.round(confidence * 100)}%` : "0%",
+                    width: confidencePercent,
                     background: confidenceBarColor,
                   }}
                 />
               </div>
             </div>
 
-            {needsManualReview && confidence !== null && (
+            {needsManualReview && hasConfidence && (
               <p className="text-amber-500/80 text-xs mt-3 flex items-center gap-1.5">
                 <span>!</span> Low confidence - backend will mark this for manual review
               </p>
