@@ -1,17 +1,17 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Tickets from "./pages/Tickets";
+import CreateTicket from "./pages/CreateTicket";
+import TicketDetails from "./pages/TicketDetails";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ChangeEmail from "./pages/ChangeEmail";
+import PrivateRoute from "./components/PrivateRoute";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import PrivateRoute from "./components/PrivateRoute";
 import Layout from "./components/Layout";
-import ChangeEmail from "./pages/ChangeEmail";
-import CreateTicket from "./pages/CreateTicket";
-import Dashboard from "./pages/Dashboard";
-import ForgotPassword from "./pages/ForgotPassword";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ResetPassword from "./pages/ResetPassword";
-import TicketDetails from "./pages/TicketDetails";
-import Tickets from "./pages/Tickets";
 
 function AppWrapper() {
   return (
@@ -32,62 +32,61 @@ function App() {
       <ToastContainer />
 
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/register" element={<Register />} />
 
         <Route
           path="/dashboard"
-          element={(
+          element={
             <PrivateRoute>
               <Layout>
                 <Dashboard />
               </Layout>
             </PrivateRoute>
-          )}
+          }
         />
 
         <Route
           path="/create-ticket"
-          element={(
-            <PrivateRoute allowedRoles={["customer"]}>
+          element={
+            <PrivateRoute>
               <CreateTicket />
             </PrivateRoute>
-          )}
+          }
         />
 
         <Route
           path="/tickets"
-          element={(
-            <PrivateRoute allowedRoles={["admin", "agent", "customer"]}>
-              <Layout>
-                <Tickets />
-              </Layout>
+          element={
+            <PrivateRoute>
+              <Tickets />
             </PrivateRoute>
-          )}
+          }
         />
 
         <Route
           path="/tickets/:id"
-          element={(
+          element={
             <PrivateRoute>
               <TicketDetails />
             </PrivateRoute>
-          )}
+          }
         />
 
         <Route
           path="/settings/email"
-          element={(
+          element={
             <PrivateRoute>
               <Layout>
                 <ChangeEmail />
               </Layout>
             </PrivateRoute>
-          )}
+          }
         />
+
+        <Route path="/register" element={<Register />} />
       </Routes>
     </>
   );
