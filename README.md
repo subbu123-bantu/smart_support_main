@@ -1,228 +1,246 @@
-# Smart Support — AI-Powered Ticket Automation System
+# Smart Support
 
-## Overview
+Smart Support is a full-stack support ticket platform built with Django REST Framework and React. It combines role-based ticket workflows with a hybrid AI classification pipeline that predicts ticket category, assigns priority, flags low-confidence submissions for manual review, and helps route tickets to the right agent.
 
-This project is a *full-stack AI-powered support ticket platform* that allows authenticated users to submit support requests and enables admins to manage tickets and users through a clean, role-based interface.
+## What the project does
 
-The system uses *AI-driven classification, sentiment analysis, and priority assignment* to automatically categorize and route tickets without manual intervention.
+- Authenticates users with JWT-based login and protected APIs
+- Supports three roles: `customer`, `agent`, and `admin`
+- Lets customers create tickets with live AI prediction preview
+- Lets admins and agents manage ticket status and workflow
+- Auto-assigns tickets to available agents by matching category and workload
+- Stores prediction history and exposes feedback/accuracy endpoints
+- Sends email notifications for password reset, ticket creation, and ticket updates
 
-The platform is designed with *security-first authentication, **clean separation of concerns, and a **scalable full-stack architecture*, reflecting real-world Django + React + AI integration.
+## Current frontend experience
 
----
+The React frontend currently ships with these routes:
 
-## Key Features
+- `/login`
+- `/register`
+- `/forgot-password`
+- `/reset-password`
+- `/dashboard`
+- `/tickets`
+- `/tickets/:id`
+- `/create-ticket`
+- `/settings/email`
 
-### Authentication & Security
-- Custom *JWT authentication* with role-based access control
-- Secure login, logout, and signup flow
-- Role-based routing — customers go to /support, agents go to /tickets, admins go to /admin
-- Protected backend APIs using Django REST Framework permissions
-- Frontend route protection via authorization checks on every page load
+Role access today is enforced through `PrivateRoute` and backend permissions:
 
-### AI Support Engine
-- Automatic ticket classification into predefined categories (billing, technical, account, etc.)
-- Sentiment analysis on ticket content — detects frustration, urgency, and tone
-- Priority assignment combining category + sentiment:
-  - Low / Medium / High / Critical
-- Structured output from the AI module:
-  ```json
-  {
-    "category": "...",
-    "sentiment_score": 0.0,
-    "priority": "..."
-  }
-  ```
+- `customer`: can create tickets, view their own tickets, comment on tickets, and update email
+- `agent`: can view only assigned tickets, update status/priority on assigned tickets, comment, and update email
+- `admin`: can view all tickets, assign tickets, manage categories/agents through API access, review dashboard stats, and update email
 
-### AI Escalation & Ticketing
-- Sentiment analysis detects user frustration or negative intent
-- Low-confidence or high-negativity submissions trigger automatic escalation
-- Support ticket is created and stored in PostgreSQL
-- Ticket includes:
-  - user email
-  - query / description
-  - timestamp
-  - assigned agent
-  - ticket status
-- Tickets are assigned to available support staff automatically
-- Ticket lifecycle:
-  - `open` → `in_progress` → `resolved`
+Note: the current UI does not have separate `/support` or `/admin` pages. The main authenticated landing area is `/dashboard`, with ticket operations centered around `/tickets`.
 
-### Admin Panel
-- Admin-only management at /admin
-- Full user management — view, activate, deactivate accounts
-- Ticket overview with filtering by status, priority, and category
-- Assign tickets to agents manually or let the system auto-assign
-- Monitor agent workload and ticket resolution rates
+## AI workflow
 
-### Frontend
-- Built with React.js
-- Secure API communication via Django REST Framework
-- Client-side authentication and role checks
-- Ticket submission form with real-time AI classification preview
-- Chat-style ticket thread view for back-and-forth communication
-- Auto-scroll to latest message in ticket thread
-- Clean login, signup, support, and admin page flow
+The AI layer is implemented in `backend/tickets/ai/` and currently uses a hybrid approach:
 
-### Backend
-- Django REST Framework with custom authentication
-- PostgreSQL database
-- ViewSets and DefaultRouter for clean URL generation
-- Clean separation between authentication, business logic, and AI integration
-- Background processing for non-blocking AI classification
+- rule-based category scoring
+- keyword fallback matching
+- Groq-backed AI classification
+- conflict overrides for ambiguous inputs
+- category-specific priority assignment
+- confidence thresholding and manual-review flags
 
----
+The prediction API returns:
 
-## Architecture
-
-```
-Browser (Customer / Agent / Admin)
-        ↓
-React.js Frontend (UI)
-        ↓
-Django REST API (Authentication + Business Logic)
-        ↓
-AI Pipeline
-  ├── Category Classification
-  ├── Sentiment Analysis
-  └── Priority Assignment
-        ↓
-Confidence Evaluation
-   ├── High Confidence → Auto-assign & notify
-   └── Low Confidence → Escalation flag set
-        ↓
-Support Ticket System
-        ↓
-Agent Assignment Logic
-        ↓
-PostgreSQL Database
+```json
+{
+  "predicted_category": "billing",
+  "predicted_priority": "high",
+  "category_confidence": 0.91,
+  "source": "rule+AI",
+  "needs_manual_review": false
+}
 ```
 
----
+When a ticket is created:
 
-## Technology Stack
+1. The title and description are combined and sent through the prediction pipeline.
+2. The predicted category is stored or created in the `Category` table.
+3. The predicted priority is saved on the ticket.
+4. A `TicketPredictionLog` entry is recorded.
+5. The system attempts auto-assignment to an available agent with matching category expertise.
+6. A ticket-created email is queued through Celery.
+
+When tickets are updated by admin or agent users, prediction feedback is refreshed so actual category/priority can be compared against the original prediction.
+
+## Backend API
+
+Base path: `/api/`
+
+### Authentication and user endpoints
+
+- `POST /api/login/`
+- `POST /api/logout/`
+- `POST /api/register/`
+- `POST /api/forgot-password/`
+- `POST /api/reset-password/`
+- `PATCH /api/change-email/`
+- `GET /api/agents/`
+- `PATCH /api/agents/<agent_id>/`
+
+### Ticket endpoints
+
+- `GET|POST /api/tickets/`
+- `GET|PUT|PATCH /api/tickets/<id>/`
+- `GET /api/categories/`
+- `POST /api/predict/`
+- `GET /api/stats/`
+- `GET /api/prediction-stats/`
+- `PATCH /api/tickets/<ticket_id>/assign/`
+- `GET|POST /api/tickets/<ticket_id>/comments/`
+- `DELETE /api/tickets/<ticket_id>/comments/<comment_id>/`
+- `GET /api/tickets/<ticket_id>/prediction-feedback/`
+- `GET /api/test/`
+
+## Key backend behavior
+
+- `TicketViewSet` restricts data by role:
+  - admins see all tickets
+  - agents see only assigned tickets
+  - customers see only their own tickets
+- customers can create tickets but cannot update them
+- agents can only update `status` and `priority` on tickets assigned to them
+- ticket deletion is blocked
+- admin users can assign a ticket to a specific agent or trigger auto-assignment
+- comment visibility is role-aware and supports internal notes
+- dashboard stats are role-aware, with richer analytics for admin users
+
+## Dashboard and analytics
+
+The current dashboard uses backend stats from `/api/stats/` and includes role-aware metrics such as:
+
+- total, open, in-progress, and closed ticket counts
+- category distribution
+- priority distribution
+- tickets created over the last 7 days
+- agent workload and average resolution time for admin users
+
+## Notifications and async work
+
+The backend already includes Celery integration and email notifications:
+
+- password reset emails
+- ticket created emails
+- ticket status update emails
+
+Email sending is implemented through Brevo, and Celery is configured with Redis as the broker.
+
+## Tech stack
 
 ### Frontend
-- React.js
-- JavaScript
-- Fetch API
+
+- React 19
+- React Router
+- Axios
+- Tailwind CSS
+- Recharts
+- React Toastify
 
 ### Backend
-- Django
+
+- Django 6
 - Django REST Framework
-- PostgreSQL
 - SimpleJWT
-- threading (background AI processing)
+- PostgreSQL
+- django-filter
+- Celery
+- Redis
 
-### AI / ML
-- Python NLP pipeline (classification + sentiment)
-- Scikit-learn / HuggingFace (configurable)
-- FAISS (planned — for knowledge base RAG)
+### AI and processing
 
----
+- Groq API integration
+- rule-based classification helpers
+- keyword-based fallback logic
+- category-specific priority rules
 
-## Authentication Flow
+## Project structure
 
-1. User submits username and password via `/api/v1/login/`
-2. Django authenticates and issues a JWT access token
-3. Django returns the user's role (`customer`, `agent`, or `admin`) in the response body
-4. Frontend redirects based on role — customers to `/support`, agents to `/tickets`, admins to `/admin`
-5. Every protected API request verifies the JWT signature and resolves `request.user`
-6. Logout clears the token client-side and invalidates the session server-side
-
----
-
-## How the AI Works
-
-1. User submits a ticket from the support page
-2. Ticket is sent to Django via the REST API
-3. Django authenticates the user and saves the ticket to PostgreSQL
-4. The AI engine processes the ticket description:
-   - Classifies the category
-   - Scores the sentiment
-   - Assigns a priority level
-5. The system evaluates the confidence of the classification
-6. If confidence is high — ticket is auto-assigned and the agent is notified
-7. If confidence is low or sentiment is highly negative:
-   - Escalation flag is set
-   - Admin is notified for manual review
-8. The updated ticket is returned to the frontend
-
-The AI module only processes based on the ticket content, ensuring controlled and explainable output.
-
----
-
-## Project Structure
-
-```
-smart-support/
-│
-├── backend/
-│   ├── manage.py
-│   ├── requirements.txt
-│   │
-│   ├── core/                      # Django project settings
-│   │   ├── settings.py
-│   │   ├── urls.py
-│   │   └── wsgi.py
-│   │
-│   ├── users/                     # Custom User model & JWT auth
-│   │   ├── models.py
-│   │   ├── serializers.py
-│   │   ├── views.py
-│   │   └── urls.py
-│   │
-│   ├── tickets/                   # Ticket models, serializers, views
-│   │   ├── models.py
-│   │   ├── serializers.py
-│   │   ├── views.py
-│   │   └── urls.py
-│   │
-│   └── ai_engine/                 # AI classification & sentiment logic
-│       ├── classifier.py
-│       ├── sentiment.py
-│       └── priority.py
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/            # Reusable UI components
-│   │   ├── pages/                 # Route-level views
-│   │   │   ├── Login.js
-│   │   │   ├── Signup.js
-│   │   │   ├── Support.js         # Customer ticket submission
-│   │   │   ├── Tickets.js         # Agent ticket management
-│   │   │   └── Admin.js           # Admin dashboard
-│   │   ├── services/              # API call abstractions
-│   │   └── App.js
-│   │
-│   ├── package.json
-│   └── README.md
-│
-└── README.md
+```text
+subrahmanyam/
+|-- backend/
+|   |-- core/
+|   |-- tests/
+|   |-- tickets/
+|   |   |-- ai/
+|   |   |-- services/
+|   |   |-- models.py
+|   |   |-- serializers.py
+|   |   |-- tasks.py
+|   |   |-- urls.py
+|   |   `-- views.py
+|   |-- users/
+|   |   |-- models.py
+|   |   |-- permissions.py
+|   |   |-- serializers.py
+|   |   |-- urls.py
+|   |   `-- views.py
+|   |-- manage.py
+|   `-- requirements.txt
+|-- frontend/
+|   |-- public/
+|   |-- src/
+|   |   |-- components/
+|   |   |-- constants/
+|   |   |-- pages/
+|   |   |-- services/
+|   |   |-- utils/
+|   |   |-- __tests__/
+|   |   |-- App.jsx
+|   |   `-- index.js
+|   `-- package.json
+`-- README.md
 ```
 
----
-
-## Running the Project (Development)
+## Local development
 
 ### Prerequisites
+
 - Python 3.10+
 - Node.js 18+
-- PostgreSQL running locally
+- PostgreSQL
+- Redis
 
-### Backend
+### Backend setup
 
 ```bash
 cd backend
 python -m venv env
-source env/bin/activate      # Windows: env\Scripts\activate
+env\Scripts\activate
 pip install -r requirements.txt
-
 python manage.py migrate
-python manage.py createsuperuser
 python manage.py runserver
 ```
 
-### Frontend
+Create your own local `backend/.env` file and keep it untracked. Add the values your environment needs, including:
+
+- `SECRET_KEY`
+- `DEBUG`
+- `DB_ENGINE`
+- `DB_NAME`
+- `DB_USER`
+- `DB_PASSWORD_LOCAL`
+- `DB_HOST`
+- `DB_PORT`
+- `FRONTEND_URL`
+- `GROQ_API_KEY`
+- `BREVO_API_KEY`
+- `BREVO_SMTP_USER`
+- `BREVO_SMTP_PASS`
+- `BREVO_SENDER_EMAIL`
+
+To run background email jobs locally:
+
+```bash
+cd backend
+celery -A core worker -l info --pool=solo
+```
+
+### Frontend setup
 
 ```bash
 cd frontend
@@ -230,59 +248,61 @@ npm install
 npm start
 ```
 
----
+If needed, set `REACT_APP_API_BASE_URL` so the frontend points to the correct backend origin.
 
-## Current Status
+## Testing
 
-- Authentication — login, logout, signup, session validation
-- Role-based routing — customers, agents, and admins
-- Secure JWT authentication
-- Ticket CRUD APIs
-- PostgreSQL integration
-- AI classification integration (basic)
-- Sentiment analysis for detecting user dissatisfaction
-- Automatic priority assignment
-- Role-based access control
-- Django Admin panel configuration
+### Backend
 
----
+```bash
+cd backend
+python manage.py test tests
+```
 
-## Planned Enhancements
+### Frontend
 
-- [ ] React frontend full integration with all backend APIs
-- [ ] Agent dashboard for ticket management
-- [ ] Ticket resolution workflow UI
-- [ ] User feedback collection after resolution
-- [ ] Admin monitoring dashboard for agent performance
-- [ ] Advanced filtering by status, category, and priority
-- [ ] Dashboard analytics with charts
-- [ ] AI auto-reply suggestion
-- [ ] SLA breach prediction
-- [ ] Redis + Celery for async AI processing
-- [ ] Dockerization
-- [ ] Production deployment (AWS / Azure)
-- [ ] CI/CD pipeline
+```bash
+cd frontend
+npm test -- --coverage --watchAll=false --runInBand --passWithNoTests
+```
 
----
+The frontend test suite currently covers routing, auth pages, dashboard helpers, ticket flows, comments, services, and web vitals.
+
+## CI
+
+GitHub Actions is configured in `.github/workflows/build.yml` to:
+
+- start PostgreSQL for CI
+- run backend migrations and tests with coverage
+- run frontend tests with coverage
+- upload coverage artifacts
+- publish SonarCloud analysis when credentials are available
+
+## Current status
+
+Implemented and working end-to-end today:
+
+- JWT login, logout, registration, password reset, and email change
+- role-aware ticket listing and permissions
+- ticket creation with AI prediction
+- admin assignment and auto-assignment logic
+- ticket comments with internal-note support
+- prediction logging and feedback evaluation
+- dashboard stats and charts support
+- email notifications through Celery
+- backend and frontend automated tests
+
+## Planned improvements
+
+- dedicated admin and agent management screens in the frontend
+- richer prediction review and model evaluation UX
+- better operational visibility around queue and email delivery
+- Docker-based local setup
+- production deployment configuration
+- stronger observability and audit logging
 
 ## Author
 
-**Subrahmanyam**
+Subrahmanyam
 
-This project was built to deeply understand:
-- Secure authentication internals
-- Frontend–backend communication patterns
-- AI system integration into business workflows
-- Real-world SaaS architecture and database modeling
-- Role-based access and permission systems
-
----
-
-## License
-
-Currently for educational and demonstration purposes.
-A license can be added if the project is open-sourced or deployed publicly.
-
----
-
-*Active development. Core architecture, authentication, AI integration, and ticket management are stable and working end-to-end.*
+Built to explore secure authentication, role-based SaaS workflows, API-first Django architecture, and practical AI integration inside a real support system.
