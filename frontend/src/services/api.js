@@ -92,7 +92,6 @@ export const getTickets = (
 export const createTicket = (data) => API.post("tickets/", data);
 export const getTicketById = (id) => API.get(`tickets/${id}/`);
 export const updateTicket = (id, data) => API.patch(`tickets/${id}/`, data);
-export const deleteTicket = (id) => API.delete(`tickets/${id}/`);
 export const predictTicket = (data) => API.post("predict/", data);
 
 export const assignTicket = (ticketId, agentId) =>

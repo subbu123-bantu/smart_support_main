@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { getTickets, updateTicket, getAgents, assignTicket, getCategories } from "../services/api";
 import TicketCard from "../components/TicketCard";
 import TicketFilters from "../components/TicketFilters";
+import { assignTicket, getAgents, getCategories, getTickets, updateTicket } from "../services/api";
 import logger from "../utils/logger";
 
 function Tickets() {
@@ -50,7 +50,7 @@ function Tickets() {
     } finally {
       setLoading(false);
     }
-  }, [page, ticketStatus, priority, searchQuery, assignedFilter, categoryFilter]);
+  }, [assignedFilter, categoryFilter, page, priority, searchQuery, ticketStatus]);
 
   useEffect(() => {
     fetchTickets();
@@ -58,6 +58,7 @@ function Tickets() {
 
   useEffect(() => {
     if (role !== "admin") return;
+
     getAgents()
       .then((response) => setAgents(response.data))
       .catch((error) => {
@@ -68,6 +69,7 @@ function Tickets() {
 
   useEffect(() => {
     if (role !== "admin") return;
+
     getCategories()
       .then((response) => setCategories(response.data.results || response.data))
       .catch((error) => {
@@ -89,25 +91,27 @@ function Tickets() {
     setIsSearchMode(false);
   };
 
-  const handlePriorityChange = (e) => {
-    setPriority(e.target.value);
+  const handlePriorityChange = (event) => {
+    setPriority(event.target.value);
     setPage(1);
   };
 
-  const handleCategoryChange = (e) => {
-    setSelectedCategory(e.target.value);
+  const handleCategoryChange = (event) => {
+    setSelectedCategory(event.target.value);
     setPage(1);
   };
 
-  const handleAssignedChange = (e) => {
-    setAssignedFilter(e.target.value);
+  const handleAssignedChange = (event) => {
+    setAssignedFilter(event.target.value);
     setPage(1);
   };
 
   const updateTicketAndRefresh = async (id, data, successMessage, errorMessage) => {
     try {
       await updateTicket(id, data);
-      if (successMessage) toast.success(successMessage);
+      if (successMessage) {
+        toast.success(successMessage);
+      }
       await fetchTickets();
     } catch (error) {
       logger.error("Ticket update failed", error);
@@ -138,9 +142,11 @@ function Tickets() {
     if (loading) {
       return <div className="text-center text-gray-500 py-20">Loading...</div>;
     }
+
     if (tickets.length === 0) {
       return <div className="text-center text-gray-500 py-20">No tickets found</div>;
     }
+
     return tickets.map((ticket) => (
       <TicketCard
         key={ticket.id}
@@ -162,7 +168,7 @@ function Tickets() {
         className="mb-6 text-sm text-gray-400 hover:text-white transition"
         type="button"
       >
-        ← Back to Dashboard
+        {"<- Back to Dashboard"}
       </button>
 
       <div className="mb-6">
@@ -186,26 +192,24 @@ function Tickets() {
         role={role}
       />
 
-      <div className="space-y-3">
-        {renderTicketList()}
-      </div>
+      <div className="space-y-3">{renderTicketList()}</div>
 
       {!isSearchMode && (prevPage || nextPage) && (
         <div className="flex justify-between mt-6 text-sm text-gray-400">
           <button
-            onClick={() => prevPage && setPage((p) => p - 1)}
+            onClick={() => prevPage && setPage((currentPage) => currentPage - 1)}
             disabled={!prevPage}
             type="button"
           >
-            ← Previous
+            {"<- Previous"}
           </button>
           <span>Page {page}</span>
           <button
-            onClick={() => nextPage && setPage((p) => p + 1)}
+            onClick={() => nextPage && setPage((currentPage) => currentPage + 1)}
             disabled={!nextPage}
             type="button"
           >
-            Next →
+            {"Next ->"}
           </button>
         </div>
       )}

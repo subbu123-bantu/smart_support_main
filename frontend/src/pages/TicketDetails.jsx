@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { getTicketById, getTicketPredictionFeedback } from "../services/api";
-import { ArrowLeft, Tag, AlertCircle, Clock } from "lucide-react";
-import TicketComments from "./TicketComments";
-import FeedbackCard from "../components/FeedBackCard";
+import { useNavigate, useParams } from "react-router-dom";
+import { AlertCircle, ArrowLeft, Clock, Tag } from "lucide-react";
 import EvaluationBadge from "../components/EvaluationBadge";
+import FeedbackCard from "../components/FeedBackCard";
 import PriorityBadge from "../components/PriorityBadge";
+import { getTicketById, getTicketPredictionFeedback } from "../services/api";
+import TicketComments from "./TicketComments";
 
 const STATUS_META = {
   open: {
@@ -38,7 +38,7 @@ function TicketDetails() {
 
   useEffect(() => {
     getTicketById(id)
-      .then((res) => setTicket(res.data))
+      .then((response) => setTicket(response.data))
       .catch(() => setTicket(null))
       .finally(() => setLoading(false));
   }, [id]);
@@ -48,7 +48,7 @@ function TicketDetails() {
 
     setLoadingFeedback(true);
     getTicketPredictionFeedback(id)
-      .then((res) => setPredictionFeedback(res.data))
+      .then((response) => setPredictionFeedback(response.data))
       .catch(() => setPredictionFeedback(null))
       .finally(() => setLoadingFeedback(false));
   }, [id]);
@@ -68,14 +68,13 @@ function TicketDetails() {
           <AlertCircle size={24} className="text-gray-500" />
         </div>
         <h2 className="text-xl font-bold text-white mb-2">Ticket not found</h2>
-        <p className="text-gray-500 text-sm mb-6">
-          This ticket may have been removed.
-        </p>
+        <p className="text-gray-500 text-sm mb-6">This ticket may have been removed.</p>
         <button
           onClick={() => navigate("/tickets")}
           className="text-indigo-400 hover:text-indigo-300 text-sm"
+          type="button"
         >
-          ← Back to tickets
+          {"<- Back to tickets"}
         </button>
       </div>
     );
@@ -87,9 +86,11 @@ function TicketDetails() {
     if (loadingFeedback) {
       return <p className="text-gray-500 text-sm">Loading feedback...</p>;
     }
+
     if (!predictionFeedback?.has_feedback) {
       return <p className="text-gray-500 text-sm">No prediction feedback available for this ticket.</p>;
     }
+
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -98,13 +99,13 @@ function TicketDetails() {
               <div>
                 <p className="text-sm text-gray-400">Predicted</p>
                 <p className="text-white font-medium capitalize">
-                  {predictionFeedback.predicted_category || "—"}
+                  {predictionFeedback.predicted_category || "-"}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-400">Actual</p>
                 <p className="text-white font-medium capitalize">
-                  {predictionFeedback.actual_category || "—"}
+                  {predictionFeedback.actual_category || "-"}
                 </p>
               </div>
             </div>
@@ -118,13 +119,13 @@ function TicketDetails() {
               <div>
                 <p className="text-sm text-gray-400">Predicted</p>
                 <p className="text-white font-medium capitalize">
-                  {predictionFeedback.predicted_priority || "—"}
+                  {predictionFeedback.predicted_priority || "-"}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-400">Actual</p>
                 <p className="text-white font-medium capitalize">
-                  {predictionFeedback.actual_priority || "—"}
+                  {predictionFeedback.actual_priority || "-"}
                 </p>
               </div>
             </div>
@@ -137,7 +138,7 @@ function TicketDetails() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FeedbackCard title="Prediction Source">
             <p className="text-white font-medium capitalize">
-              {predictionFeedback.source?.replaceAll("_", " ") || "—"}
+              {predictionFeedback.source?.replaceAll("_", " ") || "-"}
             </p>
           </FeedbackCard>
 
@@ -156,6 +157,7 @@ function TicketDetails() {
       <button
         onClick={() => navigate("/tickets")}
         className="mb-6 text-sm text-gray-400 hover:text-white transition flex items-center gap-2"
+        type="button"
       >
         <ArrowLeft size={14} /> Back to tickets
       </button>
@@ -165,34 +167,22 @@ function TicketDetails() {
           <div className="flex justify-between items-start mb-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-gray-500 font-mono">
-                  #{ticket.id}
-                </span>
-
-                <span
-                  className={`text-xs px-2 py-1 rounded-full border ${status.bg} ${status.color}`}
-                >
+                <span className="text-xs text-gray-500 font-mono">#{ticket.id}</span>
+                <span className={`text-xs px-2 py-1 rounded-full border ${status.bg} ${status.color}`}>
                   {status.label}
                 </span>
               </div>
 
-              <h1 className="text-2xl font-bold leading-tight">
-                {ticket.title}
-              </h1>
+              <h1 className="text-2xl font-bold leading-tight">{ticket.title}</h1>
             </div>
 
             <PriorityBadge priority={ticket.priority} />
           </div>
 
           <div className="mb-8">
-            <p className="text-gray-500 text-xs uppercase tracking-wider mb-3">
-              Description
-            </p>
-
+            <p className="text-gray-500 text-xs uppercase tracking-wider mb-3">Description</p>
             <div className="bg-white/[0.02] border border-white/5 rounded-xl p-5">
-              <p className="text-sm text-gray-300 leading-relaxed">
-                {ticket.description}
-              </p>
+              <p className="text-sm text-gray-300 leading-relaxed">{ticket.description}</p>
             </div>
           </div>
 
@@ -201,27 +191,21 @@ function TicketDetails() {
               <div className="flex items-center gap-2 mb-2 text-gray-500 text-xs uppercase">
                 <Tag size={12} /> Category
               </div>
-              <p className="text-sm font-semibold capitalize">
-                {ticket.category_name || ticket.category || "—"}
-              </p>
+              <p className="text-sm font-semibold capitalize">{ticket.category_name || ticket.category || "-"}</p>
             </div>
 
             <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2 text-gray-500 text-xs uppercase">
                 <AlertCircle size={12} /> Priority
               </div>
-              <p className="text-sm font-semibold capitalize">
-                {ticket.priority}
-              </p>
+              <p className="text-sm font-semibold capitalize">{ticket.priority}</p>
             </div>
 
             <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2 text-gray-500 text-xs uppercase">
                 <Clock size={12} /> Assigned
               </div>
-              <p className="text-sm font-semibold">
-                {ticket.assigned_to_name || "Unassigned"}
-              </p>
+              <p className="text-sm font-semibold">{ticket.assigned_to_name || "Unassigned"}</p>
             </div>
           </div>
         </div>
@@ -229,12 +213,8 @@ function TicketDetails() {
         <TicketComments ticketId={id} role={role} />
 
         <div className="bg-[#0f1117] border border-white/5 rounded-2xl p-5">
-          <h3 className="text-lg font-semibold text-white mb-1">
-            AI Prediction Feedback
-          </h3>
-          <p className="text-xs text-gray-600 mb-5">
-            Compare predicted values with the final ticket decision
-          </p>
+          <h3 className="text-lg font-semibold text-white mb-1">AI Prediction Feedback</h3>
+          <p className="text-xs text-gray-600 mb-5">Compare predicted values with the final ticket decision</p>
           {renderFeedbackContent()}
         </div>
       </div>

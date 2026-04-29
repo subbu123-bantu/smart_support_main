@@ -1,16 +1,15 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { createTicket, predictTicket } from "../services/api";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { CATEGORY_META, PRIORITY_META } from "../constants";
+import { createTicket, predictTicket } from "../services/api";
 import logger from "../utils/logger";
 
 function CreateTicket() {
-  const [title, setTitle]           = useState("");
+  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [predicting, setPredicting] = useState(false);
-
   const [category, setCategory] = useState("other");
   const [priority, setPriority] = useState("low");
   const [confidence, setConfidence] = useState(null);
@@ -18,32 +17,37 @@ function CreateTicket() {
 
   const navigate = useNavigate();
 
-  const handleAutoPredict = async (text) => {
-    if (!text || text.trim().length < 10) return;
-
-    setPredicting(true);
-    try {
-      const res = await predictTicket({ text });
-      setCategory(res.data.predicted_category || "other");
-      setPriority(res.data.predicted_priority || "low");
-      setConfidence(res.data.category_confidence ?? null);
-      setNeedsManualReview(Boolean(res.data.needs_manual_review));
-    } catch (error) {
-      logger.error("Ticket prediction failed", error);
-      setConfidence(null);
-      setNeedsManualReview(true);
-    } finally {
-      setPredicting(false);
-    }
-  };
-
   useEffect(() => {
-    const timer = setTimeout(() => handleAutoPredict(description), 600);
+    const timer = setTimeout(() => {
+      if (!description || description.trim().length < 10) {
+        return;
+      }
+
+      const handleAutoPredict = async () => {
+        setPredicting(true);
+        try {
+          const response = await predictTicket({ text: description });
+          setCategory(response.data.predicted_category || "other");
+          setPriority(response.data.predicted_priority || "low");
+          setConfidence(response.data.category_confidence ?? null);
+          setNeedsManualReview(Boolean(response.data.needs_manual_review));
+        } catch (error) {
+          logger.error("Ticket prediction failed", error);
+          setConfidence(null);
+          setNeedsManualReview(true);
+        } finally {
+          setPredicting(false);
+        }
+      };
+
+      handleAutoPredict();
+    }, 600);
+
     return () => clearTimeout(timer);
   }, [description]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     if (submitting) return;
 
     if (!title.trim() || !description.trim()) {
@@ -57,60 +61,56 @@ function CreateTicket() {
         title: title.trim(),
         description: description.trim(),
       });
-
       toast.success("Ticket submitted!");
       navigate("/tickets");
-    } catch (err) {
-      logger.error("Ticket creation failed", err);
+    } catch (error) {
+      logger.error("Ticket creation failed", error);
       toast.error(
-        err.response?.data?.detail ||
-        err.response?.data?.category?.[0] ||
+        error.response?.data?.detail ||
+        error.response?.data?.category?.[0] ||
         "Failed to create ticket"
       );
     } finally {
       setSubmitting(false);
     }
   };
-  const catMeta  = CATEGORY_META[category]  || CATEGORY_META.other;
-  const priMeta  = PRIORITY_META[priority]   || PRIORITY_META.low;
-  let bgColor = "#6366f1";
-  // const confidence =res.data.category_confidence || 0 
-    if (confidence !== null && confidence !== undefined) {
-      if (confidence >= 0.8) {
-        bgColor = "#16a34a";
-      } else if (confidence >= 0.6) {
-        bgColor = "#f59e0b";
-      } else {
-        bgColor = "#ef4444";
-      }
+
+  const categoryMeta = CATEGORY_META[category] || CATEGORY_META.other;
+  const priorityMeta = PRIORITY_META[priority] || PRIORITY_META.low;
+
+  let confidenceBarColor = "#6366f1";
+  if (confidence !== null) {
+    if (confidence >= 0.8) {
+      confidenceBarColor = "#16a34a";
+    } else if (confidence >= 0.6) {
+      confidenceBarColor = "#f59e0b";
+    } else {
+      confidenceBarColor = "#ef4444";
     }
+  }
 
-    let statusContent = null;
+  let statusContent = null;
+  if (predicting) {
+    statusContent = (
+      <span className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+        <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+        AI analyzing...
+      </span>
+    );
+  } else if (confidence !== null) {
+    statusContent = (
+      <span className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400">
+        {categoryMeta.icon} {categoryMeta.label} - <span className={priorityMeta.color}>{priority}</span>
+      </span>
+    );
+  }
 
-if (predicting) {
-  statusContent = (
-    <span className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-      <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-      </svg>
-      AI analyzing...
-    </span>
-  );
-} else if (confidence != null) {   // cleaner check
-  statusContent = (
-    <span className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400">
-      {catMeta.icon} {catMeta.label} · <span className={priMeta.color}>{priority}</span>
-    </span>
-  );
-}
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }} className="flex min-h-screen bg-[#0c0e14]">
-
-      {/* ── Left Panel ── */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 bg-[#0f1117] border-r border-white/5">
-
-        {/* Center content */}
         <div>
           <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 mb-8">
             <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
@@ -118,14 +118,14 @@ if (predicting) {
           </div>
 
           <h1 className="text-5xl font-bold text-white leading-tight mb-6" style={{ letterSpacing: "-0.03em" }}>
-            Tell us what's<br />
+            Tell us what&apos;s
+            <br />
             <span className="text-indigo-400">going wrong.</span>
           </h1>
           <p className="text-gray-500 text-lg leading-relaxed max-w-sm mb-10">
             Describe your issue and our AI will instantly classify it, set a priority, and route it to the right team.
           </p>
 
-          {/* Live AI Preview Card */}
           <div className="bg-white/[0.03] border border-white/8 rounded-2xl p-5">
             <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">AI prediction preview</p>
 
@@ -134,63 +134,59 @@ if (predicting) {
               <span className="flex items-center gap-2 text-sm text-white font-medium">
                 {predicting ? (
                   <svg className="animate-spin w-3.5 h-3.5 text-indigo-400" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
                 ) : (
-                  <span>{catMeta.icon}</span>
+                  <span>{categoryMeta.icon}</span>
                 )}
-                {catMeta.label}
+                {categoryMeta.label}
               </span>
             </div>
 
             <div className="flex items-center justify-between mb-4">
               <span className="text-gray-500 text-sm">Priority</span>
-              <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${priMeta.bg} ${priMeta.color}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${priMeta.dot}`}/>
+              <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${priorityMeta.bg} ${priorityMeta.color}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${priorityMeta.dot}`} />
                 {priority.charAt(0).toUpperCase() + priority.slice(1)}
               </span>
             </div>
 
-            {/* Confidence bar */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-gray-600 text-xs">Confidence</span>
                 <span className="text-gray-500 text-xs">
-                  {confidence !== null && confidence !== undefined ? `${Math.round(confidence * 100)}%` : "0%"}
+                  {confidence !== null ? `${Math.round(confidence * 100)}%` : "0%"}
                 </span>
               </div>
               <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
-                    width: confidence !== null && confidence !== undefined ? `${Math.round(confidence * 100)}%` : "0%",
-                    background: bgColor
+                    width: confidence !== null ? `${Math.round(confidence * 100)}%` : "0%",
+                    background: confidenceBarColor,
                   }}
                 />
               </div>
             </div>
 
-            {needsManualReview && confidence != null && (
+            {needsManualReview && confidence !== null && (
               <p className="text-amber-500/80 text-xs mt-3 flex items-center gap-1.5">
-                <span>⚠</span> Low confidence — backend will mark this for manual review
+                <span>!</span> Low confidence - backend will mark this for manual review
               </p>
             )}
           </div>
         </div>
 
-        <p className="text-gray-700 text-sm">© 2026 Smart Support. All rights reserved.</p>
+        <p className="text-gray-700 text-sm">(c) 2026 Smart Support. All rights reserved.</p>
       </div>
 
-      {/* ── Right Panel — Form ── */}
       <div className="flex flex-1 items-center justify-center p-8">
         <div className="w-full max-w-sm">
-
-          {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-2 mb-10">
             <div className="w-7 h-7 rounded-md bg-indigo-500 flex items-center justify-center">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <path d="M2 4h5v5H2zM9 7h5v5H9z" fill="white"/>
+                <path d="M2 4h5v5H2zM9 7h5v5H9z" fill="white" />
               </svg>
             </div>
             <span className="text-white font-semibold">Smart Support</span>
@@ -199,44 +195,42 @@ if (predicting) {
           <h2 className="text-2xl font-bold text-white mb-1" style={{ letterSpacing: "-0.02em" }}>
             New support ticket
           </h2>
-          <p className="text-gray-500 text-sm mb-8">We'll route your issue to the right team automatically.</p>
+          <p className="text-gray-500 text-sm mb-8">We&apos;ll route your issue to the right team automatically.</p>
 
-          {/* Mobile — AI pill */}
-          <div className="flex lg:hidden items-center gap-2 mb-6">
-            {statusContent}
-          </div>
+          <div className="flex lg:hidden items-center gap-2 mb-6">{statusContent}</div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
-                <input
+              <label htmlFor="ticket-title" className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+                Ticket title
+              </label>
+              <input
+                id="ticket-title"
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(event) => setTitle(event.target.value)}
                 placeholder="Brief summary of the issue"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500 focus:bg-indigo-500/5 transition-all duration-200"
-              />Ticket title
-              </label>
+              />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
-                
+              <label htmlFor="ticket-description" className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+                Description
+              </label>
               <textarea
+                id="ticket-description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the issue in detail — what happened, when, and any error messages…"
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Describe the issue in detail - what happened, when, and any error messages..."
                 rows={5}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500 focus:bg-indigo-500/5 transition-all duration-200 resize-none"
               />
               <p className="text-gray-700 text-xs mt-1.5">
                 {description.length < 10
                   ? `${10 - description.length} more characters for AI analysis`
-                  : "AI is analyzing your description…"}
+                  : "AI is analyzing your description..."}
               </p>
-              Description
-              </label>
             </div>
 
             <button
@@ -247,30 +241,25 @@ if (predicting) {
               {submitting ? (
                 <>
                   <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  Submitting…
+                  Submitting...
                 </>
-              ) : "Submit ticket"}
+              ) : (
+                "Submit ticket"
+              )}
             </button>
-
           </form>
-
-          
 
           <div className="mt-6 pt-6 border-t border-white/5 text-center">
             <p className="text-gray-600 text-sm">
               Changed your mind?{" "}
-              <Link
-                to="/tickets"
-                className="text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
+              <Link to="/tickets" className="text-indigo-400 hover:text-indigo-300 transition-colors">
                 Back to tickets
               </Link>
             </p>
           </div>
-
         </div>
       </div>
     </div>
