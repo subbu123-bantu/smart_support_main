@@ -4,10 +4,9 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from rest_framework import viewsets, status
-from .models import User, AgentProfile
+from rest_framework import status
+from .models import AgentProfile
 from .serializers import (
-    UserSerializer,
     RegisterSerializer,
     AgentProfileSerializer,
     ForgotPasswordSerializer,
@@ -16,7 +15,6 @@ from .serializers import (
 )
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .permissions import IsAdmin
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
@@ -24,12 +22,6 @@ from tickets.tasks import send_email_task
 
 UserModel = get_user_model()
 logger = logging.getLogger(__name__)
-
-
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [IsAdmin]
 
 
 class RegisterView(APIView):

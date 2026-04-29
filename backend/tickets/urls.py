@@ -12,8 +12,6 @@ from .views import (
     prediction_stats,
     test_backend,
 )
-from .ai.ai import predict_ticket
-
 
 router = DefaultRouter()
 router.register(r"tickets", TicketViewSet, basename="ticket")

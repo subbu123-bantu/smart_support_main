@@ -15,7 +15,6 @@ class Ticket(models.Model):
     description = models.TextField()
 
     user_ticket_id = models.PositiveIntegerField(null=True, blank=True)
-    assigned_team = models.CharField(max_length=100, blank=True)
 
     class Status(models.TextChoices):
         OPEN = "open"

@@ -248,3 +248,17 @@ LOGGING = {
         },
     },
 }
+
+if RUNNING_TESTS:
+    for logger_name in (
+        "django.request",
+        "tickets.ai.ai_client",
+        "tickets.views",
+        "tickets.services.ticketcomments",
+        "tickets.services.ticketstats",
+    ):
+        LOGGING["loggers"][logger_name] = {
+            "handlers": ["console"],
+            "level": "CRITICAL",
+            "propagate": False,
+        }
