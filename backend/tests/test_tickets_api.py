@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from tickets.models import Category, Ticket
+from tickets.services.ticketcreate import create_ticket
 from users.models import AgentProfile, User
 
 from .test_utils import PASSWORD_FIELD, build_test_password
@@ -84,6 +85,7 @@ class TicketApiTests(APITestCase):
         self.ticket_list_url = "/api/tickets/"
         self.predict_url = "/api/predict/"
         self.stats_url = "/api/stats/"
+        self.prediction_stats_url = "/api/prediction-stats/"
 
     def test_predict_view_rejects_empty_text(self):
         self.client.force_authenticate(user=self.customer_user)
@@ -216,6 +218,13 @@ class TicketApiTests(APITestCase):
         self.assertEqual(self.unassigned_ticket.assigned_to, self.agent_user)
         self.assertEqual(self.unassigned_ticket.status, Ticket.Status.IN_PROGRESS)
 
+    def test_ticket_delete_is_forbidden_for_admin(self):
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.delete(f"{self.ticket_list_url}{self.unassigned_ticket.id}/", format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("Ticket deletion is not allowed.", str(response.data))
+        self.assertTrue(Ticket.objects.filter(id=self.unassigned_ticket.id).exists())
+
     def test_assign_ticket_returns_404_for_missing_ticket(self):
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.patch(
@@ -225,3 +234,40 @@ class TicketApiTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data["error"], "Ticket not found")
+
+    def test_prediction_stats_requires_admin(self):
+        self.client.force_authenticate(user=self.customer_user)
+        response = self.client.get(self.prediction_stats_url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("Only admins can view prediction stats.", str(response.data))
+
+    @patch("tickets.services.ticketcreate.logger")
+    @patch("tickets.services.ticketcreate.send_email_task.delay", side_effect=Exception("broker unavailable"))
+    @patch("tickets.services.ticketcreate.auto_assign_ticket", return_value=({"assigned": False, "agent": None}, 200))
+    @patch("tickets.services.ticketcreate.predict_ticket")
+    @patch("tickets.services.ticketcreate.log_prediction")
+    def test_create_ticket_succeeds_when_email_queue_fails(
+        self,
+        mock_log_prediction,
+        mock_predict_ticket,
+        _mock_auto_assign,
+        _mock_delay,
+        mock_logger,
+    ):
+        mock_predict_ticket.return_value = {
+            "category": "network",
+            "priority": "high",
+            "confidence": 0.91,
+            "source": "rules",
+            "needs_manual_review": False,
+        }
+
+        ticket = create_ticket(
+            {"title": "Email queue failure", "description": "Should still create"},
+            self.customer_user,
+        )
+
+        self.assertIsNotNone(ticket.id)
+        self.assertEqual(ticket.customer, self.customer_user)
+        mock_log_prediction.assert_called_once()
+        mock_logger.exception.assert_called_once()

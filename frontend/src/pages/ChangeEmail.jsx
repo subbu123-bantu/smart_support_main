@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { changeEmail } from "../services/api";
+import logger from "../utils/logger";
 
 function ChangeEmail() {
   const [email, setEmail] = useState(localStorage.getItem("email") || "");
@@ -25,6 +26,7 @@ function ChangeEmail() {
       toast.success(response.data.message || "Email updated");
       setCurrentPassword("");
     } catch (error) {
+      logger.error("Email update failed", error);
       toast.error(
         error.response?.data?.email?.[0] ||
           error.response?.data?.current_password?.[0] ||

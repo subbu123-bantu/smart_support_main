@@ -86,6 +86,9 @@ class TicketViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Only customers can create tickets.")
         serializer.save()
 
+    def destroy(self, request, *args, **kwargs):
+        raise PermissionDenied("Ticket deletion is not allowed.")
+
     def update(self, request, *args, **kwargs):
         ticket = self.get_object()
         user = request.user
@@ -177,6 +180,9 @@ def assign_ticket(request, ticket_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def prediction_stats(request):
+    if request.user.role.lower() != "admin":
+        raise PermissionDenied("Only admins can view prediction stats.")
+
     logs = TicketPredictionLog.objects.filter(actual_category__isnull=False)
 
     total = logs.count()

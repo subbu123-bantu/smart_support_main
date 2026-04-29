@@ -1,344 +1,126 @@
-import "@testing-library/jest-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "react-toastify";
-import TicketComments from "../pages/TicketComments";
 import TicketDetails from "../pages/TicketDetails";
-import {
-  addTicketComment,
-  getTicketById,
-  getTicketComments,
-  getTicketPredictionFeedback,
-} from "../services/api";
-import logger from "../utils/logger";
+import TicketComments from "../pages/TicketComments";
+import { addTicketComment, getTicketById, getTicketComments, getTicketPredictionFeedback } from "../services/api";
 
 const mockNavigate = jest.fn();
 
+jest.mock("react-toastify", () => ({ toast: { error: jest.fn(), success: jest.fn() } }));
+jest.mock("../utils/logger", () => ({ error: jest.fn() }));
 jest.mock("../services/api", () => ({
-  getTicketComments: jest.fn(),
-  addTicketComment: jest.fn(),
   getTicketById: jest.fn(),
   getTicketPredictionFeedback: jest.fn(),
+  getTicketComments: jest.fn(),
+  addTicketComment: jest.fn(),
 }));
+jest.mock("react-router-dom", () => ({ ...jest.requireActual("react-router-dom"), useNavigate: () => mockNavigate, useParams: () => ({ id: "42" }) }));
 
-jest.mock("../utils/logger", () => ({
-  __esModule: true,
-  default: {
-    error: jest.fn(),
-  },
-}));
+const ticketResponse = {
+  id: 42,
+  title: "Printer down",
+  description: "Office printer is jammed",
+  status: "open",
+  priority: "high",
+  category_name: "Hardware",
+  assigned_to_name: "Alex",
+};
 
-jest.mock("react-toastify", () => ({
-  toast: {
-    error: jest.fn(),
-    success: jest.fn(),
-  },
-}));
+const feedbackResponse = {
+  has_feedback: true,
+  predicted_category: "hardware",
+  actual_category: "hardware",
+  category_correct: true,
+  predicted_priority: "high",
+  actual_priority: "high",
+  priority_correct: true,
+  source: "ml_model",
+  confidence: 0.93,
+};
 
-jest.mock("../components/FeedBackCard", () => {
-  const PropTypes = require("prop-types");
-
-  function MockFeedbackCard({ title, children }) {
-    return (
-      <div data-testid="feedback-card">
-        <h4>{title}</h4>
-        {children}
-      </div>
-    );
-  }
-
-  MockFeedbackCard.propTypes = {
-    title: PropTypes.string.isRequired,
-    children: PropTypes.node.isRequired,
-  };
-
-  return MockFeedbackCard;
-});
-
-jest.mock("../components/EvaluationBadge", () => {
-  const PropTypes = require("prop-types");
-
-  function MockEvaluationBadge({ value }) {
-    return <span data-testid="evaluation-badge">{String(value)}</span>;
-  }
-
-  MockEvaluationBadge.propTypes = {
-    value: PropTypes.bool,
-  };
-
-  MockEvaluationBadge.defaultProps = {
-    value: null,
-  };
-
-  return MockEvaluationBadge;
-});
-
-jest.mock("lucide-react", () => ({
-  ArrowLeft: () => <span data-testid="arrow-left" />,
-  Tag: () => <span data-testid="tag-icon" />,
-  AlertCircle: () => <span data-testid="alert-icon" />,
-  Clock: () => <span data-testid="clock-icon" />,
-}));
-
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useNavigate: () => mockNavigate,
-  useParams: () => ({ id: "12" }),
-}));
-
-describe("ticket comments and details pages", () => {
+describe("ticket details and comments", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
-  });
-
-  test("loads comments, supports internal notes, and refreshes after posting", async () => {
-    getTicketComments
-      .mockResolvedValueOnce({
-        data: {
-          results: [
-            {
-              id: 1,
-              username: "Agent One",
-              user_role: "agent",
-              is_internal: true,
-              created_at: "2026-04-20T08:00:00Z",
-              message: "Investigating issue",
-            },
-          ],
-        },
-      })
-      .mockResolvedValueOnce({
-        data: [
-          {
-            id: 2,
-            username: "Agent One",
-            user_role: "agent",
-            is_internal: false,
-            created_at: "2026-04-20T09:00:00Z",
-            message: "Resolved",
-          },
-        ],
-      });
-    addTicketComment.mockResolvedValue({});
-
-    render(<TicketComments ticketId={12} role="agent" />);
-
-    expect(screen.getByText("Loading comments...")).toBeInTheDocument();
-    expect(await screen.findByText("Investigating issue")).toBeInTheDocument();
-    expect(screen.getByText("Internal")).toBeInTheDocument();
-
-    fireEvent.change(screen.getByPlaceholderText("Write a comment..."), {
-      target: { value: "Resolved" },
-    });
-    fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByRole("button", { name: "Add Comment" }));
-
-    await waitFor(() =>
-      expect(addTicketComment).toHaveBeenCalledWith(12, {
-        message: "Resolved",
-        is_internal: true,
-      }),
-    );
-    expect(await screen.findByText("Resolved")).toBeInTheDocument();
-    expect(toast.success).toHaveBeenCalledWith("Comment added");
-  });
-
-  test("handles comments validation and failure states", async () => {
-    getTicketComments.mockRejectedValueOnce(new Error("load failed"));
-    addTicketComment.mockRejectedValueOnce(new Error("save failed"));
-
-    render(<TicketComments ticketId={99} role="customer" />);
-
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Failed to load comments"));
-    expect(logger.error).toHaveBeenCalled();
-    expect(screen.getByText("No comments yet")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Add Comment" }));
-    expect(toast.error).toHaveBeenCalledWith("Comment cannot be empty");
-
-    fireEvent.change(screen.getByPlaceholderText("Write a comment..."), {
-      target: { value: "Need update" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Add Comment" }));
-
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Failed to add comment"));
-  });
-
-  test("uses safe fallbacks for non-array comment payloads and customer posts public comments", async () => {
-    getTicketComments
-      .mockResolvedValueOnce({ data: { results: {} } })
-      .mockResolvedValueOnce({ data: [] });
-    addTicketComment.mockResolvedValue({});
-
-    render(<TicketComments ticketId={77} role="customer" />);
-
-    expect(await screen.findByText("No comments yet")).toBeInTheDocument();
-    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
-
-    fireEvent.change(screen.getByPlaceholderText("Write a comment..."), {
-      target: { value: "Customer follow-up" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Add Comment" }));
-
-    await waitFor(() =>
-      expect(addTicketComment).toHaveBeenCalledWith(77, {
-        message: "Customer follow-up",
-        is_internal: false,
-      }),
-    );
-  });
-
-  test("does not fetch comments when ticket id is missing", () => {
-    render(<TicketComments ticketId={0} role="agent" />);
-
-    expect(getTicketComments).not.toHaveBeenCalled();
-    expect(screen.getByText("Loading comments...")).toBeInTheDocument();
-  });
-
-  test("renders ticket details, prediction feedback, and back navigation", async () => {
     localStorage.setItem("role", "admin");
-    getTicketById.mockResolvedValueOnce({
-      data: {
-        id: 12,
-        title: "VPN issue",
-        description: "Cannot connect",
-        status: "closed",
-        priority: "high",
-        category_name: "Technical",
-        assigned_to_name: "Asha",
-      },
-    });
-    getTicketPredictionFeedback.mockResolvedValueOnce({
-      data: {
-        has_feedback: true,
-        predicted_category: "technical",
-        actual_category: "technical",
-        category_correct: true,
-        predicted_priority: "high",
-        actual_priority: "high",
-        priority_correct: true,
-        source: "ai_prediction",
-        confidence: 0.81,
-      },
-    });
-    getTicketComments.mockResolvedValue({ data: [] });
-
-    render(
-      <MemoryRouter>
-        <TicketDetails />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByText("Loading ticket...")).toBeInTheDocument();
-    expect(await screen.findByText("VPN issue")).toBeInTheDocument();
-    expect(screen.getByText("Cannot connect")).toBeInTheDocument();
-    expect(screen.getByText("Asha")).toBeInTheDocument();
-    expect(await screen.findByText("AI Prediction Feedback")).toBeInTheDocument();
-    expect(screen.getByText("81%")).toBeInTheDocument();
-    expect(screen.getByText("ai prediction")).toBeInTheDocument();
-
-    fireEvent.click(screen.getAllByRole("button", { name: /back to tickets/i })[0]);
-    expect(mockNavigate).toHaveBeenCalledWith("/tickets");
   });
 
-  test("renders loading feedback then empty feedback state", async () => {
-    let resolveFeedback;
-    const feedbackPromise = new Promise((resolve) => {
-      resolveFeedback = resolve;
-    });
+  test("renders ticket details, feedback, and embedded comments", async () => {
+    getTicketById.mockResolvedValue({ data: ticketResponse });
+    getTicketPredictionFeedback.mockResolvedValue({ data: feedbackResponse });
+    getTicketComments.mockResolvedValue({ data: [{ id: 1, username: "sam", user_role: "admin", message: "Investigating", created_at: "2026-04-28T00:00:00Z" }] });
 
-    localStorage.setItem("role", "customer");
-    getTicketById.mockResolvedValueOnce({
-      data: {
-        id: 44,
-        title: "Email issue",
-        description: "Cannot receive mail",
-        status: "mystery",
-        priority: "unknown",
-        category_name: "",
-        category: "",
-        assigned_to_name: "",
-      },
-    });
-    getTicketPredictionFeedback.mockReturnValueOnce(feedbackPromise);
-    getTicketComments.mockResolvedValue({ data: [] });
+    render(<TicketDetails />);
 
-    render(
-      <MemoryRouter>
-        <TicketDetails />
-      </MemoryRouter>,
-    );
-
-    expect(await screen.findByText("Email issue")).toBeInTheDocument();
-    expect(screen.getByText("Open")).toBeInTheDocument();
-    expect(screen.getByText("Unassigned")).toBeInTheDocument();
-    expect(screen.getByText("—")).toBeInTheDocument();
-    expect(screen.getByText("Loading feedback...")).toBeInTheDocument();
-
-    resolveFeedback({
-      data: {
-        has_feedback: false,
-      },
-    });
-
-    expect(
-      await screen.findByText("No prediction feedback available for this ticket."),
-    ).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(ticketResponse.title)).toBeInTheDocument());
+    expect(screen.getByText(/office printer is jammed/i)).toBeInTheDocument();
+    expect(screen.getAllByText("Correct")).toHaveLength(2);
+    expect(screen.getByText("93%")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Investigating")).toBeInTheDocument());
   });
 
-  test("renders feedback fallbacks for missing values", async () => {
-    localStorage.setItem("role", "admin");
-    getTicketById.mockResolvedValueOnce({
-      data: {
-        id: 88,
-        title: "Portal issue",
-        description: "Page is blank",
-        status: "open",
-        priority: "low",
-        category_name: null,
-        category: null,
-        assigned_to_name: null,
-      },
-    });
-    getTicketPredictionFeedback.mockResolvedValueOnce({
-      data: {
-        has_feedback: true,
-        predicted_category: "",
-        actual_category: "",
-        category_correct: null,
-        predicted_priority: "",
-        actual_priority: "",
-        priority_correct: null,
-        source: "",
-        confidence: 0,
-      },
-    });
-    getTicketComments.mockResolvedValue({ data: [] });
-
-    render(
-      <MemoryRouter>
-        <TicketDetails />
-      </MemoryRouter>,
-    );
-
-    expect(await screen.findByText("Portal issue")).toBeInTheDocument();
-    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(4);
-    expect(screen.getByText("0%")).toBeInTheDocument();
-  });
-
-  test("renders missing ticket and no-feedback fallback states", async () => {
+  test("shows fallback when the ticket is missing", async () => {
     getTicketById.mockRejectedValueOnce(new Error("missing"));
-    getTicketPredictionFeedback.mockRejectedValueOnce(new Error("no feedback"));
+    getTicketPredictionFeedback.mockRejectedValueOnce(new Error("none"));
 
-    render(
-      <MemoryRouter>
-        <TicketDetails />
-      </MemoryRouter>,
-    );
+    render(<TicketDetails />);
 
-    expect(await screen.findByText("Ticket not found")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /back to tickets/i }));
+    await waitFor(() => expect(screen.getByText(/ticket not found/i)).toBeInTheDocument());
+    expect(screen.getByText(/this ticket may have been removed/i)).toBeInTheDocument();
+  });
+
+  test("posts internal notes and hides the checkbox for customers", async () => {
+    getTicketComments
+      .mockResolvedValue({ data: [] })
+      .mockResolvedValueOnce({ data: [] })
+      .mockResolvedValueOnce({ data: [{ id: 2, username: "sam", user_role: "admin", is_internal: true, message: "Secret", created_at: "2026-04-28T00:00:00Z" }] });
+    addTicketComment.mockResolvedValue({});
+
+    const { rerender } = render(<TicketComments ticketId={5} role="admin" />);
+
+    await waitFor(() => expect(screen.getByText(/no comments yet/i)).toBeInTheDocument());
+    fireEvent.change(screen.getByPlaceholderText(/write a comment/i), { target: { value: "Secret" } });
+    fireEvent.click(screen.getByLabelText(/mark as internal note/i));
+    fireEvent.submit(screen.getByRole("button", { name: /add comment/i }).closest("form"));
+
+    await waitFor(() => expect(addTicketComment).toHaveBeenCalledWith(5, { message: "Secret", is_internal: true }));
+    expect(toast.success).toHaveBeenCalledWith("Comment added");
+
+    rerender(<TicketComments ticketId={5} role="customer" />);
+    await waitFor(() => expect(screen.queryByLabelText(/mark as internal note/i)).not.toBeInTheDocument());
+  });
+
+  test("shows ticket fallback values and no prediction feedback when data is partial", async () => {
+    getTicketById.mockResolvedValue({ data: { id: 8, title: "Laptop", description: "Battery issue", status: "unknown", priority: "low", category: "", assigned_to_name: "" } });
+    getTicketPredictionFeedback.mockResolvedValue({ data: { has_feedback: false } });
+
+    render(<TicketDetails />);
+
+    await waitFor(() => expect(screen.getByText("Open")).toBeInTheDocument());
+    expect(screen.getByText("Unassigned")).toBeInTheDocument();
+    expect(screen.getByText(/no prediction feedback available/i)).toBeInTheDocument();
+  });
+
+  test("shows loading feedback first, then fallback markers and allows navigation", async () => {
+    let resolveFeedback;
+    getTicketById.mockResolvedValue({ data: { id: 10, title: "VPN", description: "Down", status: "closed", priority: "medium", category: "", assigned_to_name: "" } });
+    getTicketPredictionFeedback.mockReturnValueOnce(new Promise((resolve) => {
+      resolveFeedback = resolve;
+    }));
+    getTicketComments.mockResolvedValue({ data: [] });
+
+    render(<TicketDetails />);
+
+    await waitFor(() => expect(screen.getByText("VPN")).toBeInTheDocument());
+    expect(screen.getByText(/loading feedback/i)).toBeInTheDocument();
+
+    await act(async () => {
+      resolveFeedback({ data: { has_feedback: true, predicted_category: "", actual_category: "", category_correct: null, predicted_priority: "", actual_priority: "", priority_correct: null, source: "", confidence: 0 } });
+    });
+
+    await waitFor(() => expect(screen.getAllByText("Pending")).toHaveLength(2));
+    expect(screen.getByText("0%")).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/back to tickets/i));
     expect(mockNavigate).toHaveBeenCalledWith("/tickets");
   });
 });

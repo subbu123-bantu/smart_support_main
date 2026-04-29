@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import AuthShell from "../components/AuthShell";
 import { resetPassword } from "../services/api";
+import logger from "../utils/logger";
 
 function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -44,6 +45,7 @@ function ResetPassword() {
       toast.success(response.data.message || "Password reset successful");
       navigate("/login");
     } catch (error) {
+      logger.error("Password reset failed", error);
       toast.error(
         error.response?.data?.error ||
           error.response?.data?.confirm_password?.[0] ||

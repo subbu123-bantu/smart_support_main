@@ -1,3 +1,5 @@
+import logging
+
 from django.db import transaction
 from django.db.models import Max
 
@@ -5,6 +7,8 @@ from tickets.ai.ai import predict_ticket, log_prediction
 from tickets.models import Ticket, Category
 from tickets.services.assignment import auto_assign_ticket
 from tickets.tasks import send_email_task
+
+logger = logging.getLogger(__name__)
 
 
 def create_ticket(validated_data, user):
@@ -40,19 +44,25 @@ def create_ticket(validated_data, user):
             assignment_result, _ = auto_assign_ticket(ticket)
         except Exception:
             assignment_result = {"assigned": False, "agent": None}
-            
-    send_email_task.delay(
-        ticket.customer.email,
-        subject=f"Ticket '{ticket.title}' created successfully",
-        template_name="emails/ticket_created.html",
-        context={
-            "customer_name": user.username,
-            "ticket_title": ticket.title,
-            "category": category_name,
-            "priority": priority,
-            "assigned_agent": assignment_result.get("agent"),
-            "assigned": assignment_result.get("assigned", False),
-        },
-    )
+
+    try:
+        send_email_task.delay(
+            ticket.customer.email,
+            subject=f"Ticket '{ticket.title}' created successfully",
+            template_name="emails/ticket_created.html",
+            context={
+                "customer_name": user.username,
+                "ticket_title": ticket.title,
+                "category": category_name,
+                "priority": priority,
+                "assigned_agent": assignment_result.get("agent"),
+                "assigned": assignment_result.get("assigned", False),
+            },
+        )
+    except Exception:
+        logger.exception(
+            "Failed to queue ticket created email for ticket_id=%s",
+            ticket.id,
+        )
 
     return ticket

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import AuthShell from "../components/AuthShell";
 import { requestPasswordReset } from "../services/api";
+import logger from "../utils/logger";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -23,6 +24,7 @@ function ForgotPassword() {
       toast.success(response.data.message || "Reset instructions sent");
       navigate("/login");
     } catch (error) {
+      logger.error("Password reset request failed", error);
       toast.error(error.response?.data?.email?.[0] || "Unable to process request");
     } finally {
       setLoading(false);

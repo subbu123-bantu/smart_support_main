@@ -67,6 +67,12 @@ class TicketPredictionApiTests(APITestCase):
         self.assertEqual(response.data["priority_accuracy"], 50.0)
         self.assertEqual(response.data["review_needed"], 1)
 
+    def test_prediction_stats_forbids_non_admin_users(self):
+        self.client.force_authenticate(user=self.customer_user)
+        response = self.client.get(self.prediction_stats_url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("Only admins can view prediction stats.", str(response.data))
+
     def test_ticket_prediction_feedback_returns_latest_log(self):
         make_prediction_log(
             ticket=self.assigned_ticket,

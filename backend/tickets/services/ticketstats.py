@@ -1,4 +1,4 @@
-import traceback
+import logging
 from datetime import timedelta
 
 from django.db.models import Q, Count, Avg, F, ExpressionWrapper, DurationField
@@ -7,6 +7,8 @@ from django.utils import timezone
 
 from tickets.models import Ticket
 from users.models import AgentProfile
+
+logger = logging.getLogger(__name__)
 
 
 def build_ticket_stats(user):
@@ -91,5 +93,5 @@ def build_ticket_stats(user):
         return stats, 200
 
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("Failed to build ticket stats for user_id=%s", getattr(user, "id", None))
         return {"error": str(e)}, 500

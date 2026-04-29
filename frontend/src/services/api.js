@@ -1,6 +1,19 @@
 /* global globalThis */
 import axios from "axios";
 
+const DEFAULT_API_BASE_URL = "http://localhost:8000/api/";
+
+const getApiBaseUrl = () => {
+  const configuredBaseUrl = process.env.REACT_APP_API_BASE_URL?.trim();
+  if (!configuredBaseUrl) {
+    return DEFAULT_API_BASE_URL;
+  }
+
+  return configuredBaseUrl.endsWith("/")
+    ? configuredBaseUrl
+    : `${configuredBaseUrl}/`;
+};
+
 const clearAuthStorage = () => {
   localStorage.removeItem("access");
   localStorage.removeItem("role");
@@ -9,7 +22,7 @@ const clearAuthStorage = () => {
 };
 
 const API = axios.create({
-  baseURL: "http://localhost:8000/api/",
+  baseURL: getApiBaseUrl(),
 });
 
 API.interceptors.request.use(
@@ -95,4 +108,5 @@ export const addTicketComment = (ticketId, data) =>
 export const getTicketPredictionFeedback = (ticketId) =>
   API.get(`tickets/${ticketId}/prediction-feedback/`);
 
+export { clearAuthStorage };
 export default API;

@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { createTicket, predictTicket } from "../services/api";
 import { toast } from "react-toastify";
 import { CATEGORY_META, PRIORITY_META } from "../constants";
+import logger from "../utils/logger";
 
 function CreateTicket() {
   const [title, setTitle]           = useState("");
@@ -27,7 +28,8 @@ function CreateTicket() {
       setPriority(res.data.predicted_priority || "low");
       setConfidence(res.data.category_confidence ?? null);
       setNeedsManualReview(Boolean(res.data.needs_manual_review));
-    } catch {
+    } catch (error) {
+      logger.error("Ticket prediction failed", error);
       setConfidence(null);
       setNeedsManualReview(true);
     } finally {
@@ -59,6 +61,7 @@ function CreateTicket() {
       toast.success("Ticket submitted!");
       navigate("/tickets");
     } catch (err) {
+      logger.error("Ticket creation failed", err);
       toast.error(
         err.response?.data?.detail ||
         err.response?.data?.category?.[0] ||

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import AuthShell from "../components/AuthShell";
 import { registerUser } from "../services/api";
+import logger from "../utils/logger";
 
 function Register() {
   const [username, setUsername] = useState("");
@@ -31,6 +32,7 @@ function Register() {
       toast.success("Account created! Please sign in.");
       navigate("/");
     } catch (err) {
+      logger.error("Registration failed", err);
       const msg =
         err.response?.data?.username?.[0] ||
         err.response?.data?.email?.[0] ||

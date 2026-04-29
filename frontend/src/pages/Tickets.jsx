@@ -60,14 +60,20 @@ function Tickets() {
     if (role !== "admin") return;
     getAgents()
       .then((response) => setAgents(response.data))
-      .catch(() => setAgents([]));
+      .catch((error) => {
+        logger.error("Failed to fetch agents", error);
+        setAgents([]);
+      });
   }, [role]);
 
   useEffect(() => {
     if (role !== "admin") return;
     getCategories()
       .then((response) => setCategories(response.data.results || response.data))
-      .catch(() => setCategories([]));
+      .catch((error) => {
+        logger.error("Failed to fetch categories", error);
+        setCategories([]);
+      });
   }, [role]);
 
   const handleSearch = () => {
@@ -104,7 +110,7 @@ function Tickets() {
       if (successMessage) toast.success(successMessage);
       await fetchTickets();
     } catch (error) {
-      logger.error(error);
+      logger.error("Ticket update failed", error);
       toast.error(errorMessage);
     }
   };
@@ -123,7 +129,7 @@ function Tickets() {
       toast.success("Assigned");
       await fetchTickets();
     } catch (error) {
-      logger.error(error);
+      logger.error("Ticket assignment failed", error);
       toast.error("Failed");
     }
   };

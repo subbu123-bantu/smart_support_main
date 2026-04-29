@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import AuthShell from "../components/AuthShell";
 import { loginUser } from "../services/api";
+import logger from "../utils/logger";
 
 function Login() {
   const navigate = useNavigate();
@@ -30,7 +31,12 @@ function Login() {
       toast.success("Login successful!", { autoClose: 800 });
       navigate("/dashboard");
     } catch (error) {
-      toast.error(error.response?.data?.error || "Login failed");
+      logger.error("Login failed", error);
+      const message = error.response?.data?.error
+        || (error.request
+          ? "Cannot reach the backend. Check that Django is running and the API URL is correct."
+          : "Login failed");
+      toast.error(message);
     } finally {
       setLoading(false);
     }
