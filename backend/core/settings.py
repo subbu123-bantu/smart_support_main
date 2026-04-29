@@ -32,6 +32,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_bool_env("DEBUG", False)
+production_like = not DEBUG and not RUNNING_TESTS
 
 if not SECRET_KEY:
     if DEBUG or RUNNING_TESTS:
@@ -162,14 +163,19 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
-local_frontend_origins = "http://localhost:3000,http://127.0.0.1:3000"
+frontend_scheme = os.getenv(
+    "FRONTEND_SCHEME",
+    "https" if production_like else "http",
+).strip().lower()
+local_frontend_hosts = ("localhost:3000", "127.0.0.1:3000")
+local_frontend_origins = ",".join(
+    f"{frontend_scheme}://{host}" for host in local_frontend_hosts
+)
 
 CSRF_TRUSTED_ORIGINS = get_list_env("CSRF_TRUSTED_ORIGINS", local_frontend_origins)
 
 # CORS
 CORS_ALLOWED_ORIGINS = get_list_env("CORS_ALLOWED_ORIGINS", local_frontend_origins)
-
-production_like = not DEBUG and not RUNNING_TESTS
 
 SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", production_like)
 SESSION_COOKIE_SECURE = get_bool_env("SESSION_COOKIE_SECURE", production_like)
@@ -194,7 +200,7 @@ EMAIL_HOST_USER = os.getenv('BREVO_SMTP_USER')     # from Brevo
 EMAIL_HOST_PASSWORD =os.getenv('BREVO_SMTP_PASS')        # SMTP key (NOT API key)
 BREVO_API_KEY=os.getenv('BREVO_API_KEY')
 DEFAULT_FROM_EMAIL = os.getenv('BREVO_SENDER_EMAIL')
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+FRONTEND_URL = os.getenv('FRONTEND_URL', f'{frontend_scheme}://localhost:3000')
 
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
