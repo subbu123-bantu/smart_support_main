@@ -168,7 +168,7 @@ function Tickets() {
         className="mb-6 text-sm text-gray-400 hover:text-white transition"
         type="button"
       >
-        {"<- Back to Dashboard"}
+        {"< Back to Dashboard"}
       </button>
 
       <div className="mb-6">

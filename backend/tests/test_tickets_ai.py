@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from django.test import TestCase
-from requests import RequestException
+from requests import HTTPError, RequestException
 
 from tickets.ai.ai import (
     best_keyword_category,
@@ -13,6 +13,7 @@ from tickets.ai.ai import (
     resolve_low_confidence,
     rule_engine,
 )
+from tickets.ai import ai_client
 from tickets.ai.ai_client import ai_classification, build_groq_payload, call_groq, parse_ai_result
 from tickets.ai.ai_helper import count_generic_only, is_generic_input, is_weak_input, phrase_score, preprocess
 from tickets.ai.ai_overrides import apply_conflict_overrides, apply_override, starts_with_refund_request
@@ -50,20 +51,27 @@ class TicketAiHelpersTests(TestCase):
 
 class TicketAiOverrideAndPriorityTests(TestCase):
     def test_category_specific_priority_helpers_cover_additional_branches(self):
+        self.assertEqual(bill_category("refund not received after cancellation"), "medium")
+        self.assertEqual(bill_category("payment page shows server error after money deduction"), "high")
         self.assertEqual(bill_category("gst details how to update invoice information"), "low")
         self.assertEqual(bill_category("invoice not visible on invoice page"), "high")
 
         self.assertEqual(tech_category("server error 500 crash exception"), "high")
         self.assertEqual(tech_category("feature not working and very slow"), "medium")
+        self.assertEqual(tech_category("critical dashboard crash for all users"), "urgent")
 
         self.assertEqual(network_category("fails on office wifi network"), "high")
-        self.assertEqual(network_category("slow internet latency disconnect issue"), "medium")
+        self.assertEqual(network_category("slow internet latency disconnect issue"), "high")
+        self.assertEqual(network_category("network completely down for all users"), "urgent")
+        self.assertEqual(network_category("internet connection keeps disconnecting"), "high")
 
         self.assertEqual(auth_category("cannot login due to invalid credentials and 2fa issue"), "high")
         self.assertEqual(auth_category("session expired after password reset verification link"), "medium")
+        self.assertEqual(auth_category("otp is not coming to my mobile number"), "high")
 
         self.assertEqual(acc_category("delete my account permanently"), "medium")
-        self.assertEqual(acc_category("change email address change requested"), "medium")
+        self.assertEqual(acc_category("change email address change requested"), "low")
+        self.assertEqual(acc_category("my account details are incorrect"), "medium")
         self.assertEqual(acc_category("update profile display name"), "low")
 
     def test_apply_override_updates_category_source_and_confidence(self):
@@ -79,6 +87,12 @@ class TicketAiOverrideAndPriorityTests(TestCase):
     def test_apply_conflict_overrides_shifts_to_billing_for_refund_wording(self):
         final = {"category": "technical", "source": "rule", "confidence": 0.72}
         updated = apply_conflict_overrides("refund request because app crash charged twice", final)
+        self.assertEqual(updated["category"], "billing")
+        self.assertEqual(updated["source"], "billing_override")
+
+    def test_apply_conflict_overrides_prefers_billing_for_payment_error_with_money_deducted(self):
+        final = {"category": "technical", "source": "rule", "confidence": 0.90}
+        updated = apply_conflict_overrides("payment page shows server error after money deducted", final)
         self.assertEqual(updated["category"], "billing")
         self.assertEqual(updated["source"], "billing_override")
 
@@ -99,6 +113,9 @@ class TicketAiOverrideAndPriorityTests(TestCase):
 
 
 class TicketAiClientTests(TestCase):
+    def setUp(self):
+        ai_client._groq_cooldown_until = 0.0
+
     def test_build_groq_payload_uses_expected_model_and_prompt_shape(self):
         payload = build_groq_payload("Classify this ticket")
         self.assertIn("model", payload)
@@ -122,6 +139,32 @@ class TicketAiClientTests(TestCase):
     @patch("tickets.ai.ai_client.GROQ_API_KEY", "token")
     def test_call_groq_returns_none_on_request_failure(self, _mock_post):
         self.assertIsNone(call_groq("ticket text"))
+
+    @patch("tickets.ai.ai_client.requests.post")
+    @patch("tickets.ai.ai_client.time.monotonic", return_value=100.0)
+    @patch("tickets.ai.ai_client.GROQ_API_KEY", "token")
+    def test_call_groq_starts_cooldown_after_rate_limit(self, mock_monotonic, mock_post):
+        response = Mock(status_code=429, headers={"Retry-After": "7"})
+        error = HTTPError("rate limited")
+        error.response = response
+
+        mock_response = Mock()
+        mock_response.raise_for_status.side_effect = error
+        mock_post.return_value = mock_response
+
+        self.assertIsNone(call_groq("ticket text"))
+        self.assertEqual(ai_client._groq_cooldown_until, 107.0)
+        mock_monotonic.assert_called()
+
+    @patch("tickets.ai.ai_client.requests.post")
+    @patch("tickets.ai.ai_client.time.monotonic", return_value=50.0)
+    @patch("tickets.ai.ai_client.GROQ_API_KEY", "token")
+    def test_call_groq_skips_request_during_cooldown(self, mock_monotonic, mock_post):
+        ai_client._groq_cooldown_until = 55.0
+
+        self.assertIsNone(call_groq("ticket text"))
+        mock_post.assert_not_called()
+        mock_monotonic.assert_called_once()
 
     def test_parse_ai_result_accepts_json_and_clamps_confidence(self):
         parsed = parse_ai_result('{"category":"technical","confidence":0.99}')
