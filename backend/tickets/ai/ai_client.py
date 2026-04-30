@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import time
 
 import requests
 from dotenv import load_dotenv
@@ -18,6 +19,9 @@ GROQ_URL = os.environ.get(
     "https://api.groq.com/openai/v1/chat/completions",
 )
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_RATE_LIMIT_COOLDOWN = int(os.environ.get("GROQ_RATE_LIMIT_COOLDOWN", "60"))
+GROQ_FAILURE_COOLDOWN = int(os.environ.get("GROQ_FAILURE_COOLDOWN", "30"))
+_groq_cooldown_until = 0.0
 
 
 def build_groq_payload(prompt: str) -> dict:
@@ -41,8 +45,34 @@ def build_groq_payload(prompt: str) -> dict:
     }
 
 
+def _retry_after_seconds(response) -> int:
+    if response is None:
+        return GROQ_RATE_LIMIT_COOLDOWN
+
+    retry_after = response.headers.get("Retry-After")
+    if not retry_after:
+        return GROQ_RATE_LIMIT_COOLDOWN
+
+    try:
+        return max(int(retry_after), 1)
+    except (TypeError, ValueError):
+        return GROQ_RATE_LIMIT_COOLDOWN
+
+
+def _start_cooldown(seconds: int) -> None:
+    global _groq_cooldown_until
+    _groq_cooldown_until = time.monotonic() + max(seconds, 1)
+
+
+def _in_cooldown() -> bool:
+    return time.monotonic() < _groq_cooldown_until
+
+
 def call_groq(prompt: str):
     if not GROQ_API_KEY:
+        return None
+
+    if _in_cooldown():
         return None
 
     headers = {
@@ -61,6 +91,16 @@ def call_groq(prompt: str):
         data = response.json()
         return data["choices"][0]["message"]["content"]
     except RequestException as error:
+        response = getattr(error, "response", None)
+        if response is not None and response.status_code == 429:
+            cooldown_seconds = _retry_after_seconds(response)
+            _start_cooldown(cooldown_seconds)
+            logger.warning(
+                "Groq rate limited; skipping AI calls for %ss",
+                cooldown_seconds,
+            )
+            return None
+        _start_cooldown(GROQ_FAILURE_COOLDOWN)
         logger.warning("Groq request failed: %s", error)
         return None
     except (KeyError, IndexError, TypeError, ValueError) as error:

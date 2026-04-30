@@ -11,12 +11,16 @@ from .ai_helper import contains_any
 
 
 def bill_category(text: str) -> str:
+    if contains_any(text, ["refund not received", "refund pending", "refund delayed"]):
+        return "medium"
+
     if contains_any(
         text,
         [
             "payment failed",
             "charged twice",
             "money deducted",
+            "money deduction",
             "deducted twice",
             "refund",
             "transaction failed",
@@ -49,7 +53,7 @@ def bill_category(text: str) -> str:
 
 
 def tech_category(text: str) -> str:
-    if contains_any(text, ["all users", "everyone", "for all admins", "production down"]):
+    if contains_any(text, ["all users", "everyone", "for all admins", "production down", "critical", "immediate"]):
         return "urgent"
 
     if contains_any(text, [SERVER_ERROR, ERROR_500, "crash", "exception"]):
@@ -58,13 +62,19 @@ def tech_category(text: str) -> str:
     if contains_any(text, ["dashboard not loading", "upload failed", "file upload", "page freezes"]):
         return "high"
 
-    if contains_any(text, [NOT_WORKING, "failed", "broken", "bug", "wrong data", "slow"]):
+    if contains_any(
+        text,
+        [NOT_WORKING, "failed", "broken", "bug", "wrong data", "slow", "button", "mobile view"],
+    ):
         return "medium"
 
     return "medium"
 
 
 def network_category(text: str) -> str:
+    if contains_any(text, ["all users", "completely down", "network down"]):
+        return "urgent"
+
     if contains_any(
         text,
         [
@@ -73,6 +83,7 @@ def network_category(text: str) -> str:
             "connection timeout",
             "request timed out",
             "connection lost",
+            "unable to connect",
         ],
     ):
         if contains_any(text, ["dashboard", "repeatedly", "after"]):
@@ -82,7 +93,10 @@ def network_category(text: str) -> str:
     if "fails on" in text and contains_any(text, ["wifi", "network"]):
         return "high"
 
-    if contains_any(text, ["timeout", "disconnect", "latency", "slow internet", "wifi"]):
+    if contains_any(text, ["disconnect", "disconnecting", "timeout", "request failed due to network timeout"]):
+        return "high"
+
+    if contains_any(text, ["latency", "slow internet", "wifi"]):
         return "medium"
 
     return "medium"
@@ -96,8 +110,10 @@ def auth_category(text: str) -> str:
             "unable to login",
             "account locked",
             "otp not received",
+            "otp is not coming",
             "invalid credentials",
             "two factor",
+            "authentication code",
             "2fa",
             ACCESS_DENIED,
             "cannot sign in",
@@ -142,8 +158,20 @@ def acc_category(text: str) -> str:
             "change phone",
             "update phone number",
             "registered mobile number",
+            "registered mobile",
             "registered phone number",
             "email address change",
+        ],
+    ):
+        return "low"
+
+    if contains_any(
+        text,
+        [
+            "account details",
+            "details are incorrect",
+            "cannot see my account settings",
+            "account settings",
         ],
     ):
         return "medium"
@@ -153,9 +181,9 @@ def acc_category(text: str) -> str:
         [
             "update profile",
             "profile update",
-            "account settings",
             "display name",
             "profile",
+            "username",
         ],
     ):
         return "low"
