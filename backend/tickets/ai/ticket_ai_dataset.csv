@@ -1,0 +1,1001 @@
+text,category,confidence,priority
+Delete my account,account,0.81,medium
+Thanks for support and also Thanks for support,other,0.32,low
+Change email address and also Delete my account,account,0.85,medium
+feature response nahi de raha and also White screen after login,technical,0.91,medium
+hello bhai,other,0.21,low
+Page keeps reloading,technical,0.88,medium
+Charged twice for same order and also Invoice amount incorrect,billing,0.86,high
+Refund not received after cancellation and also Refund not received after cancellation,billing,0.85,medium
+account details change karni hai,account,0.82,medium
+Password reset link expired,authentication,0.84,medium
+High latency issue,network,0.76,medium
+Auto debit happened unexpectedly and also Payment failed but money deducted,billing,0.84,high
+otp nahi aa raha,authentication,0.8,medium
+Please check,other,0.38,low
+This is not working,other,0.39,low
+Delete my account,account,0.79,medium
+Refund not received after cancellation,billing,0.77,medium
+Update phone number and also Delete my account,account,0.91,medium
+Please check,other,0.38,low
+Good morning,other,0.4,low
+Update username,account,0.92,low
+Hello,other,0.38,low
+App disconnects frequently and also Network unstable,network,0.87,high
+Button not working,technical,0.83,medium
+I need help,other,0.23,low
+Good morning and also I need help,other,0.27,low
+OTP not received,authentication,0.84,high
+Subscription charged after cancellation,billing,0.85,high
+payment cut ho gaya but service nahi mila,billing,0.8,medium
+Charged twice for same order,billing,0.83,high
+Unexpected server error and also Feature not responding,technical,0.85,high
+Cannot login with correct password,authentication,0.94,high
+Subscription charged after cancellation and also Refund not received after cancellation,billing,0.8,medium
+Invoice amount incorrect and also Refund not received after cancellation,billing,0.81,medium
+wifi se connect nahi ho raha and also High latency issue,network,0.75,medium
+Please check,other,0.23,low
+wifi se connect nahi ho raha,network,0.82,medium
+Delete my acount,account,0.78,low
+Works on mobile data but not wifi,network,0.88,medium
+hello bhai and also This is not working,other,0.31,low
+I need help,other,0.32,low
+app bar bar crash ho raha hai,technical,0.76,high
+Network unstable,network,0.94,medium
+Session expired quickly,authentication,0.91,medium
+wifi se connect nahi ho raha,network,0.94,medium
+Cannot login with correct password and also OTP not received,authentication,0.85,high
+Hello,other,0.33,low
+Good morning,other,0.39,low
+app bar bar crash ho raha hai,technical,0.88,high
+Cannot login with correct password,authentication,0.76,high
+Update username,account,0.9,low
+Page keeps reloading,technical,0.8,medium
+Change email address,account,0.83,low
+I need help and also Good morning,other,0.33,low
+Modify profile details,account,0.9,low
+Account locked unexpectedly and also OTP not received,authentication,0.78,high
+feature response nahi de raha,technical,0.91,medium
+Works on mobile data but not wifi and also High latency issue,network,0.78,medium
+Works on mobile data but not wifi,network,0.83,medium
+Good morning,other,0.4,low
+Password reset link expired and also Password reset link expired,authentication,0.82,medium
+Works on mobile data but not wifi,network,0.91,medium
+hello bhai and also I need help,other,0.29,low
+Update phone number,account,0.84,low
+Auto debit happened unexpectedly,billing,0.83,medium
+Page keeps reloading and also Button not working,technical,0.85,medium
+otp nahi aa raha,authentication,0.89,medium
+Payment failed but money deducted,billing,0.93,high
+Subscription charged after cancellation and also Payment failed but money deducted,billing,0.88,high
+Network unstable,network,0.83,medium
+Modify profile details,account,0.79,low
+Password reset link expired and also Session expired quickly,authentication,0.78,medium
+Auto debit happened unexpectedly and also Auto debit happened unexpectedly,billing,0.89,medium
+pymnt failed but money deducted,billing,0.78,high
+Update username and also Update phone number,account,0.78,low
+OTP not received and also Cannot login with correct password,authentication,0.94,high
+Please check,other,0.27,low
+network issue aa raha hai,network,0.92,medium
+Works on mobile data but not wifi,network,0.91,medium
+Hello and also This is not working,other,0.38,low
+Subscription charged after cancellation and also Invoice amount incorrect,billing,0.87,high
+Cannot logn with correct password,authentication,0.89,medium
+Update phone number,account,0.81,low
+Button not working,technical,0.89,medium
+White screen after login,technical,0.82,medium
+Update phone number and also Delete my account,account,0.79,medium
+Subscription charged after cancellation,billing,0.92,high
+Delete my account,account,0.79,medium
+High latency issue,network,0.85,medium
+Network unstable,network,0.92,medium
+App crashes on upload,technical,0.87,high
+Feature not responding,technical,0.79,medium
+App disconnects frequently and also Connection timeout error,network,0.88,high
+Hello,other,0.26,low
+Update username,account,0.76,low
+Refund not received after cancellation,billing,0.78,medium
+OTP not received,authentication,0.81,high
+Account locked unexpectedly,authentication,0.92,high
+Session expired quickly and also Password reset link expired,authentication,0.91,medium
+Connection timeout error,network,0.88,high
+Works on mobile data but not wifi and also Connection timeout error,network,0.91,high
+Please check,other,0.21,low
+OTP not received,authentication,0.83,high
+High latency issue and also High latency issue,network,0.95,medium
+App disconnects frequently and also Connection timeout error,network,0.89,high
+App crashes on upload,technical,0.77,high
+OTP not received,authentication,0.91,high
+OTP not received,authentication,0.9,high
+White screen after login,technical,0.82,medium
+App disconnects frequently,network,0.94,high
+Modify profile details,account,0.84,low
+Account locked unexpectedly and also Account locked unexpectedly,authentication,0.83,high
+Thanks for support,other,0.31,low
+Thanks for support,other,0.29,low
+Account locked unexpectedly,authentication,0.8,high
+account details change karni hai and also Change email address,account,0.88,low
+refund abhi tak nahi mila and also Payment failed but money deducted,billing,0.94,high
+Network unstable and also App disconnects frequently,network,0.83,high
+mera email address update karna hai,account,0.83,low
+app bar bar crash ho raha hai,technical,0.86,high
+Cannot login with correct password,authentication,0.82,high
+Update phone number,account,0.85,low
+Auto debit happened unexpectedly,billing,0.88,medium
+Change email address,account,0.92,low
+Password reset link expired and also OTP not received,authentication,0.95,high
+Update username,account,0.89,low
+Account locked unexpectedly and also Session expired quickly,authentication,0.77,high
+Change email address,account,0.87,low
+thoda help chahiye and also Thanks for support,other,0.4,low
+Modify profile details,account,0.81,low
+Connection timeout error,network,0.81,high
+This is not working and also Please check,other,0.23,low
+I need help,other,0.27,low
+Invoice amount incorrect,billing,0.79,medium
+Works on mobile data but not wifi and also High latency issue,network,0.84,medium
+payment cut ho gaya but service nahi mila and also Charged twice for same order,billing,0.81,high
+Charged twice for same order,billing,0.76,high
+Charged twice for same order,billing,0.8,high
+Subscription charged after cancellation,billing,0.93,high
+Change email address,account,0.86,low
+mera email address update karna hai,account,0.92,low
+network issue aa raha hai,network,0.9,medium
+OTP not received,authentication,0.76,high
+Hello and also Hello,other,0.37,low
+Hello,other,0.36,low
+Payment failed but money deducted,billing,0.78,high
+Session expired quickly,authentication,0.88,medium
+Thanks for support and also I need help,other,0.36,low
+App disconnects frequently,network,0.75,high
+Unexpected server error,technical,0.86,high
+hello bhai,other,0.34,low
+Change email address and also Change email address,account,0.76,low
+Change email address,account,0.77,low
+feature response nahi de raha,technical,0.92,medium
+Delete my account,account,0.91,medium
+Hello,other,0.31,low
+Thanks for support,other,0.29,low
+Works on mobile data but not wifi,network,0.93,medium
+Feature not responding,technical,0.83,medium
+Cannot lgin with correct password,authentication,0.88,medium
+Refund not received after cancellation and also Charged twice for same order,billing,0.92,medium
+Thanks for support,other,0.32,low
+mera email address update karna hai,account,0.84,low
+White screen after login,technical,0.83,medium
+Change email address,account,0.93,low
+Update username and also Modify profile details,account,0.81,low
+Please check and also Thanks for support,other,0.24,low
+Button not working,technical,0.9,medium
+Change email address,account,0.93,low
+High latency issue,network,0.77,medium
+account details change karni hai and also Delete my account,account,0.82,medium
+feature response nahi de raha,technical,0.82,medium
+Account locked unexpectedly,authentication,0.86,high
+Page keeps reloading,technical,0.79,medium
+Delete my account,account,0.78,medium
+Subscription charged after cancellation,billing,0.82,high
+Account locked unexpectedly,authentication,0.94,high
+Network unstable,network,0.85,medium
+Feature not responding,technical,0.92,medium
+Cannot login with correct password,authentication,0.88,high
+Cannot logn with correct password,authentication,0.9,medium
+thoda help chahiye,other,0.22,low
+Change email address,account,0.85,low
+Button not working,technical,0.86,medium
+Connection timeout error,network,0.8,high
+Payment failed but money deducted,billing,0.9,high
+Connection timeout error,network,0.79,high
+Feature not responding,technical,0.83,medium
+Delete my account,account,0.94,medium
+Update username,account,0.9,low
+network issue aa raha hai and also App disconnects frequently,network,0.88,high
+Subscription charged after cancellation and also Auto debit happened unexpectedly,billing,0.8,high
+Button not working,technical,0.9,medium
+Password reset link expired,authentication,0.77,medium
+Change email address,account,0.83,low
+Refund not received after cancellation and also Invoice amount incorrect,billing,0.77,medium
+Refund not received after cancellation,billing,0.89,medium
+Connection timeout error and also High latency issue,network,0.83,high
+Subscription charged after cancellation and also Charged twice for same order,billing,0.9,high
+Modify profile details,account,0.92,low
+Works on mobile data but not wifi,network,0.77,medium
+refund abhi tak nahi mila and also Payment failed but money deducted,billing,0.88,high
+Modify profile details,account,0.85,low
+Connection timeout error,network,0.91,high
+network issue aa raha hai,network,0.83,medium
+Change email address and also Delete my account,account,0.88,medium
+Refund not received after cancellation and also Refund not received after cancellation,billing,0.9,medium
+This is not working,other,0.35,low
+account details change karni hai,account,0.9,medium
+Works on mobile data but not wifi and also Network unstable,network,0.84,medium
+OTP not received and also Account locked unexpectedly,authentication,0.9,high
+Auto debit happened unexpectedly,billing,0.84,medium
+Modify profile details and also Update phone number,account,0.89,low
+Good morning and also Good morning,other,0.23,low
+Please check,other,0.31,low
+Good morning,other,0.3,low
+account details change karni hai and also Change email address,account,0.87,low
+Charged twice for same order,billing,0.8,high
+Connection timeout error,network,0.83,high
+Refund not received after cancellation,billing,0.94,medium
+Update username,account,0.85,low
+refund abhi tak nahi mila,billing,0.81,high
+Thanks for support,other,0.39,low
+hello bhai and also This is not working,other,0.3,low
+Invoice amount incorrect,billing,0.88,medium
+Payment failed but money deducted,billing,0.82,high
+Update username and also Update phone number,account,0.85,low
+Session expired quickly,authentication,0.8,medium
+Works on mobile data but not wifi,network,0.76,medium
+mera email address update karna hai,account,0.77,low
+White screen after login,technical,0.83,medium
+Delete my account,account,0.91,medium
+Subscription charged after cancellation,billing,0.85,high
+refund abhi tak nahi mila and also Payment failed but money deducted,billing,0.88,high
+app bar bar crash ho raha hai and also Unexpected server error,technical,0.83,high
+Update username and also Update username,account,0.91,low
+OTP not received and also OTP not received,authentication,0.8,high
+OTP not received,authentication,0.84,high
+Network unstable,network,0.95,medium
+mera email address update karna hai,account,0.78,low
+Thanks for support and also This is not working,other,0.26,low
+OTP not received and also OTP not received,authentication,0.8,high
+mera email address update karna hai,account,0.76,low
+acount locked unexpectedly,authentication,0.78,medium
+Good morning and also Please check,other,0.26,low
+Subscription charged after cancellation and also Auto debit happened unexpectedly,billing,0.94,high
+Thanks for support,other,0.32,low
+Please check,other,0.33,low
+Refund not received after cancellation,billing,0.93,medium
+Good morning,other,0.37,low
+Update username,account,0.77,low
+network issue aa raha hai,network,0.88,medium
+app bar bar crash ho raha hai,technical,0.84,high
+Button not working,technical,0.86,medium
+Unexpected server error,technical,0.93,high
+Delete my acount and also Modify profile details,account,0.92,low
+thoda help chahiye and also I need help,other,0.4,low
+mera email address update karna hai and also Update phone number,account,0.8,low
+Unexpected server error,technical,0.9,high
+Change email address,account,0.92,low
+Unexpected server error,technical,0.94,high
+Works on mobile data but not wifi and also High latency issue,network,0.76,medium
+account details change karni hai,account,0.78,medium
+I need help and also I need help,other,0.32,low
+Change email address,account,0.91,low
+app bar bar crash ho raha hai and also App crashes on upload,technical,0.87,high
+App disconnects frequently and also High latency issue,network,0.94,high
+Update username,account,0.94,low
+Page keeps reloading,technical,0.85,medium
+Update username,account,0.83,low
+Thanks for support,other,0.26,low
+login nahi ho raha,authentication,0.95,medium
+app bar bar crash ho raha hai,technical,0.76,high
+Works on mobile data but not wifi and also Connection timeout error,network,0.88,high
+Please check and also Good morning,other,0.26,low
+Auto debit happened unexpectedly,billing,0.88,medium
+Account locked unexpectedly and also OTP not received,authentication,0.84,high
+wifi se connect nahi ho raha and also Network unstable,network,0.88,medium
+Connection timeout error,network,0.78,high
+App crashes on upload,technical,0.78,high
+Account locked unexpectedly,authentication,0.85,high
+Cannot login with correct password,authentication,0.94,high
+Delete my account and also Update phone number,account,0.84,medium
+Update phone number,account,0.88,low
+App crashes on upload and also Page keeps reloading,technical,0.85,high
+High latency issue,network,0.78,medium
+Modify profile details,account,0.78,low
+Update username,account,0.89,low
+I need help,other,0.36,low
+Password reset link expired,authentication,0.89,medium
+Delete my accnt,account,0.88,low
+Connection timeout error and also Connection timeout error,network,0.83,high
+Connection timeout error,network,0.94,high
+Refund not received after cancellation,billing,0.76,medium
+otp nahi aa raha,authentication,0.85,medium
+refund abhi tak nahi mila,billing,0.93,high
+Password reset link expired,authentication,0.94,medium
+Charged twice for same order,billing,0.79,high
+Update phone number,account,0.79,low
+app bar bar crash ho raha hai and also White screen after login,technical,0.76,high
+Good morning,other,0.25,low
+Hello,other,0.21,low
+Connection timeout error and also Works on mobile data but not wifi,network,0.75,high
+Payment failed but money deducted,billing,0.92,high
+Auto debit happened unexpectedly,billing,0.82,medium
+mera email address update karna hai,account,0.9,low
+refund abhi tak nahi mila,billing,0.91,high
+Connection timeout error,network,0.79,high
+Thanks for support,other,0.35,low
+OTP not received,authentication,0.87,high
+feature response nahi de raha and also Feature not responding,technical,0.84,medium
+Session expired quickly,authentication,0.84,medium
+mera email address update karna hai and also Delete my account,account,0.84,medium
+feature response nahi de raha,technical,0.77,medium
+Hello,other,0.32,low
+Update phone number,account,0.82,low
+wifi se connect nahi ho raha,network,0.85,medium
+hello bhai,other,0.27,low
+hello bhai,other,0.28,low
+App disconnects frequently,network,0.93,high
+refund abhi tak nahi mila,billing,0.78,high
+Update phone number and also Delete my account,account,0.92,medium
+Session expired quickly and also Session expired quickly,authentication,0.8,medium
+Network unstable,network,0.87,medium
+Change email address,account,0.84,low
+Works on mobile data but not wifi and also Connection timeout error,network,0.85,high
+Modify profile details,account,0.9,low
+Feature not responding,technical,0.77,medium
+mera email address update karna hai and also Update phone number,account,0.88,low
+paymnt failed but money deducted and also Refund not received after cancellation,billing,0.91,medium
+Payment failed but money deducted,billing,0.91,high
+Cannot login with correct password,authentication,0.81,high
+App disconnects frequently,network,0.93,high
+Password reset link expired and also Cannot login with correct password,authentication,0.86,high
+Subscription charged after cancellation,billing,0.81,high
+Please check,other,0.3,low
+Update username and also Modify profile details,account,0.82,low
+Hello,other,0.22,low
+Delete my account and also Modify profile details,account,0.91,medium
+Account locked unexpectedly,authentication,0.86,high
+feature response nahi de raha,technical,0.77,medium
+Modify profile details and also Delete my account,account,0.88,medium
+Modify profile details,account,0.94,low
+Page keeps reloading,technical,0.81,medium
+Account locked unexpectedly and also Account locked unexpectedly,authentication,0.77,high
+This is not working,other,0.23,low
+Account locked unexpectedly,authentication,0.89,high
+app bar bar crash ho raha hai and also Button not working,technical,0.75,high
+Change email address,account,0.76,low
+Delete my acount,account,0.77,low
+App disconnects frequently,network,0.86,high
+Page keeps reloading and also White screen after login,technical,0.95,medium
+feature response nahi de raha,technical,0.85,medium
+Subscription charged after cancellation,billing,0.8,high
+wifi se connect nahi ho raha,network,0.82,medium
+Payment failed but money deducted,billing,0.85,high
+Network unstable and also Connection timeout error,network,0.87,high
+High latency issue,network,0.92,medium
+Session expired quickly and also Account locked unexpectedly,authentication,0.93,high
+App crashes on upload,technical,0.87,high
+Payment failed but money deducted,billing,0.91,high
+Button not working,technical,0.84,medium
+Payment failed but money deducted and also Invoice amount incorrect,billing,0.76,high
+Button not working and also Unexpected server error,technical,0.88,high
+Works on mobile data but not wifi,network,0.85,medium
+OTP not received,authentication,0.75,high
+payment cut ho gaya but service nahi mila,billing,0.77,medium
+feature response nahi de raha,technical,0.88,medium
+Password reset link expired and also OTP not received,authentication,0.91,high
+Delete my account and also Change email address,account,0.8,medium
+Good morning,other,0.33,low
+Change email address,account,0.78,low
+Delete my account and also Change email address,account,0.78,medium
+Password reset link expired,authentication,0.81,medium
+App disconnects frequently,network,0.81,high
+Payment failed but money deducted,billing,0.92,high
+Account locked unexpectedly,authentication,0.88,high
+Update username,account,0.84,low
+Cannot login with correct password and also Password reset link expired,authentication,0.94,high
+Modify profile details,account,0.75,low
+I need help,other,0.23,low
+hello bhai and also Hello,other,0.38,low
+netwrk unstable,network,0.92,medium
+App crashes on upload,technical,0.81,high
+Works on mobile data but not wifi,network,0.84,medium
+Update username,account,0.84,low
+Works on mobile data but not wifi,network,0.84,medium
+High latency issue and also Works on mobile data but not wifi,network,0.75,medium
+Hello and also Please check,other,0.39,low
+Please check,other,0.34,low
+Unexpected server error,technical,0.85,high
+Page keeps reloading,technical,0.88,medium
+Button not working,technical,0.93,medium
+feature response nahi de raha and also Feature not responding,technical,0.89,medium
+Cannot logn with correct password,authentication,0.83,medium
+Password reset link expired,authentication,0.77,medium
+Network unstable,network,0.76,medium
+Please check,other,0.39,low
+Change email address and also Change email address,account,0.77,low
+network issue aa raha hai,network,0.86,medium
+App disconnects frequently,network,0.8,high
+otp nahi aa raha,authentication,0.76,medium
+Invoice amount incorrect,billing,0.94,medium
+Modify profile details and also Update phone number,account,0.83,low
+Works on mobile data but not wifi,network,0.8,medium
+High latency issue and also Connection timeout error,network,0.82,high
+Change email address,account,0.79,low
+Update phone number and also Update username,account,0.87,low
+Refund not received after cancellation,billing,0.89,medium
+Network unstable and also Network unstable,network,0.87,medium
+Update phone number,account,0.84,low
+Network unstable,network,0.92,medium
+Change email address,account,0.9,low
+Charged twice for same order and also Auto debit happened unexpectedly,billing,0.86,high
+Feature not responding and also App crashes on upload,technical,0.88,high
+Charged twice for same order,billing,0.9,high
+Refund not received after cancellation,billing,0.84,medium
+OTP not received and also Password reset link expired,authentication,0.76,high
+Please check and also Thanks for support,other,0.32,low
+Update username and also Change email address,account,0.91,low
+Button not working and also White screen after login,technical,0.89,medium
+Change email address,account,0.88,low
+Cannot lgin with correct password,authentication,0.8,medium
+Update phone number and also Update phone number,account,0.76,low
+Invoice amount incorrect,billing,0.77,medium
+Feature not responding and also App crashes on upload,technical,0.9,high
+Connection timeout error,network,0.93,high
+White screen after login,technical,0.95,medium
+Change email address,account,0.85,low
+Auto debit happened unexpectedly,billing,0.76,medium
+High latency issue,network,0.92,medium
+This is not working,other,0.31,low
+Charged twice for same order and also Invoice amount incorrect,billing,0.84,high
+wifi se connect nahi ho raha,network,0.9,medium
+Button not working,technical,0.86,medium
+White screen after login,technical,0.94,medium
+network issue aa raha hai,network,0.86,medium
+Password reset link expired,authentication,0.79,medium
+Delete my account,account,0.9,medium
+Charged twice for same order,billing,0.85,high
+Network unstable,network,0.82,medium
+Session expired quickly and also Cannot login with correct password,authentication,0.78,high
+High latency issue,network,0.75,medium
+Hello,other,0.21,low
+feature response nahi de raha and also White screen after login,technical,0.78,medium
+Session expired quickly,authentication,0.84,medium
+White screen after login and also Button not working,technical,0.85,medium
+Please check,other,0.22,low
+thoda help chahiye,other,0.25,low
+Payment failed but money deducted and also Auto debit happened unexpectedly,billing,0.84,high
+Page keeps reloading,technical,0.88,medium
+Unexpected server error,technical,0.85,high
+Invoice amount incorrect,billing,0.92,medium
+Cannot login with correct password and also Cannot login with correct password,authentication,0.86,high
+Payment failed but money deducted,billing,0.77,high
+Payment failed but money deducted,billing,0.89,high
+This is not working,other,0.24,low
+refund abhi tak nahi mila,billing,0.93,high
+Account locked unexpectedly and also Session expired quickly,authentication,0.83,high
+otp nahi aa raha and also OTP not received,authentication,0.9,high
+Update username and also Update phone number,account,0.86,low
+Please check,other,0.24,low
+OTP not received,authentication,0.83,high
+OTP not received,authentication,0.85,high
+Button not working,technical,0.81,medium
+Button not working,technical,0.9,medium
+Connection timeout error,network,0.8,high
+App disconnects frequently,network,0.9,high
+Password reset link expired and also Account locked unexpectedly,authentication,0.9,high
+Delete my account,account,0.76,medium
+White screen after login and also App crashes on upload,technical,0.87,high
+Good morning,other,0.38,low
+account details change karni hai and also Modify profile details,account,0.87,medium
+Session expired quickly,authentication,0.83,medium
+This is not working,other,0.23,low
+Cannot login with correct password,authentication,0.92,high
+Update phone number and also Delete my account,account,0.9,medium
+Hello,other,0.36,low
+otp nahi aa raha,authentication,0.93,medium
+App crashes on upload,technical,0.9,high
+App disconnects frequently,network,0.95,high
+Session expired quickly,authentication,0.8,medium
+Update phone number,account,0.8,low
+Good morning,other,0.3,low
+Delete my account,account,0.92,medium
+Refund not received after cancellation,billing,0.87,medium
+App crashes on upload and also App crashes on upload,technical,0.85,high
+Good morning,other,0.25,low
+Button not working and also Button not working,technical,0.78,medium
+account details change karni hai,account,0.83,medium
+Good morning,other,0.33,low
+Session expired quickly,authentication,0.92,medium
+App disconnects frequently,network,0.91,high
+Feature not responding,technical,0.78,medium
+Subscription charged after cancellation and also Subscription charged after cancellation,billing,0.84,high
+Invoice amount incorrect and also Invoice amount incorrect,billing,0.86,medium
+Network unstable,network,0.76,medium
+Password reset link expired,authentication,0.81,medium
+Unexpected server error,technical,0.85,high
+account details change karni hai,account,0.77,medium
+Password reset link expired,authentication,0.8,medium
+Change email address,account,0.92,low
+Unexpected server error and also Unexpected server error,technical,0.81,high
+hello bhai,other,0.37,low
+Account locked unexpectedly and also Session expired quickly,authentication,0.9,high
+White screen after login and also Unexpected server error,technical,0.81,high
+Invoice amount incorrect,billing,0.79,medium
+Cannot login with correct password,authentication,0.92,high
+Delete my account,account,0.88,medium
+Modify profile details,account,0.84,low
+Page keeps reloading,technical,0.91,medium
+High latency issue,network,0.94,medium
+Subscription charged after cancellation and also Auto debit happened unexpectedly,billing,0.81,high
+hello bhai,other,0.36,low
+Delete my account,account,0.91,medium
+OTP not received,authentication,0.88,high
+Auto debit happened unexpectedly and also Refund not received after cancellation,billing,0.94,medium
+wifi se connect nahi ho raha,network,0.81,medium
+Good morning and also Thanks for support,other,0.34,low
+Network unstable,network,0.84,medium
+Good morning,other,0.33,low
+Subscription charged after cancellation,billing,0.95,high
+Delete my acount and also Update phone number,account,0.9,low
+Cannot login with correct password and also Cannot login with correct password,authentication,0.94,high
+refund abhi tak nahi mila,billing,0.94,high
+Change email address,account,0.91,low
+Good morning and also Hello,other,0.33,low
+Payment failed but money deducted,billing,0.76,high
+Auto debit happened unexpectedly,billing,0.85,medium
+Session expired quickly,authentication,0.87,medium
+Modify profile details,account,0.93,low
+Update phone number and also Update username,account,0.85,low
+Subscription charged after cancellation and also Subscription charged after cancellation,billing,0.89,high
+This is not working,other,0.2,low
+Hello,other,0.27,low
+I need help,other,0.25,low
+hello bhai,other,0.22,low
+account details change karni hai,account,0.75,medium
+App crashes on upload,technical,0.93,high
+Network unstable,network,0.89,medium
+wifi se connect nahi ho raha,network,0.77,medium
+Page keeps reloading,technical,0.78,medium
+wifi se connect nahi ho raha,network,0.89,medium
+Unexpected server error and also Feature not responding,technical,0.95,high
+ntwrk unstable,network,0.91,medium
+Network unstable and also Works on mobile data but not wifi,network,0.81,medium
+account details change karni hai and also Update username,account,0.85,medium
+Refund not received after cancellation,billing,0.82,medium
+Button not working and also Feature not responding,technical,0.87,medium
+otp nahi aa raha,authentication,0.91,medium
+OTP not received,authentication,0.81,high
+Works on mobile data but not wifi and also Network unstable,network,0.89,medium
+Refund not received after cancellation,billing,0.76,medium
+payment cut ho gaya but service nahi mila,billing,0.79,medium
+Button not working,technical,0.76,medium
+Update phone number and also Update phone number,account,0.83,low
+Hello,other,0.26,low
+Account locked unexpectedly,authentication,0.82,high
+app bar bar crash ho raha hai,technical,0.9,high
+Network unstable,network,0.83,medium
+Page keeps reloading and also Feature not responding,technical,0.88,medium
+refund abhi tak nahi mila,billing,0.76,high
+Button not working,technical,0.89,medium
+app bar bar crash ho raha hai,technical,0.91,high
+Account locked unexpectedly,authentication,0.89,high
+Delete my account,account,0.85,medium
+account details change karni hai,account,0.84,medium
+Payment failed but money deducted,billing,0.83,high
+OTP not received,authentication,0.89,high
+Hello,other,0.37,low
+Auto debit happened unexpectedly and also Auto debit happened unexpectedly,billing,0.95,medium
+Modify profile details and also Delete my account,account,0.92,medium
+Update username,account,0.84,low
+Works on mobile data but not wifi and also High latency issue,network,0.91,medium
+OTP not received,authentication,0.79,high
+Button not working,technical,0.78,medium
+Update username,account,0.76,low
+Connection timeout error,network,0.93,high
+Modify profile details and also Update username,account,0.83,low
+Connection timeout error,network,0.9,high
+refund abhi tak nahi mila,billing,0.88,high
+Invoice amount incorrect,billing,0.77,medium
+App crashes on upload,technical,0.76,high
+Payment failed but money deducted,billing,0.95,high
+Connection timeout error,network,0.88,high
+Subscription charged after cancellation,billing,0.87,high
+Button not working,technical,0.92,medium
+Page keeps reloading,technical,0.85,medium
+White screen after login and also White screen after login,technical,0.82,medium
+login nahi ho raha,authentication,0.81,medium
+mera email address update karna hai,account,0.8,low
+Delete my account,account,0.91,medium
+Update username,account,0.94,low
+I need help,other,0.33,low
+Update phone number,account,0.94,low
+Modify profile details,account,0.77,low
+Change email address,account,0.91,low
+feature response nahi de raha,technical,0.86,medium
+Subscription charged after cancellation and also Payment failed but money deducted,billing,0.87,high
+Connection timeout error,network,0.83,high
+Network unstable,network,0.94,medium
+Hello,other,0.38,low
+OTP not received and also Session expired quickly,authentication,0.78,high
+Delete my account,account,0.91,medium
+Update username,account,0.93,low
+otp nahi aa raha,authentication,0.9,medium
+Delete my account,account,0.91,medium
+Page keeps reloading and also App crashes on upload,technical,0.77,high
+Update phone number,account,0.76,low
+Works on mobile data but not wifi,network,0.9,medium
+Connection timeout error,network,0.83,high
+app bar bar crash ho raha hai,technical,0.87,high
+login nahi ho raha,authentication,0.91,medium
+Hello,other,0.39,low
+OTP not received,authentication,0.85,high
+Unexpected server error,technical,0.89,high
+account details change karni hai and also Update phone number,account,0.86,low
+thoda help chahiye,other,0.27,low
+High latency issue,network,0.86,medium
+network issue aa raha hai,network,0.8,medium
+Cannot login with correct password,authentication,0.82,high
+White screen after login,technical,0.87,medium
+Invoice amount incorrect and also Payment failed but money deducted,billing,0.94,high
+hello bhai,other,0.22,low
+otp nahi aa raha and also Account locked unexpectedly,authentication,0.92,high
+Page keeps reloading and also Page keeps reloading,technical,0.87,medium
+thoda help chahiye,other,0.21,low
+Password reset link expired,authentication,0.77,medium
+This is not working and also I need help,other,0.33,low
+Cannot lgin with correct password,authentication,0.87,medium
+Please check,other,0.36,low
+refund abhi tak nahi mila and also Payment failed but money deducted,billing,0.9,high
+Thanks for support,other,0.3,low
+Session expired quickly,authentication,0.76,medium
+Update phone number and also Change email address,account,0.83,low
+Good morning and also Good morning,other,0.32,low
+Good morning and also Please check,other,0.37,low
+wifi se connect nahi ho raha,network,0.81,medium
+payment cut ho gaya but service nahi mila,billing,0.95,medium
+Connection timeout error,network,0.76,high
+Refund not received after cancellation,billing,0.94,medium
+payment cut ho gaya but service nahi mila,billing,0.87,medium
+Feature not responding and also Feature not responding,technical,0.78,medium
+Works on mobile data but not wifi and also Network unstable,network,0.83,medium
+Delete my accnt,account,0.9,low
+Update phone number,account,0.9,low
+Button not working and also Unexpected server error,technical,0.79,high
+refund abhi tak nahi mila,billing,0.81,high
+Network unstable,network,0.93,medium
+Cannot login with correct password and also Password reset link expired,authentication,0.8,high
+Page keeps reloading,technical,0.84,medium
+Cannot login with correct password,authentication,0.92,high
+Please check,other,0.37,low
+login nahi ho raha,authentication,0.79,medium
+Payment failed but money deducted,billing,0.92,high
+Hello,other,0.27,low
+Connection timeout error,network,0.89,high
+refund abhi tak nahi mila,billing,0.91,high
+High latency issue,network,0.94,medium
+Delete my account,account,0.84,medium
+This is not working,other,0.35,low
+Invoice amount incorrect,billing,0.89,medium
+wifi se connect nahi ho raha,network,0.75,medium
+Invoice amount incorrect,billing,0.78,medium
+White screen after login,technical,0.77,medium
+Auto debit happened unexpectedly,billing,0.93,medium
+OTP not received and also Account locked unexpectedly,authentication,0.79,high
+Modify profile details,account,0.86,low
+Thanks for support and also Hello,other,0.33,low
+refund abhi tak nahi mila,billing,0.87,high
+Button not working,technical,0.83,medium
+network issue aa raha hai,network,0.88,medium
+account details change karni hai and also Update phone number,account,0.81,low
+Good morning,other,0.24,low
+account details change karni hai,account,0.89,medium
+Unexpected server error,technical,0.81,high
+Password reset link expired,authentication,0.88,medium
+Feature not responding,technical,0.83,medium
+I need help,other,0.33,low
+I need help,other,0.21,low
+High latency issue,network,0.9,medium
+Button not working and also Feature not responding,technical,0.82,medium
+wifi se connect nahi ho raha and also App disconnects frequently,network,0.88,high
+Cannot login with correct password and also OTP not received,authentication,0.91,high
+Password reset link expired,authentication,0.87,medium
+Thanks for support,other,0.2,low
+account details change karni hai,account,0.8,medium
+App crashes on upload,technical,0.86,high
+Page keeps reloading,technical,0.92,medium
+Update username,account,0.87,low
+Modify profile details,account,0.91,low
+Auto debit happened unexpectedly,billing,0.83,medium
+network issue aa raha hai,network,0.87,medium
+Works on mobile data but not wifi,network,0.91,medium
+White screen after logn,technical,0.8,medium
+hello bhai and also Thanks for support,other,0.35,low
+Page keeps reloading and also Unexpected server error,technical,0.76,high
+Update username and also Update phone number,account,0.87,low
+wifi se connect nahi ho raha,network,0.94,medium
+Update username,account,0.91,low
+Good morning,other,0.37,low
+Modify profile details,account,0.89,low
+Thanks for support and also Please check,other,0.33,low
+refund abhi tak nahi mila and also Refund not received after cancellation,billing,0.92,medium
+Change email address,account,0.86,low
+payment cut ho gaya but service nahi mila,billing,0.95,medium
+Delete my account,account,0.8,medium
+Payment failed but money deducted,billing,0.81,high
+Update phone number,account,0.78,low
+Password reset link expired and also Password reset link expired,authentication,0.86,medium
+Delete my account and also Change email address,account,0.76,medium
+account details change karni hai,account,0.87,medium
+White screen after lgin,technical,0.95,medium
+Feature not responding and also Feature not responding,technical,0.77,medium
+Page keeps reloading and also App crashes on upload,technical,0.78,high
+hello bhai,other,0.32,low
+login nahi ho raha,authentication,0.85,medium
+refund abhi tak nahi mila,billing,0.92,high
+Cannot login with correct password,authentication,0.79,high
+Modify profile details and also Update phone number,account,0.8,low
+App disconnects frequently,network,0.78,high
+High latency issue and also High latency issue,network,0.82,medium
+mera email address update karna hai,account,0.95,low
+Session expired quickly,authentication,0.91,medium
+Payment failed but money deducted,billing,0.92,high
+thoda help chahiye,other,0.25,low
+Connection timeout error,network,0.82,high
+OTP not received and also Session expired quickly,authentication,0.93,high
+Change email address,account,0.88,low
+Session expired quickly and also Account locked unexpectedly,authentication,0.76,high
+Button not working,technical,0.81,medium
+Page keeps reloading and also White screen after login,technical,0.89,medium
+Change email address,account,0.95,low
+Cannot login with correct password,authentication,0.76,high
+Thanks for support,other,0.26,low
+Please check,other,0.27,low
+Update phone number,account,0.93,low
+Account locked unexpectedly,authentication,0.89,high
+Session expired quickly,authentication,0.93,medium
+Update username,account,0.86,low
+Good morning,other,0.23,low
+network issue aa raha hai,network,0.76,medium
+Refund not received after cancellation,billing,0.79,medium
+Password reset link expired,authentication,0.94,medium
+Session expired quickly,authentication,0.83,medium
+Account locked unexpectedly,authentication,0.89,high
+account details change karni hai and also Update phone number,account,0.85,low
+Modify profile details,account,0.8,low
+Cannot login with correct password and also Session expired quickly,authentication,0.95,high
+Invoice amount incorrect and also Subscription charged after cancellation,billing,0.8,high
+OTP not received,authentication,0.92,high
+Modify profile details,account,0.84,low
+Network unstable,network,0.94,medium
+I need help and also I need help,other,0.28,low
+Invoice amount incorrect,billing,0.8,medium
+Button not working,technical,0.76,medium
+thoda help chahiye and also Please check,other,0.28,low
+payment cut ho gaya but service nahi mila,billing,0.94,medium
+Network unstable,network,0.9,medium
+OTP not received,authentication,0.92,high
+netwrk unstable,network,0.75,medium
+Please check,other,0.28,low
+Please check,other,0.38,low
+This is not working,other,0.38,low
+Hello,other,0.34,low
+Network unstable and also App disconnects frequently,network,0.79,high
+otp nahi aa raha,authentication,0.88,medium
+Page keeps reloading and also Button not working,technical,0.77,medium
+hello bhai,other,0.32,low
+otp nahi aa raha,authentication,0.92,medium
+Hello,other,0.22,low
+App disconnects frequently and also Connection timeout error,network,0.87,high
+network issue aa raha hai,network,0.83,medium
+Update username,account,0.89,low
+Thanks for support and also I need help,other,0.27,low
+Good morning,other,0.37,low
+feature response nahi de raha,technical,0.84,medium
+Change email address and also Change email address,account,0.93,low
+Subscription charged after cancellation,billing,0.8,high
+OTP not received and also Password reset link expired,authentication,0.8,high
+OTP not received and also Password reset link expired,authentication,0.77,high
+Thanks for support,other,0.2,low
+Modify profile details,account,0.78,low
+wifi se connect nahi ho raha and also Network unstable,network,0.87,medium
+payment cut ho gaya but service nahi mila and also Refund not received after cancellation,billing,0.8,medium
+wifi se connect nahi ho raha and also High latency issue,network,0.92,medium
+wifi se connect nahi ho raha and also Works on mobile data but not wifi,network,0.86,medium
+Password reset link expired and also Account locked unexpectedly,authentication,0.92,high
+Good morning,other,0.22,low
+App disconnects frequently,network,0.83,high
+OTP not received,authentication,0.87,high
+High latency issue,network,0.84,medium
+Password reset link expired,authentication,0.87,medium
+White screen after login,technical,0.94,medium
+OTP not received and also Account locked unexpectedly,authentication,0.77,high
+Thanks for support and also Hello,other,0.31,low
+Invoice amount incorrect,billing,0.84,medium
+acount locked unexpectedly,authentication,0.77,medium
+Connection timeout error and also Network unstable,network,0.76,high
+Invoice amount incorrect,billing,0.77,medium
+Feature not responding,technical,0.76,medium
+Unexpected server error and also Feature not responding,technical,0.87,high
+Payment failed but money deducted,billing,0.86,high
+Update phone number,account,0.75,low
+Cannot login with correct password,authentication,0.81,high
+hello bhai,other,0.25,low
+Unexpected server error,technical,0.92,high
+login nahi ho raha,authentication,0.92,medium
+Update phone number,account,0.8,low
+Auto debit happened unexpectedly and also Invoice amount incorrect,billing,0.91,medium
+Payment failed but money deducted and also Invoice amount incorrect,billing,0.93,high
+Modify profile details,account,0.82,low
+Account locked unexpectedly and also Session expired quickly,authentication,0.93,high
+Change email address,account,0.82,low
+App crashes on upload and also Feature not responding,technical,0.87,high
+App disconnects frequently,network,0.89,high
+Cannot login with correct password,authentication,0.8,high
+Good morning,other,0.38,low
+Auto debit happened unexpectedly,billing,0.84,medium
+wifi se connect nahi ho raha and also App disconnects frequently,network,0.95,high
+Refund not received after cancellation,billing,0.86,medium
+Session expired quickly and also Account locked unexpectedly,authentication,0.77,high
+app bar bar crash ho raha hai,technical,0.88,high
+feature response nahi de raha,technical,0.77,medium
+High latency issue,network,0.92,medium
+Payment failed but money deducted,billing,0.84,high
+Cannot login with correct password,authentication,0.84,high
+Works on mobile data but not wifi,network,0.76,medium
+Password reset link expired and also Account locked unexpectedly,authentication,0.9,high
+app bar bar crash ho raha hai,technical,0.78,high
+Payment failed but money deducted,billing,0.82,high
+Cannot login with correct password,authentication,0.92,high
+Update phone number,account,0.79,low
+Update username,account,0.89,low
+Payment failed but money deducted and also Subscription charged after cancellation,billing,0.87,high
+thoda help chahiye and also Hello,other,0.34,low
+refund abhi tak nahi mila,billing,0.82,high
+thoda help chahiye,other,0.26,low
+Unexpected server error,technical,0.76,high
+payment cut ho gaya but service nahi mila and also Charged twice for same order,billing,0.85,high
+Auto debit happened unexpectedly,billing,0.9,medium
+feature response nahi de raha,technical,0.76,medium
+Subscription charged after cancellation,billing,0.78,high
+Delete my account,account,0.88,medium
+Connection timeout error,network,0.84,high
+Change email address,account,0.88,low
+refund abhi tak nahi mila and also Refund not received after cancellation,billing,0.91,medium
+High latency issue,network,0.85,medium
+App disconnects frequently and also Network unstable,network,0.82,high
+Password reset link expired,authentication,0.89,medium
+Session expired quickly,authentication,0.85,medium
+Session expired quickly,authentication,0.86,medium
+wifi se connect nahi ho raha,network,0.85,medium
+Page keeps reloading,technical,0.86,medium
+App crashes on upload,technical,0.94,high
+Refund not received after cancellation,billing,0.93,medium
+app bar bar crash ho raha hai,technical,0.81,high
+wifi se connect nahi ho raha,network,0.79,medium
+Charged twice for same order,billing,0.92,high
+Hello and also Thanks for support,other,0.39,low
+Thanks for support,other,0.4,low
+OTP not received,authentication,0.9,high
+Refund not received after cancellation,billing,0.93,medium
+OTP not received,authentication,0.92,high
+Session expired quickly,authentication,0.89,medium
+High latency issue,network,0.95,medium
+Session expired quickly and also Session expired quickly,authentication,0.93,medium
+otp nahi aa raha and also Account locked unexpectedly,authentication,0.94,high
+app bar bar crash ho raha hai and also Button not working,technical,0.87,high
+feature response nahi de raha,technical,0.82,medium
+Update username,account,0.82,low
+Payment failed but money deducted,billing,0.88,high
+Invoice amount incorrect and also Invoice amount incorrect,billing,0.92,medium
+Thanks for support,other,0.34,low
+High latency issue,network,0.8,medium
+otp nahi aa raha and also Password reset link expired,authentication,0.89,medium
+Session expired quickly and also Session expired quickly,authentication,0.83,medium
+Modify profile details,account,0.87,low
+Cannot login with correct password,authentication,0.92,high
+White screen after login,technical,0.81,medium
+Network unstable and also High latency issue,network,0.91,medium
+Network unstable,network,0.79,medium
+I need help,other,0.21,low
+payment cut ho gaya but service nahi mila,billing,0.87,medium
+hello bhai and also Please check,other,0.27,low
+App disconnects frequently,network,0.89,high
+Connection timeout error,network,0.81,high
+refund abhi tak nahi mila and also Refund not received after cancellation,billing,0.76,medium
+Refund not received after cancellation and also Charged twice for same order,billing,0.82,medium
+Refund not received after cancellation,billing,0.8,medium
+mera email address update karna hai,account,0.92,low
+Button not working,technical,0.9,medium
+Account locked unexpectedly,authentication,0.75,high
+Please check,other,0.27,low
+app bar bar crash ho raha hai,technical,0.85,high
+High latency issue,network,0.83,medium
+Payment failed but money deducted,billing,0.78,high
+Page keeps reloading,technical,0.92,medium
+OTP not received,authentication,0.77,high
+network issue aa raha hai,network,0.8,medium
+otp nahi aa raha,authentication,0.81,medium
+High latency issue,network,0.94,medium
+Good morning,other,0.25,low
+Unexpected server error,technical,0.76,high
+Please check,other,0.37,low
+Please check,other,0.29,low
+Invoice amount incorrect,billing,0.9,medium
+Good morning,other,0.26,low
+Password reset link expired,authentication,0.93,medium
+account details change karni hai,account,0.89,medium
+Hello,other,0.25,low
+otp nahi aa raha,authentication,0.92,medium
+Connection timeout error and also High latency issue,network,0.88,high
+Password reset link expired,authentication,0.85,medium
+Network unstable,network,0.78,medium
+App crashes on upload and also Feature not responding,technical,0.9,high
+Account locked unexpectedly,authentication,0.75,high
+Update phone number,account,0.9,low
+Hello,other,0.24,low
+App disconnects frequently,network,0.86,high
+Update phone number,account,0.86,low
+Please check,other,0.2,low
+account details change karni hai,account,0.78,medium
+Auto debit happened unexpectedly and also Refund not received after cancellation,billing,0.88,medium
+Charged twice for same order,billing,0.8,high
+Refund not received after cancellation and also Refund not received after cancellation,billing,0.79,medium
+Update username,account,0.83,low
+Good morning,other,0.25,low
+Unexpected server error,technical,0.84,high
+Subscription charged after cancellation and also Subscription charged after cancellation,billing,0.82,high
+Cannot login with correct password,authentication,0.76,high
+wifi se connect nahi ho raha,network,0.91,medium
+mera email address update karna hai,account,0.9,low
+thoda help chahiye,other,0.36,low
+Connection timeout error and also Works on mobile data but not wifi,network,0.87,high
+Please check,other,0.25,low
+feature response nahi de raha and also Feature not responding,technical,0.78,medium
+hello bhai,other,0.38,low
+OTP not received,authentication,0.81,high
+Please check,other,0.26,low
+login nahi ho raha,authentication,0.78,medium
+Good morning,other,0.39,low
+Works on mobile data but not wifi,network,0.75,medium
+Cannot login with correct password,authentication,0.89,high
+Thanks for support,other,0.32,low
+Subscription charged after cancellation,billing,0.83,high
+White screen after login and also Feature not responding,technical,0.93,medium
+Cannot login with correct password and also Session expired quickly,authentication,0.93,high
+Update username and also Modify profile details,account,0.91,low
+Auto debit happened unexpectedly,billing,0.8,medium
+Button not working,technical,0.85,medium
+Modify profile details,account,0.94,low
+I need help,other,0.25,low
+Update username and also Update phone number,account,0.83,low
+Change email address,account,0.92,low
+Refund not received after cancellation,billing,0.75,medium
+refund abhi tak nahi mila,billing,0.89,high
+Update username and also Change email address,account,0.88,low
+Refund not received after cancellation,billing,0.76,medium
+Cannot login with correct password and also Session expired quickly,authentication,0.75,high
+wifi se connect nahi ho raha,network,0.91,medium
+mera email address update karna hai,account,0.86,low
+wifi se connect nahi ho raha,network,0.89,medium
+Works on mobile data but not wifi,network,0.87,medium
+wifi se connect nahi ho raha and also High latency issue,network,0.91,medium
+App disconnects frequently and also High latency issue,network,0.83,high
+This is not working and also I need help,other,0.39,low
+Change email address,account,0.9,low
+Auto debit happened unexpectedly,billing,0.89,medium
+Good morning,other,0.24,low
+Feature not responding,technical,0.91,medium
+account details change karni hai,account,0.81,medium
+wifi se connect nahi ho raha and also High latency issue,network,0.91,medium
+Button not working and also Unexpected server error,technical,0.78,high
+Update phone number and also Update username,account,0.94,low
+Cannot login with correct password,authentication,0.8,high
+App disconnects frequently,network,0.81,high
+hello bhai,other,0.31,low
+Feature not responding and also White screen after login,technical,0.92,medium
+Connection timeout error,network,0.84,high
+Payment failed but money deducted,billing,0.86,high
+Network unstable,network,0.9,medium
+Delete my account,account,0.9,medium
+account details change karni hai,account,0.85,medium
+High latency issue,network,0.78,medium
+Delete my account,account,0.92,medium
+netwrk unstable,network,0.77,medium
+Connection timeout error,network,0.9,high
+Network unstable,network,0.84,medium
+App crashes on upload,technical,0.79,high
+High latency issue and also App disconnects frequently,network,0.91,high
+Page keeps reloading and also Page keeps reloading,technical,0.75,medium
+Charged twice for same order and also Subscription charged after cancellation,billing,0.84,high
+Account locked unexpectedly,authentication,0.79,high
+network issue aa raha hai and also Works on mobile data but not wifi,network,0.81,medium
+mera email address update karna hai and also Delete my account,account,0.95,medium
+pymnt failed but money deducted,billing,0.83,high
+Unexpected server error,technical,0.76,high
+account details change karni hai,account,0.84,medium
+Charged twice for same order,billing,0.95,high

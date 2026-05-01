@@ -23,6 +23,7 @@ GROQ_URL = os.environ.get(
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_RATE_LIMIT_COOLDOWN = int(os.environ.get("GROQ_RATE_LIMIT_COOLDOWN", "60"))
 GROQ_FAILURE_COOLDOWN = int(os.environ.get("GROQ_FAILURE_COOLDOWN", "30"))
+GROQ_REQUEST_FAILED_LOG = "Groq request failed: %s"
 _groq_cooldown_until = 0.0
 
 
@@ -125,7 +126,7 @@ Ticket:
                 )
                 return None
             _start_cooldown(GROQ_FAILURE_COOLDOWN)
-            logger.warning("Groq request failed: %s", error)
+            logger.warning(GROQ_REQUEST_FAILED_LOG, error)
             return None
         except (KeyError, IndexError, TypeError, ValueError) as error:
             logger.warning("Unexpected Groq response structure: %s", error)
@@ -164,11 +165,11 @@ Ticket:
                 )
                 return None
             _start_cooldown(GROQ_FAILURE_COOLDOWN)
-            logger.warning("Groq request failed: %s", error)
+            logger.warning(GROQ_REQUEST_FAILED_LOG, error)
             return None
         except httpx.HTTPError as error:
             _start_cooldown(GROQ_FAILURE_COOLDOWN)
-            logger.warning("Groq request failed: %s", error)
+            logger.warning(GROQ_REQUEST_FAILED_LOG, error)
             return None
         except (KeyError, IndexError, TypeError, ValueError) as error:
             logger.warning("Unexpected Groq response structure: %s", error)
