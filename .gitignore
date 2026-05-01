@@ -78,6 +78,7 @@ backend/env/
 backend/.coverage
 backend/coverage.xml
 backend/.pytest_cache/
+backend/pytest-cache-files-*/
 backend/htmlcov/
 frontend/coverage/
 node_modules/

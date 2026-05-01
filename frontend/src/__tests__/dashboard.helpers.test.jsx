@@ -95,9 +95,9 @@ describe("dashboard helper components", () => {
   });
 
   test("agent workload table covers empty and populated states", () => {
-    const emptyRender = render(<AgentWorkloadTable agentWorkload={[]} />);
+    const view = render(<AgentWorkloadTable agentWorkload={[]} />);
     expect(screen.getByText("No agents found")).toBeInTheDocument();
-    emptyRender.unmount();
+    view.unmount();
 
     render(
       <AgentWorkloadTable

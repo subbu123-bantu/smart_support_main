@@ -76,9 +76,7 @@ test("create ticket auto-predicts and submits trimmed values", async () => {
     jest.runAllTimers();
   });
   await waitFor(() => expect(predictTicket).toHaveBeenCalledWith({ text: "the login form keeps failing badly" }));
-  await act(async () => {
-    fireEvent.submit(screen.getByRole("button", { name: /submit ticket/i }).closest("form"));
-  });
+  fireEvent.click(screen.getByRole("button", { name: /submit ticket/i }));
   await waitFor(() => expect(createTicket).toHaveBeenCalledWith({ title: "Broken login", description: "the login form keeps failing badly" }));
   expect(mockNavigate).toHaveBeenCalledWith("/tickets");
 });
@@ -90,7 +88,7 @@ test("create ticket skips short predictions and handles prediction and submit fa
   createTicket.mockRejectedValueOnce({ response: { data: { category: ["Pick a valid category"] } } });
   render(<CreateTicket />);
 
-  fireEvent.submit(screen.getByRole("button", { name: /submit ticket/i }).closest("form"));
+  fireEvent.click(screen.getByRole("button", { name: /submit ticket/i }));
   expect(toast.error).toHaveBeenCalledWith("Please fill in both fields");
 
   fireEvent.change(screen.getByPlaceholderText(/brief summary/i), { target: { value: " Mail issue " } });
@@ -112,11 +110,9 @@ test("create ticket skips short predictions and handles prediction and submit fa
     jest.runAllTimers();
   });
   await waitFor(() => expect(predictTicket).toHaveBeenLastCalledWith({ text: "mail routing keeps dropping replies every morning" }));
-  await waitFor(() => expect(screen.getByText("45%")).toBeInTheDocument());
+  expect(await screen.findByText("45%")).toBeInTheDocument();
 
-  await act(async () => {
-    fireEvent.submit(screen.getByRole("button", { name: /submit ticket/i }).closest("form"));
-  });
+  fireEvent.click(screen.getByRole("button", { name: /submit ticket/i }));
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Pick a valid category"));
 });
 
@@ -129,22 +125,15 @@ test("tickets page loads admin filters and refreshes after actions", async () =>
   render(<Tickets />);
   await waitFor(() => expect(getTickets).toHaveBeenCalledWith(1, null, null, null, "", ""));
   fireEvent.change(screen.getByPlaceholderText(/search tickets/i), { target: { value: "printer" } });
-  await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
-  });
+  fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
   await waitFor(() => expect(getTickets).toHaveBeenLastCalledWith(1, null, null, "printer", "", ""));
-  await act(async () => {
-    fireEvent.change(screen.getByDisplayValue("All Priority"), { target: { value: "high" } });
-    fireEvent.change(screen.getByDisplayValue("All Categories"), { target: { value: "2" } });
-    fireEvent.change(screen.getByDisplayValue("All"), { target: { value: "true" } });
-  });
+  fireEvent.change(screen.getByDisplayValue("All Priority"), { target: { value: "high" } });
+  fireEvent.change(screen.getByDisplayValue("All Categories"), { target: { value: "2" } });
+  fireEvent.change(screen.getByDisplayValue("All"), { target: { value: "true" } });
   await waitFor(() => expect(getTickets).toHaveBeenLastCalledWith(1, null, "high", "printer", "true", "2"));
-  await act(async () => {
-    const statusButton = await screen.findByText("status");
-    fireEvent.click(statusButton);
-    fireEvent.click(screen.getByText("field"));
-    fireEvent.click(screen.getByText("assign"));
-  });
+  fireEvent.click(await screen.findByText("status"));
+  fireEvent.click(screen.getByText("field"));
+  fireEvent.click(screen.getByText("assign"));
   await waitFor(() => expect(updateTicket).toHaveBeenCalled());
   expect(assignTicket).toHaveBeenCalledWith(1, "7");
   expect(toast.success).toHaveBeenCalled();
@@ -157,23 +146,23 @@ test("tickets page handles loading, pagination, empty states, errors, and non-ad
   }));
   getAgents.mockRejectedValueOnce(new Error("agents failed"));
   getCategories.mockRejectedValueOnce(new Error("categories failed"));
-  const firstRender = render(<Tickets />);
+  const view = render(<Tickets />);
   expect(await screen.findByText(/loading/i)).toBeInTheDocument();
 
   resolveTickets({ data: { results: [], next: "/2", previous: null } });
-  await waitFor(() => expect(screen.getByText(/no tickets found/i)).toBeInTheDocument());
+  expect(await screen.findByText(/no tickets found/i)).toBeInTheDocument();
 
   getTickets.mockResolvedValueOnce({ data: { results: [{ id: 2, title: "Router", status: "open", priority: "medium", category: 1 }], next: "/3", previous: "/1" } });
   fireEvent.click(screen.getByText(/next/i));
   await waitFor(() => expect(getTickets).toHaveBeenLastCalledWith(2, null, null, null, "", ""));
-  await waitFor(() => expect(screen.getByText("Page 2")).toBeInTheDocument());
+  expect(await screen.findByText("Page 2")).toBeInTheDocument();
 
   getTickets.mockRejectedValueOnce(new Error("fetch failed"));
   fireEvent.click(screen.getByText(/next/i));
-  await waitFor(() => expect(screen.getByText(/no tickets found/i)).toBeInTheDocument());
+  expect(await screen.findByText(/no tickets found/i)).toBeInTheDocument();
 
   mockNavigate.mockClear();
-  firstRender.unmount();
+  view.unmount();
   localStorage.setItem("role", "customer");
   getTickets.mockResolvedValueOnce({ data: { results: [{ id: 9, title: "Customer Ticket", status: "open", priority: "low", category: 1 }], next: null, previous: null } });
   render(<Tickets />);

@@ -30,20 +30,20 @@ beforeEach(() => {
 });
 
 test("app routes root to login and renders protected dashboard", () => {
-  globalThis.history.pushState({}, "", "/");
+  window.history.pushState({}, "", "/");
   render(<App />);
   expect(screen.getByText("Login Page")).toBeInTheDocument();
   mockDecode.mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 60 });
-  globalThis.history.pushState({}, "", "/dashboard");
+  window.history.pushState({}, "", "/dashboard");
   render(<App />);
   expect(screen.getByText("Dashboard Page")).toBeInTheDocument();
 });
 
 test("private route clears auth for expired tokens and allows matching roles", () => {
   mockDecode.mockReturnValue({ exp: 1 });
-  const firstRender = render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><PrivateRoute allowedRoles={["admin"]}><div>secret</div></PrivateRoute></MemoryRouter>);
+  const view = render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><PrivateRoute allowedRoles={["admin"]}><div>secret</div></PrivateRoute></MemoryRouter>);
   expect(screen.queryByText("secret")).not.toBeInTheDocument();
-  firstRender.unmount();
+  view.unmount();
   localStorage.setItem("access", "fresh");
   localStorage.setItem("role", "admin");
   mockDecode.mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 60 });
@@ -57,9 +57,9 @@ test("private route rejects invalid tokens and disallowed roles", () => {
   mockDecode.mockImplementationOnce(() => {
     throw new Error("bad token");
   });
-  const firstRender = render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><PrivateRoute allowedRoles={["admin"]}><div>secret</div></PrivateRoute></MemoryRouter>);
+  const view = render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><PrivateRoute allowedRoles={["admin"]}><div>secret</div></PrivateRoute></MemoryRouter>);
   expect(screen.queryByText("secret")).not.toBeInTheDocument();
-  firstRender.unmount();
+  view.unmount();
 
   localStorage.setItem("access", "fresh");
   localStorage.setItem("role", "customer");
@@ -69,7 +69,7 @@ test("private route rejects invalid tokens and disallowed roles", () => {
 });
 
 test("sidebar shows role links and logs out", async () => {
-  Object.defineProperty(globalThis, "location", { value: { href: "" }, writable: true });
+  Object.defineProperty(window, "location", { value: { href: "" }, writable: true });
   API.post = jest.fn().mockResolvedValue({});
   render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><Sidebar /></MemoryRouter>);
   expect(screen.getByText("Dashboard")).toBeInTheDocument();
@@ -79,11 +79,11 @@ test("sidebar shows role links and logs out", async () => {
   fireEvent.click(screen.getByTitle("Logout"));
   expect(API.post).toHaveBeenCalledWith("logout/");
   await screen.findByTitle("Logout");
-  expect(globalThis.location.href).toBe("/login");
+  expect(window.location.href).toBe("/login");
 });
 
 test("sidebar collapses and still logs out after api failures", async () => {
-  Object.defineProperty(globalThis, "location", { value: { href: "" }, writable: true });
+  Object.defineProperty(window, "location", { value: { href: "" }, writable: true });
   localStorage.setItem("role", "agent");
   localStorage.setItem("username", "alex");
   API.post = jest.fn().mockRejectedValue(new Error("network"));
@@ -95,7 +95,7 @@ test("sidebar collapses and still logs out after api failures", async () => {
 
   fireEvent.click(screen.getByTitle("Logout"));
   await screen.findByTitle("Logout");
-  expect(globalThis.location.href).toBe("/login");
+  expect(window.location.href).toBe("/login");
   expect(localStorage.getItem("access")).toBeNull();
 });
 

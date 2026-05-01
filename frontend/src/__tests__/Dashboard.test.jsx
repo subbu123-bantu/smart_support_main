@@ -35,7 +35,7 @@ test("dashboard maps stats data and shows admin sections", async () => {
   getTicketStats.mockResolvedValue({ data: { total: 8, open: 2, in_progress: 3, closed: 3, by_category: [{ category__name: "Billing", count: 3 }], by_priority: [{ priority: "high", count: 4 }], by_date: [{ date: "2026-04-28", count: 2 }], agent_workload: [{ agent: "A", assigned: 2, in_progress: 1, solved: 1, avg_resolution_hours: 4 }] } });
   getTickets.mockResolvedValue({ data: { results: [{ id: 1, title: "Printer", priority: "high" }, { id: 2, title: "VPN", priority: "low" }] } });
   render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><Dashboard /></MemoryRouter>);
-  await waitFor(() => expect(screen.getByText("Total Tickets")).toBeInTheDocument());
+  expect(await screen.findByText("Total Tickets")).toBeInTheDocument();
   expect(screen.getByText("8")).toBeInTheDocument();
   expect(screen.getByText("Status Breakdown")).toBeInTheDocument();
   expect(screen.getByText("Tickets by Category")).toBeInTheDocument();

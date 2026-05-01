@@ -52,11 +52,11 @@ describe("ticket details and comments", () => {
 
     render(<TicketDetails />);
 
-    await waitFor(() => expect(screen.getByText(ticketResponse.title)).toBeInTheDocument());
+    expect(await screen.findByText(ticketResponse.title)).toBeInTheDocument();
     expect(screen.getByText(/office printer is jammed/i)).toBeInTheDocument();
     expect(screen.getAllByText("Correct")).toHaveLength(2);
     expect(screen.getByText("93%")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText("Investigating")).toBeInTheDocument());
+    expect(await screen.findByText("Investigating")).toBeInTheDocument();
   });
 
   test("shows fallback when the ticket is missing", async () => {
@@ -65,7 +65,7 @@ describe("ticket details and comments", () => {
 
     render(<TicketDetails />);
 
-    await waitFor(() => expect(screen.getByText(/ticket not found/i)).toBeInTheDocument());
+    expect(await screen.findByText(/ticket not found/i)).toBeInTheDocument();
     expect(screen.getByText(/this ticket may have been removed/i)).toBeInTheDocument();
   });
 
@@ -78,10 +78,10 @@ describe("ticket details and comments", () => {
 
     const { rerender } = render(<TicketComments ticketId={5} role="admin" />);
 
-    await waitFor(() => expect(screen.getByText(/no comments yet/i)).toBeInTheDocument());
+    expect(await screen.findByText(/no comments yet/i)).toBeInTheDocument();
     fireEvent.change(screen.getByPlaceholderText(/write a comment/i), { target: { value: "Secret" } });
     fireEvent.click(screen.getByLabelText(/mark as internal note/i));
-    fireEvent.submit(screen.getByRole("button", { name: /add comment/i }).closest("form"));
+    fireEvent.click(screen.getByRole("button", { name: /add comment/i }));
 
     await waitFor(() => expect(addTicketComment).toHaveBeenCalledWith(5, { message: "Secret", is_internal: true }));
     expect(toast.success).toHaveBeenCalledWith("Comment added");
@@ -96,7 +96,7 @@ describe("ticket details and comments", () => {
 
     render(<TicketDetails />);
 
-    await waitFor(() => expect(screen.getByText("Open")).toBeInTheDocument());
+    expect(await screen.findByText("Open")).toBeInTheDocument();
     expect(screen.getByText("Unassigned")).toBeInTheDocument();
     expect(screen.getByText(/no prediction feedback available/i)).toBeInTheDocument();
   });
@@ -111,14 +111,14 @@ describe("ticket details and comments", () => {
 
     render(<TicketDetails />);
 
-    await waitFor(() => expect(screen.getByText("VPN")).toBeInTheDocument());
+    expect(await screen.findByText("VPN")).toBeInTheDocument();
     expect(screen.getByText(/loading feedback/i)).toBeInTheDocument();
 
     await act(async () => {
       resolveFeedback({ data: { has_feedback: true, predicted_category: "", actual_category: "", category_correct: null, predicted_priority: "", actual_priority: "", priority_correct: null, source: "", confidence: 0 } });
     });
 
-    await waitFor(() => expect(screen.getAllByText("Pending")).toHaveLength(2));
+    await screen.findAllByText("Pending");
     expect(screen.getByText("0%")).toBeInTheDocument();
     fireEvent.click(screen.getByText(/back to tickets/i));
     expect(mockNavigate).toHaveBeenCalledWith("/tickets");

@@ -45,7 +45,6 @@ describe("auth pages", () => {
 
     render(<Login />);
 
-    const loginForm = screen.getByLabelText(/username/i).closest("form");
     fireEvent.click(screen.getByRole("button", { name: /forgot password/i }));
     fireEvent.click(screen.getByRole("button", { name: /create one/i }));
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
@@ -53,14 +52,16 @@ describe("auth pages", () => {
 
     fireEvent.change(screen.getByLabelText(/username/i), { target: { value: "sam" } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "pw" } });
-    fireEvent.submit(loginForm);
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => expect(loginUser).toHaveBeenCalledWith({ username: "sam", password: "pw" }));
     expect(localStorage.getItem("access")).toBe("t");
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
 
+    toast.error.mockClear();
     loginUser.mockRejectedValueOnce({ request: {} });
-    fireEvent.submit(loginForm);
+    await waitFor(() => expect(screen.getByRole("button", { name: /sign in/i })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("Cannot reach the backend")));
   });
 
@@ -69,24 +70,24 @@ describe("auth pages", () => {
 
     render(<Register />);
 
-    const registerForm = screen.getByLabelText(/^username/i).closest("form");
     fireEvent.change(screen.getByLabelText(/^username/i), { target: { value: "sam" } });
     fireEvent.change(screen.getByLabelText(/^email/i), { target: { value: "a@b.com" } });
     fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: "pw1" } });
     fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "pw2" } });
-    fireEvent.submit(registerForm);
+    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
 
     expect(toast.error).toHaveBeenCalledWith("Passwords do not match");
 
     fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "pw1" } });
     expect(screen.getByText(/passwords match/i)).toBeInTheDocument();
-    fireEvent.submit(registerForm);
+    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
 
     await waitFor(() => expect(registerUser).toHaveBeenCalledWith({ username: "sam", email: "a@b.com", password: "pw1" }));
     expect(mockNavigate).toHaveBeenCalledWith("/");
 
+    await waitFor(() => expect(screen.getByRole("button", { name: /create account/i })).toBeEnabled());
     registerUser.mockRejectedValueOnce({ response: { data: { email: ["Taken"] } } });
-    fireEvent.submit(registerForm);
+    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Taken"));
   });
 
@@ -95,46 +96,46 @@ describe("auth pages", () => {
 
     render(<ForgotPassword />);
 
-    const forgotForm = screen.getByLabelText(/email/i).closest("form");
     fireEvent.click(screen.getByRole("button", { name: /back to sign in/i }));
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: " a@b.com " } });
-    fireEvent.submit(forgotForm);
+    fireEvent.click(screen.getByRole("button", { name: /send reset link/i }));
 
     await waitFor(() => expect(requestPasswordReset).toHaveBeenCalledWith({ email: "a@b.com" }));
     expect(mockNavigate).toHaveBeenCalledWith("/login");
 
+    await waitFor(() => expect(screen.getByRole("button", { name: /send reset link/i })).toBeEnabled());
     requestPasswordReset.mockRejectedValueOnce({ response: { data: { email: ["Unknown email"] } } });
-    fireEvent.submit(forgotForm);
+    fireEvent.click(screen.getByRole("button", { name: /send reset link/i }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Unknown email"));
   });
 
   test("reset password validates the link and handles submit branches", async () => {
-    const firstRender = render(<ResetPassword />);
-    fireEvent.submit(screen.getByRole("button", { name: /reset password/i }).closest("form"));
-    expect(toast.error).toHaveBeenCalledWith("Reset link is invalid");
-    firstRender.unmount();
+    const view = render(<ResetPassword />);
+    expect(screen.getByText(/missing required information/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /reset password/i })).toBeDisabled();
+    view.unmount();
 
     mockSearch = "uid=u1&token=t1";
     resetPassword.mockResolvedValue({ data: { message: "ok" } });
 
     render(<ResetPassword />);
 
-    const resetForm = screen.getByLabelText(/new password/i).closest("form");
     fireEvent.click(screen.getByRole("button", { name: /request another/i }));
     fireEvent.change(screen.getByLabelText(/new password/i), { target: { value: "pw" } });
     fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "nope" } });
-    fireEvent.submit(resetForm);
+    fireEvent.click(screen.getByRole("button", { name: /reset password/i }));
 
     expect(toast.error).toHaveBeenCalledWith("Passwords do not match");
 
     fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "pw" } });
-    fireEvent.submit(resetForm);
+    fireEvent.click(screen.getByRole("button", { name: /reset password/i }));
 
     await waitFor(() => expect(resetPassword).toHaveBeenCalledWith({ uid: "u1", token: "t1", password: "pw", confirm_password: "pw" }));
     expect(mockNavigate).toHaveBeenCalledWith("/login");
 
+    await waitFor(() => expect(screen.getByRole("button", { name: /reset password/i })).toBeEnabled());
     resetPassword.mockRejectedValueOnce({ response: { data: { error: "Expired" } } });
-    fireEvent.submit(resetForm);
+    fireEvent.click(screen.getByRole("button", { name: /reset password/i }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Expired"));
   });
 
@@ -144,20 +145,20 @@ describe("auth pages", () => {
 
     render(<ChangeEmail />);
 
-    const emailForm = screen.getByLabelText(/new email/i).closest("form");
     expect(screen.getByLabelText(/new email/i)).toHaveValue("old@x.com");
-    fireEvent.submit(emailForm);
+    fireEvent.click(screen.getByRole("button", { name: /update email/i }));
     expect(toast.error).toHaveBeenCalledWith("Please fill all fields");
 
     fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "pw" } });
-    fireEvent.submit(emailForm);
+    fireEvent.click(screen.getByRole("button", { name: /update email/i }));
 
     await waitFor(() => expect(changeEmail).toHaveBeenCalledWith({ email: "old@x.com", current_password: "pw" }));
     expect(localStorage.getItem("email")).toBe("new@x.com");
 
+    await waitFor(() => expect(screen.getByRole("button", { name: /update email/i })).toBeEnabled());
     changeEmail.mockRejectedValueOnce({ response: { data: { error: "Bad password" } } });
     fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: "pw" } });
-    fireEvent.submit(emailForm);
+    fireEvent.click(screen.getByRole("button", { name: /update email/i }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Bad password"));
   });
 });
