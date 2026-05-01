@@ -342,3 +342,12 @@ class TicketTaskAndExceptionTests(TestCase):
             send_email_task.run("user@example.com", "Subject")
         mock_logger.error.assert_called_once()
         mock_retry.assert_called_once()
+
+    @patch("tickets.tasks.logger")
+    @patch("tickets.tasks.render_to_string", side_effect=ValueError("template broken"))
+    @patch.object(send_email_task, "retry")
+    def test_send_email_task_does_not_retry_non_request_errors(self, mock_retry, _mock_render, mock_logger):
+        with self.assertRaisesMessage(ValueError, "template broken"):
+            send_email_task.run("user@example.com", "Subject")
+        mock_logger.error.assert_not_called()
+        mock_retry.assert_not_called()

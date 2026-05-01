@@ -1,21 +1,27 @@
-from celery import shared_task
-from django.template.loader import render_to_string
-from django.conf import settings
-import requests
 import logging
+
+import requests
+from celery import shared_task
+from django.conf import settings
+from django.template.loader import render_to_string
+
 from tickets.exceptions import EmailSendError
+
 logger = logging.getLogger(__name__)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_email_task(self, recipient_email, subject, template_name="emails/ticket_created.html", context=None):
+def send_email_task(
+    self,
+    recipient_email,
+    subject,
+    template_name="emails/ticket_created.html",
+    context=None,
+):
     try:
         context = context or {}
-
-        # Render HTML template
         html_content = render_to_string(template_name, context)
 
-        # Brevo API call
         response = requests.post(
             "https://api.brevo.com/v3/smtp/email",
             headers={
@@ -35,18 +41,18 @@ def send_email_task(self, recipient_email, subject, template_name="emails/ticket
         )
 
         if response.status_code not in (200, 201):
-           
-
             raise EmailSendError(
                 status_code=response.status_code,
-                message=response.text
+                message=response.text,
             )
 
-        logger.info(f"✅ Email sent → {recipient_email}")
+        logger.info("Email sent to %s", recipient_email)
 
-    except Exception as exc:
+    except (requests.RequestException, EmailSendError) as exc:
         logger.error(
-            f"❌ Email failed (attempt {self.request.retries + 1}): {exc}",
+            "Email failed (attempt %s): %s",
+            self.request.retries + 1,
+            exc,
             exc_info=True,
         )
         raise self.retry(exc=exc)

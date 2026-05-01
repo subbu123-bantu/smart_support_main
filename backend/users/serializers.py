@@ -65,7 +65,7 @@ class ResetPasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs["password"] != attrs["confirm_password"]:
-            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})  # nosec B105
 
         validate_password(attrs["password"])
         return attrs
