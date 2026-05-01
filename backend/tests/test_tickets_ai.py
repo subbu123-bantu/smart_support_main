@@ -1,6 +1,7 @@
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
+from asgiref.sync import async_to_sync
 from django.test import TestCase
 from requests import HTTPError, RequestException
 
@@ -14,7 +15,17 @@ from tickets.ai.ai import (
     rule_engine,
 )
 from tickets.ai import ai_client
-from tickets.ai.ai_client import ai_classification, build_groq_payload, call_groq, parse_ai_result
+from tickets.ai.ai_client import (
+    GroqTicketClassifier,
+    ai_classification,
+    ai_classification_async,
+    build_groq_payload,
+    build_groq_prompt,
+    call_groq,
+    call_groq_async,
+    parse_ai_result,
+)
+from tickets.ai.ai_dataset import format_examples_for_prompt
 from tickets.ai.ai_helper import count_generic_only, is_generic_input, is_weak_input, phrase_score, preprocess
 from tickets.ai.ai_overrides import apply_conflict_overrides, apply_override, starts_with_refund_request
 from tickets.ai.ai_priority import (
@@ -122,6 +133,19 @@ class TicketAiClientTests(TestCase):
         self.assertEqual(payload["messages"][1]["content"], "Classify this ticket")
         self.assertEqual(payload["temperature"], 0.1)
 
+    def test_build_groq_prompt_includes_reference_examples(self):
+        examples = format_examples_for_prompt()
+        prompt = build_groq_prompt("router timeout")
+        self.assertIn("Reference examples:", prompt)
+        self.assertIn(examples, prompt)
+        self.assertIn("router timeout", prompt)
+
+    def test_classifier_instance_builds_payload_with_custom_model(self):
+        classifier = GroqTicketClassifier(api_key="token", model="demo-model")
+        payload = classifier.build_payload("Prompt text")
+        self.assertEqual(payload["model"], "demo-model")
+        self.assertEqual(payload["messages"][1]["content"], "Prompt text")
+
     @patch("tickets.ai.ai_client.GROQ_API_KEY", None)
     def test_call_groq_returns_none_without_api_key(self):
         self.assertIsNone(call_groq("ticket text"))
@@ -179,6 +203,13 @@ class TicketAiClientTests(TestCase):
     def test_ai_classification_uses_call_and_parse_pipeline(self, mock_call_groq):
         mock_call_groq.return_value = '{"category":"network","confidence":0.67}'
         result = ai_classification("router timeout")
+        self.assertEqual(result["category"], "network")
+        self.assertEqual(result["source"], "AI")
+
+    @patch("tickets.ai.ai_client.call_groq_async", new_callable=AsyncMock)
+    def test_ai_classification_async_uses_call_and_parse_pipeline(self, mock_call_groq_async):
+        mock_call_groq_async.return_value = '{"category":"network","confidence":0.67}'
+        result = async_to_sync(ai_classification_async)("router timeout")
         self.assertEqual(result["category"], "network")
         self.assertEqual(result["source"], "AI")
 
@@ -311,3 +342,12 @@ class TicketTaskAndExceptionTests(TestCase):
             send_email_task.run("user@example.com", "Subject")
         mock_logger.error.assert_called_once()
         mock_retry.assert_called_once()
+
+    @patch("tickets.tasks.logger")
+    @patch("tickets.tasks.render_to_string", side_effect=ValueError("template broken"))
+    @patch.object(send_email_task, "retry")
+    def test_send_email_task_does_not_retry_non_request_errors(self, mock_retry, _mock_render, mock_logger):
+        with self.assertRaisesMessage(ValueError, "template broken"):
+            send_email_task.run("user@example.com", "Subject")
+        mock_logger.error.assert_not_called()
+        mock_retry.assert_not_called()

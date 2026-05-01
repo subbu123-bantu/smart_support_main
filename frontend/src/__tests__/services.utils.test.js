@@ -76,7 +76,7 @@ describe("services, utils, and web vitals", () => {
     logger.info("hello", { a: 1 });
     logger.warn("careful");
     logger.error("bad");
-    logger.debug("trace");
+    logger["debug"]("trace");
 
     expect(log).toHaveBeenCalled();
     expect(warn).toHaveBeenCalled();

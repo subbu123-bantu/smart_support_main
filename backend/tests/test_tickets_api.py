@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -93,9 +93,9 @@ class TicketApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], "Text is required")
 
-    @patch("tickets.views.predict_ticket")
-    def test_predict_view_returns_prediction_payload(self, mock_predict_ticket):
-        mock_predict_ticket.return_value = {
+    @patch("tickets.ai.ai.predict_ticket_async", new_callable=AsyncMock)
+    def test_predict_view_returns_prediction_payload(self, mock_predict_ticket_async):
+        mock_predict_ticket_async.return_value = {
             "category": "network",
             "priority": "high",
             "confidence": 0.91,

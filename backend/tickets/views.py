@@ -3,6 +3,7 @@ import logging
 from django.db.models import Q, Count
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django_filters.rest_framework import DjangoFilterBackend
+from asgiref.sync import async_to_sync
 
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
@@ -136,7 +137,9 @@ def predict_view(request):
     if not text:
         return Response({"detail": "Text is required"}, status=400)
 
-    result = predict_ticket(text)
+    from .ai.ai import predict_ticket_async
+
+    result = async_to_sync(predict_ticket_async)(text)
 
     return Response({
         "predicted_category": result["category"],
