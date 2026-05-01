@@ -52,13 +52,25 @@ def _in_cooldown() -> bool:
 
 class GroqTicketClassifier:
     def __init__(self, api_key=None, url=None, model=None):
-        self.api_key = api_key or GROQ_API_KEY
-        self.url = url or GROQ_URL
-        self.model = model or GROQ_MODEL
+        self.api_key = api_key
+        self.url = url
+        self.model = model
+
+    @property
+    def resolved_api_key(self):
+        return GROQ_API_KEY if self.api_key is None else self.api_key
+
+    @property
+    def resolved_url(self):
+        return GROQ_URL if self.url is None else self.url
+
+    @property
+    def resolved_model(self):
+        return GROQ_MODEL if self.model is None else self.model
 
     def build_payload(self, prompt: str) -> dict:
         return {
-            "model": self.model,
+            "model": self.resolved_model,
             "messages": [
                 {
                     "role": "system",
@@ -94,20 +106,21 @@ Ticket:
 {text}"""
 
     def call(self, prompt: str):
-        if not self.api_key:
+        api_key = self.resolved_api_key
+        if not api_key:
             return None
 
         if _in_cooldown():
             return None
 
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
 
         try:
             response = requests.post(
-                self.url,
+                self.resolved_url,
                 headers=headers,
                 json=self.build_payload(prompt),
                 timeout=10,
@@ -133,21 +146,22 @@ Ticket:
             return None
 
     async def call_async(self, prompt: str):
-        if not self.api_key:
+        api_key = self.resolved_api_key
+        if not api_key:
             return None
 
         if _in_cooldown():
             return None
 
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
 
         try:
             async with httpx.AsyncClient(timeout=10) as client:
                 response = await client.post(
-                    self.url,
+                    self.resolved_url,
                     headers=headers,
                     json=self.build_payload(prompt),
                 )

@@ -25,6 +25,7 @@ from tickets.ai.ai_client import (
     call_groq_async,
     parse_ai_result,
 )
+from tickets.ai.ai_dataset import format_examples_for_prompt
 from tickets.ai.ai_helper import count_generic_only, is_generic_input, is_weak_input, phrase_score, preprocess
 from tickets.ai.ai_overrides import apply_conflict_overrides, apply_override, starts_with_refund_request
 from tickets.ai.ai_priority import (
@@ -133,9 +134,10 @@ class TicketAiClientTests(TestCase):
         self.assertEqual(payload["temperature"], 0.1)
 
     def test_build_groq_prompt_includes_reference_examples(self):
+        examples = format_examples_for_prompt()
         prompt = build_groq_prompt("router timeout")
         self.assertIn("Reference examples:", prompt)
-        self.assertIn("My payment failed but money was deducted", prompt)
+        self.assertIn(examples, prompt)
         self.assertIn("router timeout", prompt)
 
     def test_classifier_instance_builds_payload_with_custom_model(self):
