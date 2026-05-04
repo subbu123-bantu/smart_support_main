@@ -4,7 +4,6 @@ import os
 import re
 import time
 
-import httpx
 import requests
 from dotenv import load_dotenv
 from requests import RequestException
@@ -145,51 +144,6 @@ Ticket:
             logger.warning("Unexpected Groq response structure: %s", error)
             return None
 
-    async def call_async(self, prompt: str):
-        api_key = self.resolved_api_key
-        if not api_key:
-            return None
-
-        if _in_cooldown():
-            return None
-
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
-
-        try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                response = await client.post(
-                    self.resolved_url,
-                    headers=headers,
-                    json=self.build_payload(prompt),
-                )
-                response.raise_for_status()
-                data = response.json()
-                return data["choices"][0]["message"]["content"]
-        except httpx.HTTPStatusError as error:
-            response = error.response
-            if response is not None and response.status_code == 429:
-                cooldown_seconds = _retry_after_seconds(response)
-                _start_cooldown(cooldown_seconds)
-                logger.warning(
-                    "Groq rate limited; skipping AI calls for %ss",
-                    cooldown_seconds,
-                )
-                return None
-            _start_cooldown(GROQ_FAILURE_COOLDOWN)
-            logger.warning(GROQ_REQUEST_FAILED_LOG, error)
-            return None
-        except httpx.HTTPError as error:
-            _start_cooldown(GROQ_FAILURE_COOLDOWN)
-            logger.warning(GROQ_REQUEST_FAILED_LOG, error)
-            return None
-        except (KeyError, IndexError, TypeError, ValueError) as error:
-            logger.warning("Unexpected Groq response structure: %s", error)
-            return None
-
-
 CLASSIFIER = GroqTicketClassifier()
 
 
@@ -203,10 +157,6 @@ def build_groq_prompt(text: str) -> str:
 
 def call_groq(prompt: str):
     return CLASSIFIER.call(prompt)
-
-
-async def call_groq_async(prompt: str):
-    return await CLASSIFIER.call_async(prompt)
 
 
 def parse_ai_result(result: str):
@@ -233,15 +183,6 @@ def parse_ai_result(result: str):
 def ai_classification(text: str):
     prompt = build_groq_prompt(text)
     result = call_groq(prompt)
-    if not result:
-        return None
-
-    return parse_ai_result(result)
-
-
-async def ai_classification_async(text: str):
-    prompt = build_groq_prompt(text)
-    result = await call_groq_async(prompt)
     if not result:
         return None
 

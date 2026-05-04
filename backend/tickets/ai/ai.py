@@ -1,4 +1,4 @@
-from .ai_client import ai_classification, ai_classification_async
+from .ai_client import ai_classification
 from .ai_constants import (
     AUTH_DEBOOST_PHRASES,
     CATEGORY_KEYWORDS,
@@ -212,62 +212,6 @@ class TicketPredictor:
             "needs_manual_review": self.needs_manual_review(category, confidence, source),
         }
 
-    async def predict_ticket_async(self, text: str) -> dict:
-        clean = preprocess(text)
-        words = clean.split()
-
-        if is_weak_input(words, clean):
-            return {
-                "category": "other",
-                "confidence": 0.30,
-                "source": "weak_input_reject",
-                "priority": "low",
-                "needs_manual_review": True,
-            }
-
-        if is_generic_input(words, clean):
-            return {
-                "category": "other",
-                "confidence": 0.32,
-                "source": "generic_input_reject",
-                "priority": "low",
-                "needs_manual_review": True,
-            }
-
-        rule_result = self.rule_engine(clean)
-        keyword_result = self.best_keyword_category(clean)
-        ai_result = await ai_classification_async(text)
-
-        final = self.choose_final(rule_result, ai_result, keyword_result)
-        final = apply_conflict_overrides(clean, final)
-
-        category = final.get("category", "other")
-        confidence = final.get("confidence", 0.35)
-
-        if category not in CATEGORIES and category != "other":
-            category = "other"
-            confidence = 0.35
-            final["source"] = "fallback"
-
-        category, confidence = self.resolve_low_confidence(
-            category,
-            confidence,
-            final,
-            keyword_result,
-        )
-
-        priority = get_priority(clean, category)
-        source = final["source"]
-
-        return {
-            "category": category,
-            "confidence": round(confidence, 2),
-            "source": source,
-            "priority": priority,
-            "needs_manual_review": self.needs_manual_review(category, confidence, source),
-        }
-
-
 PREDICTOR = TicketPredictor()
 
 
@@ -297,7 +241,3 @@ def needs_manual_review(category: str, confidence: float, source: str) -> bool:
 
 def predict_ticket(text: str) -> dict:
     return PREDICTOR.predict_ticket(text)
-
-
-async def predict_ticket_async(text: str) -> dict:
-    return await PREDICTOR.predict_ticket_async(text)

@@ -1,7 +1,5 @@
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, Mock, patch
-
-from asgiref.sync import async_to_sync
+from unittest.mock import Mock, patch
 from django.test import TestCase
 from requests import HTTPError, RequestException
 
@@ -18,11 +16,9 @@ from tickets.ai import ai_client
 from tickets.ai.ai_client import (
     GroqTicketClassifier,
     ai_classification,
-    ai_classification_async,
     build_groq_payload,
     build_groq_prompt,
     call_groq,
-    call_groq_async,
     parse_ai_result,
 )
 from tickets.ai.ai_dataset import format_examples_for_prompt
@@ -205,14 +201,6 @@ class TicketAiClientTests(TestCase):
         result = ai_classification("router timeout")
         self.assertEqual(result["category"], "network")
         self.assertEqual(result["source"], "AI")
-
-    @patch("tickets.ai.ai_client.call_groq_async", new_callable=AsyncMock)
-    def test_ai_classification_async_uses_call_and_parse_pipeline(self, mock_call_groq_async):
-        mock_call_groq_async.return_value = '{"category":"network","confidence":0.67}'
-        result = async_to_sync(ai_classification_async)("router timeout")
-        self.assertEqual(result["category"], "network")
-        self.assertEqual(result["source"], "AI")
-
 
 class TicketAiDecisionTests(TestCase):
     def test_rule_engine_returns_short_input_fallback(self):
