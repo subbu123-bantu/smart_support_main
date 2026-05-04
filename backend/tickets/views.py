@@ -8,7 +8,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class test_backend(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         return Response({"message": "Backend is working!"})
 
