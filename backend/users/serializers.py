@@ -43,6 +43,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "email", "password"]
 
+    def validate_email(self, value):
+        value = value.strip().lower()
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
+    
     def create(self, validated_data):
         return User.objects.create_user(
             username=validated_data["username"],

@@ -2,7 +2,13 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { toast } from "react-toastify";
 import TicketDetails from "../pages/TicketDetails";
 import TicketComments from "../pages/TicketComments";
-import { addTicketComment, getTicketById, getTicketComments, getTicketPredictionFeedback } from "../services/api";
+import {
+  addTicketComment,
+  deleteTicketComment,
+  getTicketById,
+  getTicketComments,
+  getTicketPredictionFeedback,
+} from "../services/api";
 
 const mockNavigate = jest.fn();
 
@@ -13,6 +19,7 @@ jest.mock("../services/api", () => ({
   getTicketPredictionFeedback: jest.fn(),
   getTicketComments: jest.fn(),
   addTicketComment: jest.fn(),
+  deleteTicketComment: jest.fn(),
 }));
 jest.mock("react-router-dom", () => ({ ...jest.requireActual("react-router-dom"), useNavigate: () => mockNavigate, useParams: () => ({ id: "42" }) }));
 
@@ -43,6 +50,7 @@ describe("ticket details and comments", () => {
     jest.clearAllMocks();
     localStorage.clear();
     localStorage.setItem("role", "admin");
+    localStorage.setItem("username", "sam");
   });
 
   test("renders ticket details, feedback, and embedded comments", async () => {
@@ -88,6 +96,46 @@ describe("ticket details and comments", () => {
 
     rerender(<TicketComments ticketId={5} role="customer" />);
     await waitFor(() => expect(screen.queryByLabelText(/mark as internal note/i)).not.toBeInTheDocument());
+  });
+
+  test("shows delete for allowed comments and refreshes after deletion", async () => {
+    getTicketComments
+      .mockResolvedValueOnce({
+        data: [
+          { id: 1, username: "sam", user_role: "admin", message: "Investigating", created_at: "2026-04-28T00:00:00Z" },
+          { id: 2, username: "alex", user_role: "agent", message: "Agent note", created_at: "2026-04-28T01:00:00Z" },
+        ],
+      })
+      .mockResolvedValueOnce({
+        data: [
+          { id: 2, username: "alex", user_role: "agent", message: "Agent note", created_at: "2026-04-28T01:00:00Z" },
+        ],
+      });
+    deleteTicketComment.mockResolvedValue({});
+
+    render(<TicketComments ticketId={5} role="admin" />);
+
+    expect(await screen.findByText("Investigating")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: /delete/i })[0]);
+
+    await waitFor(() => expect(deleteTicketComment).toHaveBeenCalledWith(5, 1));
+    expect(toast.success).toHaveBeenCalledWith("Comment deleted");
+    expect(await screen.findByText("Agent note")).toBeInTheDocument();
+  });
+
+  test("only shows delete for the current user's own comment when not admin", async () => {
+    localStorage.setItem("username", "customer1");
+    getTicketComments.mockResolvedValue({
+      data: [
+        { id: 1, username: "customer1", user_role: "customer", message: "Mine", created_at: "2026-04-28T00:00:00Z" },
+        { id: 2, username: "someone-else", user_role: "customer", message: "Not mine", created_at: "2026-04-28T01:00:00Z" },
+      ],
+    });
+
+    render(<TicketComments ticketId={5} role="customer" />);
+
+    expect(await screen.findByText("Mine")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /delete/i })).toHaveLength(1);
   });
 
   test("shows ticket fallback values and no prediction feedback when data is partial", async () => {

@@ -104,6 +104,8 @@ export const getTicketComments = (ticketId) =>
   API.get(`tickets/${ticketId}/comments/`);
 export const addTicketComment = (ticketId, data) =>
   API.post(`tickets/${ticketId}/comments/`, data);
+export const deleteTicketComment = (ticketId, commentId) =>
+  API.delete(`tickets/${ticketId}/comments/${commentId}/`);
 export const getTicketPredictionFeedback = (ticketId) =>
   API.get(`tickets/${ticketId}/prediction-feedback/`);
 

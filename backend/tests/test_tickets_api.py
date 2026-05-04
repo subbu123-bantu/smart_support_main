@@ -173,7 +173,22 @@ class TicketApiTests(APITestCase):
         self.assigned_ticket.refresh_from_db()
         self.assertEqual(self.assigned_ticket.priority, Ticket.Priority.MEDIUM)
         mock_feedback.assert_called_once()
-        mock_delay.assert_called_once()
+        mock_delay.assert_not_called()
+
+    @patch("tickets.views.send_email_task.delay")
+    @patch("tickets.views.update_prediction_feedback")
+    def test_ticket_update_without_status_change_does_not_queue_status_email(self, mock_feedback, mock_delay):
+        self.client.force_authenticate(user=self.agent_user)
+        response = self.client.patch(
+            f"{self.ticket_list_url}{self.assigned_ticket.id}/",
+            {"priority": Ticket.Priority.MEDIUM},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assigned_ticket.refresh_from_db()
+        self.assertEqual(self.assigned_ticket.priority, Ticket.Priority.MEDIUM)
+        mock_feedback.assert_called_once()
+        mock_delay.assert_not_called()
 
     def test_ticket_update_blocks_agent_from_editing_disallowed_fields(self):
         self.client.force_authenticate(user=self.agent_user)
@@ -217,6 +232,16 @@ class TicketApiTests(APITestCase):
         self.unassigned_ticket.refresh_from_db()
         self.assertEqual(self.unassigned_ticket.assigned_to, self.agent_user)
         self.assertEqual(self.unassigned_ticket.status, Ticket.Status.IN_PROGRESS)
+
+    def test_assign_ticket_rejects_empty_agent_id(self):
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.patch(
+            f"/api/tickets/{self.unassigned_ticket.id}/assign/",
+            {"agent_id": ""},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error"], "agent_id cannot be empty")
 
     def test_ticket_delete_is_forbidden_for_admin(self):
         self.client.force_authenticate(user=self.admin_user)

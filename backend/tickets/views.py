@@ -92,6 +92,7 @@ class TicketViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         ticket = self.get_object()
         user = request.user
+        previous_status = ticket.status
 
         if user.role.lower() == "customer":
             raise PermissionDenied("Customers cannot update tickets.")
@@ -109,21 +110,22 @@ class TicketViewSet(viewsets.ModelViewSet):
         ticket.refresh_from_db()
         update_prediction_feedback(ticket)
 
-        try:
-            send_email_task.delay(
-                ticket.customer.email,
-                subject=f"Your ticket '{ticket.title}' updated",
-                template_name="emails/ticket_status_updated.html",
-                context={
-                    "customer_name": ticket.customer.username,
-                    "ticket_title": ticket.title,
-                    "new_status": ticket.status,
-                }
-            )
-        except Exception:
-            logger.exception(
-                "Failed to queue ticket update email for ticket_id=%s", ticket.id
-            )
+        if ticket.status != previous_status:
+            try:
+                send_email_task.delay(
+                    ticket.customer.email,
+                    subject=f"Your ticket '{ticket.title}' updated",
+                    template_name="emails/ticket_status_updated.html",
+                    context={
+                        "customer_name": ticket.customer.username,
+                        "ticket_title": ticket.title,
+                        "new_status": ticket.status,
+                    }
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to queue ticket update email for ticket_id=%s", ticket.id
+                )
 
         return response
 
@@ -167,8 +169,10 @@ def assign_ticket(request, ticket_id):
     except Ticket.DoesNotExist:
         return Response({"error": "Ticket not found"}, status=404)
 
-    agent_id = request.data.get("agent_id")
-    if agent_id:
+    if "agent_id" in request.data:
+        agent_id = request.data.get("agent_id")
+        if agent_id in (None, ""):
+            return Response({"error": "agent_id cannot be empty"}, status=400)
         data, status_code = assign_ticket_to_agent(ticket, agent_id)
         return Response(data, status=status_code)
 
@@ -183,7 +187,7 @@ def prediction_stats(request):
     if request.user.role.lower() != "admin":
         raise PermissionDenied("Only admins can view prediction stats.")
 
-    logs = TicketPredictionLog.objects.filter(actual_category__isnull=False)
+    logs = TicketPredictionLog.objects.exclude(actual_category="")
 
     total = logs.count()
     correct_category = logs.filter(category_correct=True).count()

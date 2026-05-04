@@ -67,6 +67,40 @@ class TicketPredictionApiTests(APITestCase):
         self.assertEqual(response.data["priority_accuracy"], 50.0)
         self.assertEqual(response.data["review_needed"], 1)
 
+    def test_prediction_stats_ignores_logs_without_actual_category(self):
+        make_prediction_log(
+            ticket=self.assigned_ticket,
+            text="Unevaluated issue",
+            predicted_category="network",
+            predicted_priority="high",
+            source="rules",
+            confidence=0.91,
+            actual_category="",
+            actual_priority="",
+            category_correct=None,
+            priority_correct=None,
+        )
+        make_prediction_log(
+            ticket=self.other_ticket,
+            text="Evaluated issue",
+            predicted_category="network",
+            predicted_priority="high",
+            source="rules",
+            confidence=0.91,
+            actual_category="network",
+            actual_priority="high",
+            category_correct=True,
+            priority_correct=True,
+        )
+
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get(self.prediction_stats_url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total_evaluated"], 1)
+        self.assertEqual(response.data["category_accuracy"], 100.0)
+        self.assertEqual(response.data["priority_accuracy"], 100.0)
+
     def test_prediction_stats_forbids_non_admin_users(self):
         self.client.force_authenticate(user=self.customer_user)
         response = self.client.get(self.prediction_stats_url, format="json")

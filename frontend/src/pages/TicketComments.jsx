@@ -1,6 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import PropTypes from "prop-types";
-import { getTicketComments, addTicketComment } from "../services/api";
+import {
+  getTicketComments,
+  addTicketComment,
+  deleteTicketComment,
+} from "../services/api";
 import { toast } from "react-toastify";
 import logger from "../utils/logger";
 
@@ -10,6 +14,8 @@ function TicketComments({ ticketId, role }) {
   const [isInternal, setIsInternal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
+  const currentUsername = localStorage.getItem("username") || "";
 
   const fetchComments = useCallback(async () => {
     setLoading(true);
@@ -61,6 +67,24 @@ function TicketComments({ ticketId, role }) {
     }
   };
 
+  const canDeleteComment = (comment) =>
+    role === "admin" || comment.username === currentUsername;
+
+  const handleDelete = async (commentId) => {
+    setDeletingCommentId(commentId);
+
+    try {
+      await deleteTicketComment(ticketId, commentId);
+      toast.success("Comment deleted");
+      await fetchComments();
+    } catch (error) {
+      logger.error("Failed to delete comment:", error);
+      toast.error("Failed to delete comment");
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
+
   const renderComments = () => {
     if (loading) {
       return <p className="text-sm text-gray-500">Loading comments...</p>;
@@ -94,9 +118,22 @@ function TicketComments({ ticketId, role }) {
                 )}
               </div>
 
-              <span className="text-xs text-gray-500">
-                {new Date(comment.created_at).toLocaleString()}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-500">
+                  {new Date(comment.created_at).toLocaleString()}
+                </span>
+
+                {canDeleteComment(comment) && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(comment.id)}
+                    disabled={deletingCommentId === comment.id}
+                    className="text-xs text-rose-400 hover:text-rose-300 disabled:opacity-50 transition bg-black-200"
+                  >
+                    {deletingCommentId === comment.id ? "Deleting..." : "Delete"}
+                  </button>
+                )}
+              </div>
             </div>
 
             <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">

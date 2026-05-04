@@ -43,6 +43,7 @@ describe("services, utils, and web vitals", () => {
     api.assignTicket(7, 3);
     api.updateAgentProfile(3, { active: true });
     api.addTicketComment(2, { message: "hi" });
+    api.deleteTicketComment(2, 9);
 
     expect(requestHandlers.ok({ url: "tickets/", headers: {} }).headers.Authorization).toBe("Bearer abc");
     expect(requestHandlers.ok({ url: "login/", headers: {} }).headers.Authorization).toBeUndefined();

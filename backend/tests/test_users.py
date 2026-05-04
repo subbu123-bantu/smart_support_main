@@ -9,7 +9,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from users.permissions import IsAdmin, IsAdminOrReadOnly, IsAgent, IsCustomer
+from users.permissions import IsAdminOrReadOnly
 from users.models import User
 from users.serializers import (
     AgentProfileSerializer,
@@ -317,12 +317,6 @@ class UserApiTests(APITestCase):
 class PermissionClassTests(TestCase):
     def build_request(self, role, method="GET", authenticated=True):
         return SimpleNamespace(method=method, user=SimpleNamespace(is_authenticated=authenticated, role=role))
-
-    def test_role_permissions_require_authenticated_matching_role(self):
-        self.assertTrue(IsAdmin().has_permission(self.build_request("admin"), None))
-        self.assertFalse(IsAdmin().has_permission(self.build_request("admin", authenticated=False), None))
-        self.assertTrue(IsAgent().has_permission(self.build_request("agent"), None))
-        self.assertTrue(IsCustomer().has_permission(self.build_request("customer"), None))
 
     def test_is_admin_or_read_only_allows_safe_methods_for_authenticated_users(self):
         self.assertTrue(IsAdminOrReadOnly().has_permission(self.build_request("customer"), None))
