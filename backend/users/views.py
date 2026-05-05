@@ -1,4 +1,5 @@
 import logging
+from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.tokens import default_token_generator
@@ -22,6 +23,12 @@ from tickets.tasks import send_email_task
 
 UserModel = get_user_model()
 logger = logging.getLogger(__name__)
+
+
+def _build_agent_list_payload():
+    profiles = AgentProfile.objects.select_related('user').prefetch_related('categories')
+    serializer = AgentProfileSerializer(profiles, many=True)
+    return serializer.data
 
 
 class RegisterView(APIView):
@@ -74,11 +81,13 @@ class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
     http_method_names = ["post"]
 
-    def post(self, request):
+    async def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        await sync_to_async(serializer.is_valid)(raise_exception=True)
 
-        user = UserModel.objects.filter(email__iexact=serializer.validated_data["email"]).first()
+        user = await sync_to_async(
+            UserModel.objects.filter(email__iexact=serializer.validated_data["email"]).first
+        )()
         if user:
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
@@ -151,13 +160,12 @@ class AgentListView(APIView):
     permission_classes = [IsAuthenticated]
     http_method_names = ["get"]
 
-    def get(self, request):
+    async def get(self, request):
         if request.user.role.lower() != 'admin':
             raise PermissionDenied("Only admins can view agents.")
 
-        profiles = AgentProfile.objects.select_related('user').prefetch_related('categories')
-        serializer = AgentProfileSerializer(profiles, many=True)
-        return Response(serializer.data)
+        data = await sync_to_async(_build_agent_list_payload)()
+        return Response(data)
 
 
 class AgentProfileUpdateView(APIView):

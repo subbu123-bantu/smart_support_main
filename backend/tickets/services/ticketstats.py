@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
 
+from asgiref.sync import sync_to_async
 from django.db.models import Q, Count, Avg, F, ExpressionWrapper, DurationField
 from django.db.models.functions import TruncDate
 from django.utils import timezone
@@ -14,10 +15,11 @@ logger = logging.getLogger(__name__)
 class TicketStatsService:
     def _queryset_for_user(self, user):
         role = user.role.lower()
-        if role == "admin":
-            return role, Ticket.objects.all()
-        if role == "agent":
-            return role, Ticket.objects.filter(assigned_to=user)
+        match role: 
+            case "admin":
+                return role, Ticket.objects.all()
+            case "agent":
+                return role, Ticket.objects.filter(assigned_to=user)
         return role, Ticket.objects.filter(customer=user)
 
     def _agent_workload(self):
@@ -105,3 +107,7 @@ TICKET_STATS_SERVICE = TicketStatsService()
 
 def build_ticket_stats(user):
     return TICKET_STATS_SERVICE.build_ticket_stats(user)
+
+
+async def build_ticket_stats_async(user):
+    return await sync_to_async(TICKET_STATS_SERVICE.build_ticket_stats)(user)

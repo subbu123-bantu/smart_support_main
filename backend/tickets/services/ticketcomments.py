@@ -44,37 +44,40 @@ class TicketCommentService:
 
     def get_comment_queryset_for_user(self, user, ticket):
         role = self._role(user)
-
-        if role == "admin":
-            queryset = TicketComment.objects.filter(ticket=ticket)
-        elif role == "agent":
-            if ticket.assigned_to != user:
-                raise PermissionDenied("You can only view comments on your assigned tickets.")
-            queryset = TicketComment.objects.filter(ticket=ticket)
-        elif role == "customer":
-            if ticket.customer != user:
-                raise PermissionDenied("You can only view comments on your own tickets.")
-            queryset = TicketComment.objects.filter(ticket=ticket, is_internal=False)
-        else:
-            raise PermissionDenied("Invalid role.")
+        match role:
+      
+            case "admin":
+                queryset = TicketComment.objects.filter(ticket=ticket)
+        
+            case "agent":
+                if ticket.assigned_to != user:
+                    raise PermissionDenied("You can only view comments on your assigned tickets.")
+                queryset = TicketComment.objects.filter(ticket=ticket)
+        
+            case "customer":
+                if ticket.customer != user:
+                    raise PermissionDenied("You can only view comments on your own tickets.")
+                queryset = TicketComment.objects.filter(ticket=ticket, is_internal=False)
+            case _:
+                raise PermissionDenied("Invalid role.")
 
         return queryset.select_related("user", "ticket").order_by("created_at")
 
     def create_comment_for_user(self, serializer, user, ticket):
-        role = self._role(user)
-
-        if role == "admin":
-            comment = serializer.save(ticket=ticket, user=user)
-        elif role == "agent":
-            if ticket.assigned_to != user:
-                raise PermissionDenied("You can only comment on your assigned tickets.")
-            comment = serializer.save(ticket=ticket, user=user)
-        elif role == "customer":
-            if ticket.customer != user:
-                raise PermissionDenied("You can only comment on your own tickets.")
-            comment = serializer.save(ticket=ticket, user=user, is_internal=False)
-        else:
-            raise PermissionDenied("Invalid role.")
+        role =self._role(user)
+        match role:
+            case "admin":
+                comment = serializer.save(ticket=ticket, user=user)
+            case "agent":
+                if ticket.assigned_to != user:
+                    raise PermissionDenied("You can only comment on your assigned tickets.")
+                comment = serializer.save(ticket=ticket, user=user)
+            case "customer":
+                if ticket.customer != user:
+                    raise PermissionDenied("You can only comment on your own tickets.")
+                comment = serializer.save(ticket=ticket, user=user, is_internal=False)
+            case _:
+                raise PermissionDenied("Invalid role.")
 
         if role in ["admin", "agent"] and not comment.is_internal:
             self._notify_customer(ticket, user, comment, role)
@@ -84,8 +87,9 @@ class TicketCommentService:
     def can_delete_comment(self, user, comment):
         role = self._role(user)
 
-        if role == "admin":
-            return True
+        match role:
+            case "admin":
+                return True
 
         if comment.user != user:
             raise PermissionDenied("You can only delete your own comments.")

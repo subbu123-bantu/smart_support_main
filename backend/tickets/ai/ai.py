@@ -1,4 +1,5 @@
 from .ai_client import ai_classification
+from asgiref.sync import sync_to_async
 from .ai_constants import (
     AUTH_DEBOOST_PHRASES,
     CATEGORY_KEYWORDS,
@@ -241,3 +242,7 @@ def needs_manual_review(category: str, confidence: float, source: str) -> bool:
 
 def predict_ticket(text: str) -> dict:
     return PREDICTOR.predict_ticket(text)
+
+
+async def predict_ticket_async(text: str) -> dict:
+    return await sync_to_async(PREDICTOR.predict_ticket)(text)

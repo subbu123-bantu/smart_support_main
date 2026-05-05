@@ -27,7 +27,12 @@ const API = axios.create({
 
 API.interceptors.request.use(
   (request) => {
-    const publicRoutes = ["login/", "register/", "forgot-password/", "reset-password/"];
+    const publicRoutes = [
+      "auth/login/",
+      "auth/register/",
+      "auth/forgot-password/",
+      "auth/reset-password/",
+    ];
     const isPublicRoute = publicRoutes.some((route) =>
       request.url?.includes(route)
     );
@@ -49,7 +54,7 @@ API.interceptors.response.use(
   (response) => response,
   (error) => {
     const requestUrl = error.config?.url || "";
-    const isLoginRequest = requestUrl.includes("login/");
+    const isLoginRequest = requestUrl.includes("auth/login/");
 
     if (error.response?.status === 401 && !isLoginRequest) {
       clearAuthStorage();
@@ -61,14 +66,14 @@ API.interceptors.response.use(
 );
 
 // AUTH
-export const loginUser = (data) => API.post("login/", data);
-export const registerUser = (data) => API.post("register/", data);
-export const requestPasswordReset = (data) => API.post("forgot-password/", data);
-export const resetPassword = (data) => API.post("reset-password/", data);
-export const changeEmail = (data) => API.patch("change-email/", data);
+export const loginUser = (data) => API.post("auth/login/", data);
+export const registerUser = (data) => API.post("auth/register/", data);
+export const requestPasswordReset = (data) => API.post("auth/forgot-password/", data);
+export const resetPassword = (data) => API.post("auth/reset-password/", data);
+export const changeEmail = (data) => API.patch("auth/change-email/", data);
 
 // TICKETS
-export const getTicketStats = () => API.get("stats/");
+export const getTicketStats = () => API.get("tickets/stats/");
 
 export const getTickets = (
   page = 1,
@@ -92,14 +97,14 @@ export const getTickets = (
 export const createTicket = (data) => API.post("tickets/", data);
 export const getTicketById = (id) => API.get(`tickets/${id}/`);
 export const updateTicket = (id, data) => API.patch(`tickets/${id}/`, data);
-export const predictTicket = (data) => API.post("predict/", data);
+export const predictTicket = (data) => API.post("tickets/predict/", data);
 
 export const assignTicket = (ticketId, agentId) =>
   API.patch(`tickets/${ticketId}/assign/`, { agent_id: agentId });
 
-export const getAgents = () => API.get("agents/");
-export const updateAgentProfile = (agentId, data) => API.patch(`agents/${agentId}/`, data);
-export const getCategories = () => API.get("categories/");
+export const getAgents = () => API.get("auth/agents/");
+export const updateAgentProfile = (agentId, data) => API.patch(`auth/agents/${agentId}/`, data);
+export const getCategories = () => API.get("tickets/categories/");
 export const getTicketComments = (ticketId) =>
   API.get(`tickets/${ticketId}/comments/`);
 export const addTicketComment = (ticketId, data) =>

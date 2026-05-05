@@ -1,5 +1,4 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
 from .views import (
     TicketViewSet,
@@ -13,9 +12,21 @@ from .views import (
     test_backend,
 )
 
-router = DefaultRouter()
-router.register(r"tickets", TicketViewSet, basename="ticket")
-router.register(r"categories", CategoryViewSet, basename="category")
+ticket_list = TicketViewSet.as_view({
+    "get": "list",
+    "post": "create",
+})
+
+ticket_detail = TicketViewSet.as_view({
+    "get": "retrieve",
+    "put": "update",
+    "patch": "partial_update",
+})
+
+category_list = CategoryViewSet.as_view({
+    "get": "list",
+    "post": "create",
+})
 
 ticket_comments = TicketCommentViewSet.as_view({
     "get": "list",
@@ -27,18 +38,19 @@ ticket_comment_detail = TicketCommentViewSet.as_view({
 })
 
 urlpatterns = [
-    path("", include(router.urls)),
-
     path("test/", test_backend.as_view(), name="test-backend"),
+    path("", ticket_list, name="ticket-list"),
+    path("<int:pk>/", ticket_detail, name="ticket-detail"),
+    path("categories/", category_list, name="category-list"),
     path("predict/", predict_view, name="predict"),
     path("stats/", ticket_stats, name="ticket-stats"),
     path("prediction-stats/", prediction_stats, name="prediction-stats"),
 
-    path("tickets/<int:ticket_id>/assign/", assign_ticket, name="assign-ticket"),
-    path("tickets/<int:ticket_id>/comments/", ticket_comments, name="ticket-comments"),
-    path("tickets/<int:ticket_id>/comments/<int:pk>/", ticket_comment_detail, name="ticket-comment-detail"),
+    path("<int:ticket_id>/assign/", assign_ticket, name="assign-ticket"),
+    path("<int:ticket_id>/comments/", ticket_comments, name="ticket-comments"),
+    path("<int:ticket_id>/comments/<int:pk>/", ticket_comment_detail, name="ticket-comment-detail"),
     path(
-        "tickets/<int:ticket_id>/prediction-feedback/",
+        "<int:ticket_id>/prediction-feedback/",
         ticket_prediction_feedback,
         name="ticket-prediction-feedback",
     ),

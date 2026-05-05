@@ -42,10 +42,13 @@ class TicketPredictionFeedbackService:
             return None, {"error": "Ticket not found"}, 404
 
         role = user.role.lower()
-        if role == "customer" and ticket.customer != user:
-            raise PermissionDenied("You can only view your own tickets.")
-        if role == "agent" and ticket.assigned_to != user:
-            raise PermissionDenied("You can only view feedback for your assigned tickets.")
+        match role :
+            case "customer":
+                if ticket.customer != user:
+                    raise PermissionDenied("You can only view your own tickets.")
+            case "agent":
+                if ticket.assigned_to != user:
+                    raise PermissionDenied("You can only view feedback for your assigned tickets.")
 
         log = self._latest_log(ticket)
         if not log:

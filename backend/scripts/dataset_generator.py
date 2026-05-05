@@ -127,18 +127,20 @@ def add_noise(text):
 
 
 def generate_ticket(category):
-    if category == "billing":
-        base = RNG.choice(billing_templates)
-    elif category == "technical":
-        base = RNG.choice(technical_templates)
-    elif category == "authentication":
-        base = RNG.choice(auth_templates)
-    elif category == "network":
-        base = RNG.choice(network_templates)
-    elif category == "account":
-        base = RNG.choice(account_templates)
-    else:
-        base = RNG.choice(other_templates)
+        
+    match category:
+        case "billing":
+            base = RNG.choice(billing_templates)
+        case "technical":
+            base = RNG.choice(technical_templates)
+        case "authentication":
+            base = RNG.choice(auth_templates)
+        case "network":
+            base = RNG.choice(network_templates)
+        case "account":
+            base = RNG.choice(account_templates)
+        case "other":
+            base = RNG.choice(other_templates)
 
     if RNG.random() < 0.4:
         base = add_noise(base)
@@ -154,8 +156,9 @@ def generate_ticket(category):
 
 
 def generate_confidence(category):
-    if category == "other":
-        return round(RNG.uniform(0.2, 0.4), 2)
+    match category:
+        case "other":
+            return round(RNG.uniform(0.2, 0.4), 2)
     return round(RNG.uniform(0.75, 0.95), 2)
 
 
