@@ -32,7 +32,7 @@ class TicketPredictionApiTests(APITestCase):
             assigned_to=self.other_agent,
             user_ticket_id=1,
         )
-        self.prediction_stats_url = "/api/prediction-stats/"
+        self.prediction_stats_url = "/api/tickets/prediction-stats/"
 
     def test_prediction_stats_returns_accuracy_summary(self):
         make_prediction_log(

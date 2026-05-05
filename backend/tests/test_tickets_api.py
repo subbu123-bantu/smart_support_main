@@ -83,9 +83,9 @@ class TicketApiTests(APITestCase):
         )
 
         self.ticket_list_url = "/api/tickets/"
-        self.predict_url = "/api/predict/"
-        self.stats_url = "/api/stats/"
-        self.prediction_stats_url = "/api/prediction-stats/"
+        self.predict_url = "/api/tickets/predict/"
+        self.stats_url = "/api/tickets/stats/"
+        self.prediction_stats_url = "/api/tickets/prediction-stats/"
 
     def test_predict_view_rejects_empty_text(self):
         self.client.force_authenticate(user=self.customer_user)
@@ -243,11 +243,10 @@ class TicketApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["error"], "agent_id cannot be empty")
 
-    def test_ticket_delete_is_forbidden_for_admin(self):
+    def test_ticket_delete_is_not_available_for_admin(self):
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.delete(f"{self.ticket_list_url}{self.unassigned_ticket.id}/", format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("Ticket deletion is not allowed.", str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertTrue(Ticket.objects.filter(id=self.unassigned_ticket.id).exists())
 
     def test_assign_ticket_returns_404_for_missing_ticket(self):

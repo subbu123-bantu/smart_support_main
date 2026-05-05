@@ -106,13 +106,13 @@ class RegisterSerializerTests(TestCase):
 
 class UserApiTests(APITestCase):
     def setUp(self):
-        self.register_url = "/api/register/"
-        self.login_url = "/api/login/"
-        self.logout_url = "/api/logout/"
-        self.agents_url = "/api/agents/"
-        self.forgot_password_url = "/api/forgot-password/"
-        self.reset_password_url = "/api/reset-password/"
-        self.change_email_url = "/api/change-email/"
+        self.register_url = "/api/auth/register/"
+        self.login_url = "/api/auth/login/"
+        self.logout_url = "/api/auth/logout/"
+        self.agents_url = "/api/auth/agents/"
+        self.forgot_password_url = "/api/auth/forgot-password/"
+        self.reset_password_url = "/api/auth/reset-password/"
+        self.change_email_url = "/api/auth/change-email/"
         self.admin_user = make_user(role="admin", username="adminuser")
         self.agent_user = make_user(role="agent", username="agentuser")
         self.customer_user = make_user(role="customer", username="customeruser")
@@ -123,7 +123,7 @@ class UserApiTests(APITestCase):
         self.technical_category = make_category("Technical")
         self.account_category = make_category("Account")
         self.agent_profile = make_agent_profile(self.agent_user, categories=[self.billing_category])
-        self.agent_profile_url = f"/api/agents/{self.agent_user.id}/"
+        self.agent_profile_url = f"/api/auth/agents/{self.agent_user.id}/"
 
     def authenticate(self, user):
         self.client.force_authenticate(user=user)
@@ -303,7 +303,7 @@ class UserApiTests(APITestCase):
 
     def test_update_agent_profile_returns_404_for_missing_agent_profile(self):
         self.authenticate(self.admin_user)
-        response = self.patch_json("/api/agents/999999/", {"is_available": False})
+        response = self.patch_json("/api/auth/agents/999999/", {"is_available": False})
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("No AgentProfile found", response.data["error"])
 

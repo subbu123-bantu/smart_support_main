@@ -1,7 +1,6 @@
 import logging
 
-from asgiref.sync import sync_to_async
-from django.db.models import Q, Count
+from django.db.models import Count, Q
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -14,13 +13,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from tickets.ai.ai import predict_ticket
 from tickets.models import Ticket, Category, TicketPredictionLog
 from tickets.serializers import TicketSerializer, CategorySerializer, TicketCommentSerializer
 from tickets.tasks import send_email_task
 from users.permissions import IsAdminOrReadOnly
 from users.pagination import CustomPagination
 
-from .ai.ai import predict_ticket_async
 from .services.assignment import assign_ticket_to_agent, auto_assign_ticket
 from .services.ticketcomments import (
     get_ticket_or_raise,
@@ -29,7 +28,7 @@ from .services.ticketcomments import (
     can_delete_comment,
 )
 from .services.ticket_prediction_update import update_prediction_feedback, get_prediction_feedback
-from .services.ticketstats import build_ticket_stats_async
+from .services.ticketstats import build_ticket_stats
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +62,7 @@ def _build_prediction_stats_payload():
 
 class test_backend(APIView):
     permission_classes = [AllowAny]
+
     def get(self, request):
         return Response({"message": "Backend is working!"})
 
@@ -167,12 +167,12 @@ class TicketViewSet(viewsets.ModelViewSet):
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-async def predict_view(request):
+def predict_view(request):
     text = request.data.get("text", "").strip()
     if not text:
         return Response({"detail": "Text is required"}, status=400)
 
-    result = await predict_ticket_async(text)
+    result = predict_ticket(text)
 
     return Response({
         "predicted_category": result["category"],
@@ -186,20 +186,20 @@ async def predict_view(request):
 @require_GET
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-async def ticket_stats(request):
-    data, status_code = await build_ticket_stats_async(request.user)
+def ticket_stats(request):
+    data, status_code = build_ticket_stats(request.user)
     return Response(data, status=status_code)
 
 
 @require_http_methods(["PATCH"])
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
-async def assign_ticket(request, ticket_id):
+def assign_ticket(request, ticket_id):
     if request.user.role.lower() != "admin":
         raise PermissionDenied("Only admins can assign tickets.")
 
     try:
-        ticket = await sync_to_async(Ticket.objects.get)(id=ticket_id)
+        ticket = Ticket.objects.get(id=ticket_id)
     except Ticket.DoesNotExist:
         return Response({"error": "Ticket not found"}, status=404)
 
@@ -207,21 +207,21 @@ async def assign_ticket(request, ticket_id):
         agent_id = request.data.get("agent_id")
         if agent_id in (None, ""):
             return Response({"error": "agent_id cannot be empty"}, status=400)
-        data, status_code = await sync_to_async(assign_ticket_to_agent)(ticket, agent_id)
+        data, status_code = assign_ticket_to_agent(ticket, agent_id)
         return Response(data, status=status_code)
 
-    data, status_code = await sync_to_async(auto_assign_ticket)(ticket)
+    data, status_code = auto_assign_ticket(ticket)
     return Response(data, status=status_code)
 
 
 @require_GET
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-async def prediction_stats(request):
+def prediction_stats(request):
     if request.user.role.lower() != "admin":
         raise PermissionDenied("Only admins can view prediction stats.")
 
-    data = await sync_to_async(_build_prediction_stats_payload)()
+    data = _build_prediction_stats_payload()
     return Response(data)
 
 
@@ -251,6 +251,6 @@ class TicketCommentViewSet(viewsets.ModelViewSet):
 @require_GET
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-async def ticket_prediction_feedback(request, ticket_id):
-    _, data, status_code = await sync_to_async(get_prediction_feedback)(ticket_id, request.user)
+def ticket_prediction_feedback(request, ticket_id):
+    _, data, status_code = get_prediction_feedback(ticket_id, request.user)
     return Response(data, status=status_code)
