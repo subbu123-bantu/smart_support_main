@@ -1,19 +1,24 @@
 import logging
+import json
+import inspect
 
+from asgiref.sync import sync_to_async
 from django.db.models import Count, Q
+from django.http import JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import viewsets
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from tickets.ai.ai import predict_ticket
+from tickets.ai.ai import predict_ticket_async
 from tickets.models import Ticket, Category, TicketPredictionLog
 from tickets.serializers import TicketSerializer, CategorySerializer, TicketCommentSerializer
 from tickets.tasks import send_email_task
@@ -31,6 +36,16 @@ from .services.ticket_prediction_update import update_prediction_feedback, get_p
 from .services.ticketstats import build_ticket_stats
 
 logger = logging.getLogger(__name__)
+
+
+async def predict_ticket(text: str):
+    return await predict_ticket_async(text)
+
+
+def _json_response(payload, status=200):
+    response = JsonResponse(payload, status=status)
+    response.data = payload
+    return response
 
 
 def _build_prediction_stats_payload():
@@ -163,18 +178,46 @@ class TicketViewSet(viewsets.ModelViewSet):
 
         return response
 
+@require_GET
+@ensure_csrf_cookie
+def predict_csrf_view(request):
+    return _json_response({"detail": "CSRF cookie set"})
+
+
 @require_POST
-@api_view(["POST"])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-def predict_view(request):
-    text = request.data.get("text", "").strip()
+async def predict_view(request):
+    try:
+        auth_result = await sync_to_async(
+            JWTAuthentication().authenticate,
+            thread_sensitive=True,
+        )(request)
+    except APIException as exc:
+        return _json_response({"detail": str(exc.detail)}, status=401)
+
+    if auth_result is None:
+        return _json_response(
+            {"detail": "Authentication credentials were not provided."},
+            status=401,
+        )
+
+    user, auth = auth_result
+    request.user = user
+    request.auth = auth
+
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return _json_response({"detail": "Invalid JSON body"}, status=400)
+
+    text = str(payload.get("text", "")).strip()
     if not text:
-        return Response({"detail": "Text is required"}, status=400)
+        return _json_response({"detail": "Text is required"}, status=400)
 
     result = predict_ticket(text)
+    if inspect.isawaitable(result):
+        result = await result
 
-    return Response({
+    return _json_response({
         "predicted_category": result["category"],
         "predicted_priority": result["priority"],
         "category_confidence": result["confidence"],

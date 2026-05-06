@@ -1,5 +1,4 @@
-from .ai_client import ai_classification
-from asgiref.sync import sync_to_async
+from .ai_client import ai_classification, ai_classification_async
 from .ai_constants import (
     AUTH_DEBOOST_PHRASES,
     CATEGORY_KEYWORDS,
@@ -158,12 +157,12 @@ class TicketPredictor:
     def needs_manual_review(self, category: str, confidence: float, source: str) -> bool:
         return category == "other" or confidence < 0.85 or source in self.review_sources
 
-    def predict_ticket(self, text: str) -> dict:
+    def _early_reject(self, text: str):
         clean = preprocess(text)
         words = clean.split()
 
         if is_weak_input(words, clean):
-            return {
+            return clean, {
                 "category": "other",
                 "confidence": 0.30,
                 "source": "weak_input_reject",
@@ -172,7 +171,7 @@ class TicketPredictor:
             }
 
         if is_generic_input(words, clean):
-            return {
+            return clean, {
                 "category": "other",
                 "confidence": 0.32,
                 "source": "generic_input_reject",
@@ -180,10 +179,15 @@ class TicketPredictor:
                 "needs_manual_review": True,
             }
 
+        return clean, None
+
+    def _predict_with_ai_result(self, text: str, ai_result) -> dict:
+        clean, rejected = self._early_reject(text)
+        if rejected:
+            return rejected
+
         rule_result = self.rule_engine(clean)
         keyword_result = self.best_keyword_category(clean)
-        ai_result = ai_classification(text)
-
         final = self.choose_final(rule_result, ai_result, keyword_result)
         final = apply_conflict_overrides(clean, final)
 
@@ -212,6 +216,22 @@ class TicketPredictor:
             "priority": priority,
             "needs_manual_review": self.needs_manual_review(category, confidence, source),
         }
+
+    def predict_ticket(self, text: str, include_ai: bool = True) -> dict:
+        _, rejected = self._early_reject(text)
+        if rejected:
+            return rejected
+
+        ai_result = ai_classification(text) if include_ai else None
+        return self._predict_with_ai_result(text, ai_result)
+
+    async def predict_ticket_async(self, text: str) -> dict:
+        _, rejected = self._early_reject(text)
+        if rejected:
+            return rejected
+
+        ai_result = await ai_classification_async(text)
+        return self._predict_with_ai_result(text, ai_result)
 
 PREDICTOR = TicketPredictor()
 
@@ -244,5 +264,9 @@ def predict_ticket(text: str) -> dict:
     return PREDICTOR.predict_ticket(text)
 
 
+def predict_ticket_without_ai(text: str) -> dict:
+    return PREDICTOR.predict_ticket(text, include_ai=False)
+
+
 async def predict_ticket_async(text: str) -> dict:
-    return await sync_to_async(PREDICTOR.predict_ticket)(text)
+    return await PREDICTOR.predict_ticket_async(text)

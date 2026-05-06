@@ -46,7 +46,7 @@ describe("services, utils, and web vitals", () => {
     api.deleteTicketComment(2, 9);
 
     expect(requestHandlers.ok({ url: "tickets/", headers: {} }).headers.Authorization).toBe("Bearer abc");
-    expect(requestHandlers.ok({ url: "login/", headers: {} }).headers.Authorization).toBeUndefined();
+    expect(requestHandlers.ok({ url: "auth/login/", headers: {} }).headers.Authorization).toBeUndefined();
     await expect(responseHandlers.bad({ config: { url: "tickets/" }, response: { status: 401 } })).rejects.toEqual({ config: { url: "tickets/" }, response: { status: 401 } });
     expect(localStorage.getItem("access")).toBeNull();
 
@@ -62,7 +62,10 @@ describe("services, utils, and web vitals", () => {
     localStorage.setItem("access", "a");
     localStorage.setItem("role", "r");
     clearAuthStorage();
-    expect(axios.create).toHaveBeenCalledWith({ baseURL: "http://api.example.com/" });
+    expect(axios.create).toHaveBeenCalledWith({
+      baseURL: "http://api.example.com/",
+      withCredentials: true,
+    });
     expect(localStorage.getItem("access")).toBeNull();
     delete process.env.REACT_APP_API_BASE_URL;
   });

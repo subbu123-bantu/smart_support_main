@@ -4,6 +4,7 @@ from .views import (
     TicketViewSet,
     CategoryViewSet,
     TicketCommentViewSet,
+    predict_csrf_view,
     predict_view,
     ticket_stats,
     assign_ticket,
@@ -39,6 +40,7 @@ ticket_comment_detail = TicketCommentViewSet.as_view({
 
 urlpatterns = [
     path("test/", test_backend.as_view(), name="test-backend"),
+    path("predict/csrf/", predict_csrf_view, name="predict-csrf"),
     path("", ticket_list, name="ticket-list"),
     path("<int:pk>/", ticket_detail, name="ticket-detail"),
     path("categories/", category_list, name="category-list"),

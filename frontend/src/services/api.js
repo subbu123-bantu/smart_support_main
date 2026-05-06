@@ -21,8 +21,19 @@ const clearAuthStorage = () => {
   localStorage.removeItem("email");
 };
 
+const getCookie = (name) => {
+  const cookiePrefix = `${name}=`;
+  const cookie = document.cookie
+    .split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith(cookiePrefix));
+
+  return cookie ? decodeURIComponent(cookie.slice(cookiePrefix.length)) : "";
+};
+
 const API = axios.create({
   baseURL: getApiBaseUrl(),
+  withCredentials: true,
 });
 
 API.interceptors.request.use(
@@ -65,6 +76,24 @@ API.interceptors.response.use(
   }
 );
 
+let csrfRequest = null;
+
+const ensurePredictCsrfCookie = async () => {
+  const existingToken = getCookie("csrftoken");
+  if (existingToken) {
+    return existingToken;
+  }
+
+  if (!csrfRequest) {
+    csrfRequest = Promise.resolve(API.get("tickets/predict/csrf/")).finally(() => {
+      csrfRequest = null;
+    });
+  }
+
+  await csrfRequest;
+  return getCookie("csrftoken");
+};
+
 // AUTH
 export const loginUser = (data) => API.post("auth/login/", data);
 export const registerUser = (data) => API.post("auth/register/", data);
@@ -97,7 +126,11 @@ export const getTickets = (
 export const createTicket = (data) => API.post("tickets/", data);
 export const getTicketById = (id) => API.get(`tickets/${id}/`);
 export const updateTicket = (id, data) => API.patch(`tickets/${id}/`, data);
-export const predictTicket = (data) => API.post("tickets/predict/", data);
+export const predictTicket = async (data) => {
+  const csrfToken = await ensurePredictCsrfCookie();
+  const headers = csrfToken ? { "X-CSRFToken": csrfToken } : {};
+  return API.post("tickets/predict/", data, { headers });
+};
 
 export const assignTicket = (ticketId, agentId) =>
   API.patch(`tickets/${ticketId}/assign/`, { agent_id: agentId });

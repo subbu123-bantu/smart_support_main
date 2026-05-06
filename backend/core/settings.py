@@ -72,6 +72,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'core.urls'
+ASGI_APPLICATION = 'core.asgi.application'
 
 TEMPLATES = [
     {
@@ -176,6 +177,7 @@ CSRF_TRUSTED_ORIGINS = get_list_env("CSRF_TRUSTED_ORIGINS", local_frontend_origi
 
 # CORS
 CORS_ALLOWED_ORIGINS = get_list_env("CORS_ALLOWED_ORIGINS", local_frontend_origins)
+CORS_ALLOW_CREDENTIALS = True
 
 SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", production_like)
 SESSION_COOKIE_SECURE = get_bool_env("SESSION_COOKIE_SECURE", production_like)
@@ -202,7 +204,8 @@ BREVO_API_KEY=os.getenv('BREVO_API_KEY')
 DEFAULT_FROM_EMAIL = os.getenv('BREVO_SENDER_EMAIL')
 FRONTEND_URL = os.getenv('FRONTEND_URL', f'{frontend_scheme}://localhost:3000')
 
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

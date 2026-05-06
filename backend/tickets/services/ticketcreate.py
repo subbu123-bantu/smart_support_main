@@ -3,12 +3,13 @@ import logging
 from django.db import transaction
 from django.db.models import Max
 
-from tickets.ai.ai import predict_ticket, log_prediction
+from tickets.ai.ai import log_prediction, predict_ticket_without_ai
 from tickets.models import Ticket, Category
 from tickets.services.assignment import auto_assign_ticket
-from tickets.tasks import send_email_task
+from tickets.tasks import run_ai_fallback_prediction_task, send_email_task
 
 logger = logging.getLogger(__name__)
+predict_ticket = predict_ticket_without_ai
 
 
 class TicketCreationService:
@@ -44,6 +45,20 @@ class TicketCreationService:
                 ticket.id,
             )
 
+    def _queue_ai_fallback(self, ticket, text_for_prediction, prediction):
+        if not prediction.get("needs_manual_review", False):
+            return
+
+        try:
+            # The create response should stay fast and deterministic, so the
+            # slower AI-enrichment path runs after the transaction commits.
+            run_ai_fallback_prediction_task.delay(ticket.id, text_for_prediction)
+        except Exception:
+            logger.exception(
+                "Failed to queue AI fallback prediction for ticket_id=%s",
+                ticket.id,
+            )
+
     def create_ticket(self, validated_data, user):
         text_for_prediction = self._build_prediction_text(validated_data)
         prediction = predict_ticket(text_for_prediction)
@@ -69,6 +84,10 @@ class TicketCreationService:
                 assignment_result, _ = auto_assign_ticket(ticket)
             except Exception:
                 assignment_result = {"assigned": False, "agent": None}
+
+            transaction.on_commit(
+                lambda: self._queue_ai_fallback(ticket, text_for_prediction, prediction)
+            )
 
         self._queue_created_email(ticket, user, category_name, priority, assignment_result)
         return ticket

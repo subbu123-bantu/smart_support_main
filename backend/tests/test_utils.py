@@ -1,4 +1,5 @@
 from django.utils.crypto import get_random_string
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from tickets.models import Category, Ticket, TicketPredictionLog
 from users.models import AgentProfile, User
@@ -9,6 +10,12 @@ PASSWORD_FIELD = "password"
 
 def build_test_password():
     return f"test-{get_random_string(16)}-Aa1!"
+
+
+def authenticate_client_with_jwt(client, user):
+    access_token = str(RefreshToken.for_user(user).access_token)
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+    return access_token
 
 
 def make_user(*, role="customer", username=None, email=None, password=None, **extra_fields):

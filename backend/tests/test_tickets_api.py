@@ -7,7 +7,7 @@ from tickets.models import Category, Ticket
 from tickets.services.ticketcreate import create_ticket
 from users.models import AgentProfile, User
 
-from .test_utils import PASSWORD_FIELD, build_test_password
+from .test_utils import PASSWORD_FIELD, authenticate_client_with_jwt, build_test_password
 
 
 class TicketApiTests(APITestCase):
@@ -88,7 +88,7 @@ class TicketApiTests(APITestCase):
         self.prediction_stats_url = "/api/tickets/prediction-stats/"
 
     def test_predict_view_rejects_empty_text(self):
-        self.client.force_authenticate(user=self.customer_user)
+        authenticate_client_with_jwt(self.client, self.customer_user)
         response = self.client.post(self.predict_url, {"text": "   "}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], "Text is required")
@@ -102,7 +102,7 @@ class TicketApiTests(APITestCase):
             "source": "rules",
             "needs_manual_review": False,
         }
-        self.client.force_authenticate(user=self.customer_user)
+        authenticate_client_with_jwt(self.client, self.customer_user)
         response = self.client.post(self.predict_url, {"text": "Router is down"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["predicted_category"], "network")
