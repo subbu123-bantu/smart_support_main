@@ -1,6 +1,7 @@
 import logging
 
 from django.conf import settings
+from django.db import transaction
 from rest_framework.exceptions import PermissionDenied
 
 from tickets.models import Ticket, TicketComment
@@ -80,7 +81,9 @@ class TicketCommentService:
                 raise PermissionDenied("Invalid role.")
 
         if role in ["admin", "agent"] and not comment.is_internal:
-            self._notify_customer(ticket, user, comment, role)
+            transaction.on_commit(
+                lambda: self._notify_customer(ticket, user, comment, role)
+            )
 
         return comment
 

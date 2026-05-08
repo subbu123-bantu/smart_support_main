@@ -1,11 +1,13 @@
 import csv
 from contextlib import nullcontext
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
+
+from asgiref.sync import async_to_sync
 
 from django.core.management.base import BaseCommand, CommandError
 
-from tickets.ai import predict_ticket
+from tickets.ai.ai import predict_ticket
 from tickets.ai.ai_dataset import DATASET_PATH
 
 
@@ -66,11 +68,11 @@ class Command(BaseCommand):
 
     def _runner(self, no_ai: bool):
         if no_ai:
-            return patch("tickets.ai.ai.ai_classification", return_value=None)
+            return patch("tickets.ai.ai.ai_classification_async", new=AsyncMock(return_value=None))
         return nullcontext()
 
     def _evaluate_case(self, case: dict):
-        result = predict_ticket(case["text"])
+        result = async_to_sync(predict_ticket)(case["text"])
         got_category = result.get("category")
         got_priority = result.get("priority")
         expected_priority = case["expected_priority"]

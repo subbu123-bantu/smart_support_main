@@ -1,4 +1,4 @@
-from .ai_client import ai_classification, ai_classification_async
+from .ai_client import ai_classification_async
 from .ai_constants import (
     AUTH_DEBOOST_PHRASES,
     CATEGORY_KEYWORDS,
@@ -217,20 +217,12 @@ class TicketPredictor:
             "needs_manual_review": self.needs_manual_review(category, confidence, source),
         }
 
-    def predict_ticket(self, text: str, include_ai: bool = True) -> dict:
+    async def predict_ticket(self, text: str, include_ai: bool = True) -> dict:
         _, rejected = self._early_reject(text)
         if rejected:
             return rejected
 
-        ai_result = ai_classification(text) if include_ai else None
-        return self._predict_with_ai_result(text, ai_result)
-
-    async def predict_ticket_async(self, text: str) -> dict:
-        _, rejected = self._early_reject(text)
-        if rejected:
-            return rejected
-
-        ai_result = await ai_classification_async(text)
+        ai_result = await ai_classification_async(text) if include_ai else None
         return self._predict_with_ai_result(text, ai_result)
 
 PREDICTOR = TicketPredictor()
@@ -260,13 +252,9 @@ def needs_manual_review(category: str, confidence: float, source: str) -> bool:
     return PREDICTOR.needs_manual_review(category, confidence, source)
 
 
-def predict_ticket(text: str) -> dict:
-    return PREDICTOR.predict_ticket(text)
+async def predict_ticket(text: str) -> dict:
+    return await PREDICTOR.predict_ticket(text)
 
 
-def predict_ticket_without_ai(text: str) -> dict:
-    return PREDICTOR.predict_ticket(text, include_ai=False)
-
-
-async def predict_ticket_async(text: str) -> dict:
-    return await PREDICTOR.predict_ticket_async(text)
+async def predict_ticket_without_ai(text: str) -> dict:
+    return await PREDICTOR.predict_ticket(text, include_ai=False)

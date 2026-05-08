@@ -1,6 +1,5 @@
 import logging
 import json
-import inspect
 
 from asgiref.sync import sync_to_async
 from django.db.models import Count, Q
@@ -18,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from tickets.ai.ai import predict_ticket_async
+from tickets.ai.ai import predict_ticket
 from tickets.models import Ticket, Category, TicketPredictionLog
 from tickets.serializers import TicketSerializer, CategorySerializer, TicketCommentSerializer
 from tickets.tasks import send_email_task
@@ -36,10 +35,6 @@ from .services.ticket_prediction_update import update_prediction_feedback, get_p
 from .services.ticketstats import build_ticket_stats
 
 logger = logging.getLogger(__name__)
-
-
-async def predict_ticket(text: str):
-    return await predict_ticket_async(text)
 
 
 def _json_response(payload, status=200):
@@ -213,9 +208,7 @@ async def predict_view(request):
     if not text:
         return _json_response({"detail": "Text is required"}, status=400)
 
-    result = predict_ticket(text)
-    if inspect.isawaitable(result):
-        result = await result
+    result = await predict_ticket(text)
 
     return _json_response({
         "predicted_category": result["category"],

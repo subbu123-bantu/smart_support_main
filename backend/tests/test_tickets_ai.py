@@ -1,7 +1,8 @@
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
+from asgiref.sync import async_to_sync
 from django.test import TestCase
-from requests import HTTPError, RequestException
+import httpx
 
 from tickets.ai.ai import (
     best_keyword_category,
@@ -15,10 +16,10 @@ from tickets.ai.ai import (
 from tickets.ai import ai_client
 from tickets.ai.ai_client import (
     GroqTicketClassifier,
-    ai_classification,
+    ai_classification_async,
     build_groq_payload,
     build_groq_prompt,
-    call_groq,
+    call_groq_async,
     parse_ai_result,
 )
 from tickets.ai.ai_dataset import format_examples_for_prompt
@@ -144,46 +145,55 @@ class TicketAiClientTests(TestCase):
 
     @patch("tickets.ai.ai_client.GROQ_API_KEY", None)
     def test_call_groq_returns_none_without_api_key(self):
-        self.assertIsNone(call_groq("ticket text"))
+        self.assertIsNone(async_to_sync(call_groq_async)("ticket text"))
 
-    @patch("tickets.ai.ai_client.requests.post")
+    @patch("tickets.ai.ai_client.httpx.AsyncClient")
     @patch("tickets.ai.ai_client.GROQ_API_KEY", "token")
-    def test_call_groq_returns_message_content_on_success(self, mock_post):
+    def test_call_groq_returns_message_content_on_success(self, mock_async_client):
         mock_response = Mock()
         mock_response.json.return_value = {"choices": [{"message": {"content": '{"category":"billing","confidence":0.81}'}}]}
         mock_response.raise_for_status.return_value = None
-        mock_post.return_value = mock_response
-        self.assertEqual(call_groq("ticket text"), '{"category":"billing","confidence":0.81}')
+        mock_client = AsyncMock()
+        mock_client.post.return_value = mock_response
+        mock_async_client.return_value.__aenter__.return_value = mock_client
+        self.assertEqual(
+            async_to_sync(call_groq_async)("ticket text"),
+            '{"category":"billing","confidence":0.81}',
+        )
 
-    @patch("tickets.ai.ai_client.requests.post", side_effect=RequestException("network down"))
+    @patch("tickets.ai.ai_client.httpx.AsyncClient")
     @patch("tickets.ai.ai_client.GROQ_API_KEY", "token")
-    def test_call_groq_returns_none_on_request_failure(self, _mock_post):
-        self.assertIsNone(call_groq("ticket text"))
+    def test_call_groq_returns_none_on_request_failure(self, mock_async_client):
+        mock_client = AsyncMock()
+        mock_client.post.side_effect = httpx.RequestError("network down")
+        mock_async_client.return_value.__aenter__.return_value = mock_client
+        self.assertIsNone(async_to_sync(call_groq_async)("ticket text"))
 
-    @patch("tickets.ai.ai_client.requests.post")
+    @patch("tickets.ai.ai_client.httpx.AsyncClient")
     @patch("tickets.ai.ai_client.time.monotonic", return_value=100.0)
     @patch("tickets.ai.ai_client.GROQ_API_KEY", "token")
-    def test_call_groq_starts_cooldown_after_rate_limit(self, mock_monotonic, mock_post):
+    def test_call_groq_starts_cooldown_after_rate_limit(self, mock_monotonic, mock_async_client):
         response = Mock(status_code=429, headers={"Retry-After": "7"})
-        error = HTTPError("rate limited")
-        error.response = response
+        error = httpx.HTTPStatusError("rate limited", request=Mock(), response=response)
 
         mock_response = Mock()
         mock_response.raise_for_status.side_effect = error
-        mock_post.return_value = mock_response
+        mock_client = AsyncMock()
+        mock_client.post.return_value = mock_response
+        mock_async_client.return_value.__aenter__.return_value = mock_client
 
-        self.assertIsNone(call_groq("ticket text"))
+        self.assertIsNone(async_to_sync(call_groq_async)("ticket text"))
         self.assertEqual(ai_client._groq_cooldown_until, 107.0)
         mock_monotonic.assert_called()
 
-    @patch("tickets.ai.ai_client.requests.post")
+    @patch("tickets.ai.ai_client.httpx.AsyncClient")
     @patch("tickets.ai.ai_client.time.monotonic", return_value=50.0)
     @patch("tickets.ai.ai_client.GROQ_API_KEY", "token")
-    def test_call_groq_skips_request_during_cooldown(self, mock_monotonic, mock_post):
+    def test_call_groq_skips_request_during_cooldown(self, mock_monotonic, mock_async_client):
         ai_client._groq_cooldown_until = 55.0
 
-        self.assertIsNone(call_groq("ticket text"))
-        mock_post.assert_not_called()
+        self.assertIsNone(async_to_sync(call_groq_async)("ticket text"))
+        mock_async_client.assert_not_called()
         mock_monotonic.assert_called_once()
 
     def test_parse_ai_result_accepts_json_and_clamps_confidence(self):
@@ -195,10 +205,10 @@ class TicketAiClientTests(TestCase):
     def test_parse_ai_result_returns_none_for_invalid_payload(self):
         self.assertIsNone(parse_ai_result("not-json"))
 
-    @patch("tickets.ai.ai_client.call_groq")
-    def test_ai_classification_uses_call_and_parse_pipeline(self, mock_call_groq):
-        mock_call_groq.return_value = '{"category":"network","confidence":0.67}'
-        result = ai_classification("router timeout")
+    @patch("tickets.ai.ai_client.call_groq_async", new_callable=AsyncMock)
+    def test_ai_classification_uses_call_and_parse_pipeline(self, mock_call_groq_async):
+        mock_call_groq_async.return_value = '{"category":"network","confidence":0.67}'
+        result = async_to_sync(ai_classification_async)("router timeout")
         self.assertEqual(result["category"], "network")
         self.assertEqual(result["source"], "AI")
 
@@ -258,29 +268,29 @@ class TicketAiDecisionTests(TestCase):
         self.assertTrue(needs_manual_review("billing", 0.9, "soft_fallback"))
         self.assertFalse(needs_manual_review("billing", 0.9, "rule"))
 
-    @patch("tickets.ai.ai.ai_classification")
-    def test_predict_ticket_rejects_weak_and_generic_inputs_before_ai(self, mock_ai_classification):
-        weak = predict_ticket("help")
-        generic = predict_ticket("help issue problem update")
+    @patch("tickets.ai.ai.ai_classification_async", new_callable=AsyncMock)
+    def test_predict_ticket_rejects_weak_and_generic_inputs_before_ai(self, mock_ai_classification_async):
+        weak = async_to_sync(predict_ticket)("help")
+        generic = async_to_sync(predict_ticket)("help issue problem update")
         self.assertEqual(weak["source"], "weak_input_reject")
         self.assertEqual(generic["source"], "generic_input_reject")
-        mock_ai_classification.assert_not_called()
+        mock_ai_classification_async.assert_not_called()
 
     @patch("tickets.ai.ai.apply_conflict_overrides")
-    @patch("tickets.ai.ai.ai_classification")
-    def test_predict_ticket_handles_invalid_final_category_and_returns_priority(self, mock_ai_classification, mock_apply_conflict_overrides):
-        mock_ai_classification.return_value = {"category": "technical", "confidence": 0.84, "source": "AI"}
+    @patch("tickets.ai.ai.ai_classification_async", new_callable=AsyncMock)
+    def test_predict_ticket_handles_invalid_final_category_and_returns_priority(self, mock_ai_classification_async, mock_apply_conflict_overrides):
+        mock_ai_classification_async.return_value = {"category": "technical", "confidence": 0.84, "source": "AI"}
         mock_apply_conflict_overrides.return_value = {"category": "unknown", "confidence": 0.9, "source": "weird"}
-        result = predict_ticket("dashboard crashes with server error")
+        result = async_to_sync(predict_ticket)("dashboard crashes with server error")
         self.assertEqual(result["category"], "other")
         self.assertEqual(result["source"], "fallback")
         self.assertEqual(result["priority"], "low")
         self.assertTrue(result["needs_manual_review"])
 
-    @patch("tickets.ai.ai.ai_classification")
-    def test_predict_ticket_returns_resolved_category_for_real_input(self, mock_ai_classification):
-        mock_ai_classification.return_value = {"category": "billing", "confidence": 0.86, "source": "AI"}
-        result = predict_ticket("payment failed and invoice page not loading")
+    @patch("tickets.ai.ai.ai_classification_async", new_callable=AsyncMock)
+    def test_predict_ticket_returns_resolved_category_for_real_input(self, mock_ai_classification_async):
+        mock_ai_classification_async.return_value = {"category": "billing", "confidence": 0.86, "source": "AI"}
+        result = async_to_sync(predict_ticket)("payment failed and invoice page not loading")
         self.assertEqual(result["category"], "billing")
         self.assertIn(result["source"], {"rule+AI", "billing_override", "soft_fallback", "rule"})
         self.assertIn(result["priority"], {"high", "medium", "urgent", "low"})

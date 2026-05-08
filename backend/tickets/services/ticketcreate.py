@@ -1,5 +1,6 @@
 import logging
 
+from asgiref.sync import async_to_sync
 from django.db import transaction
 from django.db.models import Max
 
@@ -9,7 +10,6 @@ from tickets.services.assignment import auto_assign_ticket
 from tickets.tasks import run_ai_fallback_prediction_task, send_email_task
 
 logger = logging.getLogger(__name__)
-predict_ticket = predict_ticket_without_ai
 
 
 class TicketCreationService:
@@ -61,7 +61,7 @@ class TicketCreationService:
 
     def create_ticket(self, validated_data, user):
         text_for_prediction = self._build_prediction_text(validated_data)
-        prediction = predict_ticket(text_for_prediction)
+        prediction = async_to_sync(predict_ticket_without_ai)(text_for_prediction)
 
         category_name = prediction["category"].lower().strip()
         priority = prediction["priority"].lower()

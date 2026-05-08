@@ -1,6 +1,7 @@
 import logging
 
 import requests
+from asgiref.sync import async_to_sync
 from celery import shared_task
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -107,7 +108,7 @@ def run_ai_fallback_prediction_task(self, ticket_id, text):
         from tickets.services.assignment import auto_assign_ticket
 
         ticket = Ticket.objects.select_related("category").get(id=ticket_id)
-        prediction = predict_ticket(text)
+        prediction = async_to_sync(predict_ticket)(text)
         log_prediction(text, prediction, ticket)
         _apply_prediction_to_ticket(ticket, prediction)
 
