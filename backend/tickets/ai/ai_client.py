@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import re
-import time
 
 import httpx
 from dotenv import load_dotenv
@@ -19,56 +18,13 @@ GROQ_URL = os.environ.get(
     "https://api.groq.com/openai/v1/chat/completions",
 )
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
-GROQ_RATE_LIMIT_COOLDOWN = int(os.environ.get("GROQ_RATE_LIMIT_COOLDOWN", "60"))
-GROQ_FAILURE_COOLDOWN = int(os.environ.get("GROQ_FAILURE_COOLDOWN", "30"))
 GROQ_REQUEST_FAILED_LOG = "Groq request failed: %s"
-_groq_cooldown_until = 0.0
-
-
-def _retry_after_seconds(response) -> int:
-    if response is None:
-        return GROQ_RATE_LIMIT_COOLDOWN
-
-    retry_after = response.headers.get("Retry-After")
-    if not retry_after:
-        return GROQ_RATE_LIMIT_COOLDOWN
-
-    try:
-        return max(int(retry_after), 1)
-    except (TypeError, ValueError):
-        return GROQ_RATE_LIMIT_COOLDOWN
-
-
-def _start_cooldown(seconds: int) -> None:
-    global _groq_cooldown_until
-    _groq_cooldown_until = time.monotonic() + max(seconds, 1)
-
-
-def _in_cooldown() -> bool:
-    return time.monotonic() < _groq_cooldown_until
 
 
 class GroqTicketClassifier:
-    def __init__(self, api_key=None, url=None, model=None):
-        self.api_key = api_key
-        self.url = url
-        self.model = model
-
-    @property
-    def resolved_api_key(self):
-        return GROQ_API_KEY if self.api_key is None else self.api_key
-
-    @property
-    def resolved_url(self):
-        return GROQ_URL if self.url is None else self.url
-
-    @property
-    def resolved_model(self):
-        return GROQ_MODEL if self.model is None else self.model
-
     def build_payload(self, prompt: str) -> dict:
         return {
-            "model": self.resolved_model,
+            "model": GROQ_MODEL,
             "messages": [
                 {
                     "role": "system",
@@ -104,21 +60,17 @@ Ticket:
 {text}"""
 
     async def call(self, prompt: str):
-        api_key = self.resolved_api_key
-        if not api_key:
-            return None
-
-        if _in_cooldown():
+        if not GROQ_API_KEY:
             return None
 
         headers = {
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json",
         }
         try:
             async with httpx.AsyncClient(timeout=10) as client:
                 response = await client.post(
-                    self.resolved_url,
+                    GROQ_URL,
                     headers=headers,
                     json=self.build_payload(prompt),
                 )
@@ -128,18 +80,13 @@ Ticket:
         except httpx.HTTPStatusError as error:
             response = error.response
             if response is not None and response.status_code == 429:
-                cooldown_seconds = _retry_after_seconds(response)
-                _start_cooldown(cooldown_seconds)
                 logger.warning(
-                    "Groq rate limited; skipping AI calls for %ss",
-                    cooldown_seconds,
+                    "Groq rate limited; request skipped",
                 )
                 return None
-            _start_cooldown(GROQ_FAILURE_COOLDOWN)
             logger.warning(GROQ_REQUEST_FAILED_LOG, error)
             return None
         except httpx.RequestError as error:
-            _start_cooldown(GROQ_FAILURE_COOLDOWN)
             logger.warning(GROQ_REQUEST_FAILED_LOG, error)
             return None
         except (KeyError, IndexError, TypeError, ValueError) as error:

@@ -82,12 +82,11 @@ def send_email_task(
         retry_count = self.request.retries + 1
         countdown = min(60 * (2 ** self.request.retries), 300)
 
-        logger.error(
+        logger.exception(
             "Email failed (attempt %s/%s): %s",
             retry_count,
             self.max_retries + 1,
             exc,
-            exc_info=True,
         )
 
         if self.request.retries >= self.max_retries:
@@ -125,13 +124,12 @@ def run_ai_fallback_prediction_task(self, ticket_id, text):
     except Exception as exc:
         retry_count = self.request.retries + 1
         countdown = min(30 * (2 ** self.request.retries), 300)
-        logger.error(
+        logger.exception(
             "AI fallback prediction failed (attempt %s/%s) for ticket_id=%s: %s",
             retry_count,
             self.max_retries + 1,
             ticket_id,
             exc,
-            exc_info=True,
         )
         if self.request.retries >= self.max_retries:
             raise
